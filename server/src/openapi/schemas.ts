@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
 import {
   CAMPAIGN_STATUSES,
+  ERROR_CODE_VALUES,
   ENTRY_STATUSES,
   PARTICIPANT_STATUSES,
   REJECT_REASON_CODE_VALUES,
@@ -18,10 +19,16 @@ import {
  */
 extendZodWithOpenApi(z)
 
-/** design.md §12.5 规定的统一错误响应体 */
+/**
+ * design.md §12.5 规定的统一错误响应体。
+ *
+ * code 用枚举而不是 string：错误码目录本就该是契约的一部分。
+ * 前端据此能拿到编译器强制的穷尽性检查 —— 服务端新增一个错误码
+ * 而前端没有对应处理时，它的错误映射表会直接编译不过。
+ */
 export const ErrorResponseSchema = z
   .object({
-    code: z.string().openapi({ example: 'CHECKIN_CLOSED' }),
+    code: z.enum(ERROR_CODE_VALUES).openapi({ example: 'CHECKIN_CLOSED' }),
     message: z.string().openapi({ example: '该活动日的打卡已经截止' }),
     request_id: z.string().openapi({ example: 'req_5f3a9c1d7b6e4a52' }),
     details: z.record(z.string(), z.unknown()),

@@ -57,6 +57,16 @@ export const ERROR_STATUS = {
 
 export type ErrorCode = keyof typeof ERROR_STATUS
 
+/**
+ * 错误码目录的数组形式，供 Zod 生成枚举。
+ *
+ * 这样 OpenAPI 契约里 ErrorResponse.code 会是这串字面量的联合类型，
+ * 而不是宽泛的 string —— 前端就能拿到编译器强制的穷尽性检查：
+ * 新增一个错误码而前端没处理，`Record<ErrorCode, …>` 会直接编译不过。
+ * 把错误码写进契约，比让前端照抄一份列表可靠。
+ */
+export const ERROR_CODE_VALUES = Object.keys(ERROR_STATUS) as [ErrorCode, ...ErrorCode[]]
+
 // ---------------------------------------------------------------------------
 // 角色与权限
 // ---------------------------------------------------------------------------
