@@ -1,0 +1,9 @@
+# Claude Code 的本机权限设置：与具体机器绑定，不适合入库
+.claude/settings.local.json
+
+# 编辑器与系统产物
+.DS_Store
+Thumbs.db
+.idea/
+
+# server/ 下的 node_modules、.env、数据库、storage/、backups/ 由 server/.gitignore 负责
