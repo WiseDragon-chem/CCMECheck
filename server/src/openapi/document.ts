@@ -763,7 +763,7 @@ export function buildOpenApiDocument() {
         '北京大学化学与分子工程学院国庆打卡活动后端。',
         '',
         '**约定**',
-        '- 所有路径以 `/api/v1` 为前缀，响应字段为 `snake_case`。',
+        '- 所有路径以 `/api/v1` 为前缀，**请求体与响应字段一律 `snake_case`**（含认证接口）。',
         '- 访问令牌走 `Authorization: Bearer`；刷新令牌在 HttpOnly Cookie 中。',
         '- 积分以「毫点」为单位的整数传输（1000 = 1 分），权重为千分比整数。',
         '- 活动日按北京时间（固定 +08:00）计算；服务器时间以响应中的 `server_time` 为准，',

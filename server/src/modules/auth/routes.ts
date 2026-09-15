@@ -28,8 +28,8 @@ export function createAuthRouter(): Router {
     activateRateLimiter,
     route({ body: activateBodySchema }, async ({ req, res, body }) => {
       const result = await authService.activateAccount({
-        studentId: body.studentId,
-        activationCode: body.activationCode,
+        studentId: body.student_id,
+        activationCode: body.activation_code,
         password: body.password,
         deviceInfo: req.header('user-agent'),
       })
@@ -44,7 +44,7 @@ export function createAuthRouter(): Router {
     loginRateLimiter,
     route({ body: loginBodySchema }, async ({ req, res, body }) => {
       const result = await authService.login({
-        studentId: body.studentId,
+        studentId: body.student_id,
         password: body.password,
         deviceInfo: req.header('user-agent'),
       })
@@ -89,8 +89,8 @@ export function createAuthRouter(): Router {
       const principal = requirePrincipal(req)
       const result = await authService.changePassword({
         userId: principal.userId,
-        currentPassword: body.currentPassword,
-        newPassword: body.newPassword,
+        currentPassword: body.current_password,
+        newPassword: body.new_password,
         deviceInfo: req.header('user-agent'),
       })
       setRefreshCookie(res, result.tokens.refreshToken, REFRESH_TTL_MS)

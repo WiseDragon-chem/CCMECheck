@@ -233,6 +233,46 @@ describe('打卡提交', () => {
     expect(response.body.code).toBe('CAMPAIGN_NOT_ACTIVE')
   })
 
+  /**
+   * 回归：can_submit 曾经只看时间窗与记录状态，不看活动状态。
+   * 于是活动进入 settling 后，今日接口会对未打卡的赛道返回 can_submit: true，
+   * 界面显示「去打卡」，点下去必然被 CAMPAIGN_NOT_ACTIVE 拒绝。
+   * 接口不该给前端一个自己会否定的答案。
+   */
+  it('活动不在进行中时，今日接口不再给出「可提交」', async () => {
+    const before = await authed(token).get('/api/v1/checkins/today')
+    expect(before.status).toBe(200)
+    const submittable = (before.body.cards as Array<{ slug: string; can_submit: boolean }>).filter(
+      (card) => card.can_submit,
+    )
+    expect(submittable.length, '进行中时至少应有一张卡可提交').toBeGreaterThan(0)
+
+    await db.campaign.update({ where: { id: campaignId }, data: { status: 'settling' } })
+
+    const after = await authed(token).get('/api/v1/checkins/today')
+    expect(after.status).toBe(200)
+    // 活动状态仍然如实返回，前端据此渲染「活动已停止提交」的说明横幅
+    expect(after.body.campaign.status).toBe('settling')
+
+    const cards = after.body.cards as Array<{ slug: string; can_submit: boolean; card_state: string }>
+    expect(cards.length).toBeGreaterThan(0)
+    for (const card of cards) {
+      expect(card.can_submit, `${card.slug} 在活动停止提交后仍被标记为可提交`).toBe(false)
+      // 卡片自身的状态不因活动状态而失真 —— 区分「为什么不能提交」是展示层的事
+      expect(card.card_state).toBe('can_submit')
+    }
+  })
+
+  it('活动恢复进行中后，可提交状态随之恢复', async () => {
+    await db.campaign.update({ where: { id: campaignId }, data: { status: 'settling' } })
+    const stopped = await authed(token).get('/api/v1/checkins/today')
+    expect((stopped.body.cards as Array<{ can_submit: boolean }>).every((card) => !card.can_submit)).toBe(true)
+
+    await db.campaign.update({ where: { id: campaignId }, data: { status: 'active' } })
+    const resumed = await authed(token).get('/api/v1/checkins/today')
+    expect((resumed.body.cards as Array<{ can_submit: boolean }>).some((card) => card.can_submit)).toBe(true)
+  })
+
   it('未登录无法访问今日接口', async () => {
     const response = await api().get('/api/v1/checkins/today')
     expect(response.status).toBe(401)

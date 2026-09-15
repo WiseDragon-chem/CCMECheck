@@ -72,7 +72,7 @@ describe('会话撤销', () => {
 
     const changed = await authed(deviceA.accessToken)
       .post('/api/v1/auth/change-password')
-      .send({ currentPassword: TEST_PASSWORD, newPassword: NEW_PASSWORD })
+      .send({ current_password: TEST_PASSWORD, new_password: NEW_PASSWORD })
 
     expect(changed.status, JSON.stringify(changed.body)).toBe(200)
 
@@ -112,7 +112,7 @@ describe('会话撤销', () => {
     const relogin = await login('2026001', NEW_PASSWORD)
     expect(relogin.accessToken).toBeTruthy()
 
-    const oldPassword = await api().post('/api/v1/auth/login').send({ studentId: '2026001', password: TEST_PASSWORD })
+    const oldPassword = await api().post('/api/v1/auth/login').send({ student_id: '2026001', password: TEST_PASSWORD })
     expect(oldPassword.status, JSON.stringify(oldPassword.body)).toBe(401)
     expect(oldPassword.body.code).toBe('INVALID_CREDENTIALS')
   })
@@ -159,7 +159,7 @@ describe('会话撤销', () => {
     expect(staleAccess.body.code).toBe('ACCOUNT_DISABLED')
 
     // 被禁用的账号无法再登录
-    const relogin = await api().post('/api/v1/auth/login').send({ studentId: '2026001', password: TEST_PASSWORD })
+    const relogin = await api().post('/api/v1/auth/login').send({ student_id: '2026001', password: TEST_PASSWORD })
     expect(relogin.status, JSON.stringify(relogin.body)).toBe(401)
     expect(relogin.body.code).toBe('ACCOUNT_DISABLED')
   })
@@ -170,7 +170,7 @@ describe('会话撤销', () => {
 
     const response = await authed(device.accessToken)
       .post('/api/v1/auth/change-password')
-      .send({ currentPassword: 'WrongPassword1', newPassword: NEW_PASSWORD })
+      .send({ current_password: 'WrongPassword1', new_password: NEW_PASSWORD })
 
     expect(response.status, JSON.stringify(response.body)).toBe(401)
     expect(response.body.code).toBe('INVALID_CREDENTIALS')
@@ -196,7 +196,7 @@ describe('会话撤销', () => {
   it('未登录不能修改密码', async () => {
     const response = await api()
       .post('/api/v1/auth/change-password')
-      .send({ currentPassword: TEST_PASSWORD, newPassword: NEW_PASSWORD })
+      .send({ current_password: TEST_PASSWORD, new_password: NEW_PASSWORD })
 
     expect(response.status, JSON.stringify(response.body)).toBe(401)
     expect(response.body.code).toBe('UNAUTHENTICATED')

@@ -182,7 +182,16 @@ export async function getTodayOverview(principal: AuthPrincipal, now: Date = new
     // §6.4 的状态机：参赛者只能从 pending 或 rejected 重新提交；
     // approved 需要管理员重新打开，revoked / void 对参赛者是终态
     const reSubmittable = entry ? entry.status === 'pending' || entry.status === 'rejected' : true
-    const canSubmit = allowed && reSubmittable
+
+    // 活动本身也要接受提交：进入 settling / finished 后 submitCheckin 会抛 CAMPAIGN_NOT_ACTIVE。
+    // 这里若不同步判断，接口会对未打卡的赛道返回 can_submit: true，
+    // 界面显示「去打卡」，点下去必然失败 —— 前端不该被喂一个自己会拒绝的答案。
+    //
+    // 注意：只改这一个布尔值，不要把「为什么不能提交」编码进 card_state。
+    // 响应里已有 campaign.status，前端据此渲染活动状态横幅即可，
+    // can_submit 的语义保持单一：服务器此刻是否接受提交。
+    const campaignAcceptsSubmissions = SUBMITTABLE_CAMPAIGN_STATUSES.includes(campaign.status as never)
+    const canSubmit = allowed && reSubmittable && campaignAcceptsSubmissions
 
     let cardState: CardState
     if (entry) {

@@ -17,7 +17,8 @@ export interface AuthSession {
 
 /** 登录并返回访问令牌与 Cookie，供后续请求复用 */
 export async function login(studentId: string, password: string): Promise<AuthSession> {
-  const response = await api().post('/api/v1/auth/login').send({ studentId, password })
+  // 请求体字段是 snake_case（与其余所有模块一致），这里是本地形参到线上字段的映射
+  const response = await api().post('/api/v1/auth/login').send({ student_id: studentId, password })
 
   if (response.status !== 200) {
     throw new Error(`登录失败（${response.status}）：${JSON.stringify(response.body)}`)

@@ -52,14 +52,14 @@ describe('账号激活', () => {
     return { user, activation }
   }
 
-  function activate(body: { studentId: string; activationCode: string; password: string }) {
+  function activate(body: { student_id: string; activation_code: string; password: string }) {
     return api().post('/api/v1/auth/activate').send(body)
   }
 
   it('名单中的学生用学号＋激活码完成激活并拿到令牌', async () => {
     const { user, activation } = await rosterStudent('2026001', CODE)
 
-    const response = await activate({ studentId: '2026001', activationCode: CODE, password: ACCOUNT_PASSWORD })
+    const response = await activate({ student_id: '2026001', activation_code: CODE, password: ACCOUNT_PASSWORD })
 
     expect(response.status, JSON.stringify(response.body)).toBe(201)
     expect(response.body.user.status).toBe('active')
@@ -86,7 +86,7 @@ describe('账号激活', () => {
   })
 
   it('名单外的学号无法激活，也不会因此留下账号', async () => {
-    const response = await activate({ studentId: '2026999', activationCode: CODE, password: ACCOUNT_PASSWORD })
+    const response = await activate({ student_id: '2026999', activation_code: CODE, password: ACCOUNT_PASSWORD })
 
     expect(response.status, JSON.stringify(response.body)).toBe(400)
     expect(response.body.code).toBe('ACTIVATION_INVALID')
@@ -98,17 +98,17 @@ describe('账号激活', () => {
   it('同一激活码不能使用两次', async () => {
     await rosterStudent('2026001', CODE)
 
-    const first = await activate({ studentId: '2026001', activationCode: CODE, password: ACCOUNT_PASSWORD })
+    const first = await activate({ student_id: '2026001', activation_code: CODE, password: ACCOUNT_PASSWORD })
     expect(first.status, JSON.stringify(first.body)).toBe(201)
 
-    const second = await activate({ studentId: '2026001', activationCode: CODE, password: ACCOUNT_PASSWORD })
+    const second = await activate({ student_id: '2026001', activation_code: CODE, password: ACCOUNT_PASSWORD })
     expect(second.status, JSON.stringify(second.body)).toBe(400)
     expect(second.body.code).toBe('ACTIVATION_INVALID')
 
     // 上面那次第二次尝试会先撞上「已有密码」分支，因此单独构造一条 usedAt 已写入、
     // 但账号仍未激活的记录，才能真正验证 usedAt 这条判定
     await rosterStudent('2026002', 'ACT-2026-0002', { usedAt: new Date() })
-    const reused = await activate({ studentId: '2026002', activationCode: 'ACT-2026-0002', password: ACCOUNT_PASSWORD })
+    const reused = await activate({ student_id: '2026002', activation_code: 'ACT-2026-0002', password: ACCOUNT_PASSWORD })
     expect(reused.status, JSON.stringify(reused.body)).toBe(400)
     expect(reused.body.code).toBe('ACTIVATION_INVALID')
 
@@ -121,8 +121,8 @@ describe('账号激活', () => {
     await rosterStudent('2026003', 'ACT-2026-0003', { expiresAt: cst('2026-09-01T00:00:00') })
 
     const response = await activate({
-      studentId: '2026003',
-      activationCode: 'ACT-2026-0003',
+      student_id: '2026003',
+      activation_code: 'ACT-2026-0003',
       password: ACCOUNT_PASSWORD,
     })
 
@@ -136,11 +136,11 @@ describe('账号激活', () => {
 
   it('§16.2 同一学号无法重复创建账号', async () => {
     await rosterStudent('2026004', 'ACT-2026-0004')
-    const created = await activate({ studentId: '2026004', activationCode: 'ACT-2026-0004', password: ACCOUNT_PASSWORD })
+    const created = await activate({ student_id: '2026004', activation_code: 'ACT-2026-0004', password: ACCOUNT_PASSWORD })
     expect(created.status, JSON.stringify(created.body)).toBe(201)
 
     // 第二次激活必然失败，且失败的方式是「拒绝」而不是「再建一个账号」
-    const again = await activate({ studentId: '2026004', activationCode: 'ACT-2026-0004', password: ACCOUNT_PASSWORD })
+    const again = await activate({ student_id: '2026004', activation_code: 'ACT-2026-0004', password: ACCOUNT_PASSWORD })
     expect(again.status, JSON.stringify(again.body)).toBe(400)
     expect(again.body.code).toBe('ACTIVATION_INVALID')
 
@@ -150,7 +150,7 @@ describe('账号激活', () => {
   it('密码策略不达标时返回字段级校验错误，且不消耗激活码', async () => {
     const { activation } = await rosterStudent('2026005', 'ACT-2026-0005')
 
-    const tooShort = await activate({ studentId: '2026005', activationCode: 'ACT-2026-0005', password: 'Ab1' })
+    const tooShort = await activate({ student_id: '2026005', activation_code: 'ACT-2026-0005', password: 'Ab1' })
     expect(tooShort.status, JSON.stringify(tooShort.body)).toBe(400)
     expect(tooShort.body.code).toBe('VALIDATION_FAILED')
     // §12.5：校验失败必须给出可定位到字段的明细，前端据此把错误挂到输入框上
@@ -158,7 +158,7 @@ describe('账号激活', () => {
     expect(Array.isArray(fields)).toBe(true)
     expect(fields.map((item) => item.field)).toContain('password')
 
-    const noDigit = await activate({ studentId: '2026005', activationCode: 'ACT-2026-0005', password: 'abcdefgh' })
+    const noDigit = await activate({ student_id: '2026005', activation_code: 'ACT-2026-0005', password: 'abcdefgh' })
     expect(noDigit.status, JSON.stringify(noDigit.body)).toBe(400)
     expect(noDigit.body.code).toBe('VALIDATION_FAILED')
     expect((noDigit.body.details.fields as Array<{ field: string }>).map((item) => item.field)).toContain('password')
@@ -175,8 +175,8 @@ describe('账号激活', () => {
     const statuses: number[] = []
     for (let attempt = 0; attempt < 12; attempt += 1) {
       const response = await activate({
-        studentId: '2026888',
-        activationCode: `WRONG-CODE-${attempt}`,
+        student_id: '2026888',
+        activation_code: `WRONG-CODE-${attempt}`,
         password: ACCOUNT_PASSWORD,
       })
       statuses.push(response.status)
@@ -196,10 +196,10 @@ describe('账号激活', () => {
   it('未登录的登录接口不泄漏账号是否存在', async () => {
     const wrongPassword = await api()
       .post('/api/v1/auth/login')
-      .send({ studentId: '2026001', password: 'WrongPassword1' })
+      .send({ student_id: '2026001', password: 'WrongPassword1' })
     const noSuchUser = await api()
       .post('/api/v1/auth/login')
-      .send({ studentId: '2026977', password: 'WrongPassword1' })
+      .send({ student_id: '2026977', password: 'WrongPassword1' })
 
     expect(wrongPassword.status).toBe(401)
     expect(noSuchUser.status).toBe(401)
@@ -211,7 +211,7 @@ describe('账号激活', () => {
   it('未激活的账号不能直接登录', async () => {
     await rosterStudent('2026006', 'ACT-2026-0006')
 
-    const response = await api().post('/api/v1/auth/login').send({ studentId: '2026006', password: TEST_PASSWORD })
+    const response = await api().post('/api/v1/auth/login').send({ student_id: '2026006', password: TEST_PASSWORD })
 
     expect(response.status, JSON.stringify(response.body)).toBe(401)
     expect(response.body.code).toBe('ACCOUNT_NOT_ACTIVATED')
