@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // 根目录收窄到 src，产出才会是 dist/index.js。
+    // 若沿用顶层配置的 "."，tsc 会把 src 当成一层子目录，产出 dist/src/index.js，
+    // 而 npm start 指向的是 dist/index.js，线上会直接启动失败。
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "tests"]
+}

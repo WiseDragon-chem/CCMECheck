@@ -1,0 +1,527 @@
+// CCME 国庆打卡平台 — 数据模型
+//
+// 约定：
+//   * SQLite 连接器不支持 enum，所有状态字段以字符串保存，取值范围由
+//     src/config/constants.ts 的常量 + Zod 枚举在应用层约束（design.md §10.2）。
+//   * 时间统一保存 UTC；每条打卡记录额外保存 activity_date（YYYY-MM-DD 文本），
+//     字典序与时间序一致，唯一约束因此按业务日期生效（design.md §6.2）。
+//   * 积分以整数毫点保存，权重为整数千分比，避免浮点尾差导致名次不稳定。
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+// Prisma 7 起，连接串不再写在 schema 里：
+// 运行时由 PrismaClient 的 adapter 提供，迁移时由 prisma.config.ts 提供。
+datasource db {
+  provider = "sqlite"
+}
+
+// ---------------------------------------------------------------------------
+// 账号与认证
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String  @id @default(cuid())
+  studentId    String  @unique @map("student_id")
+  name         String
+  passwordHash String? @map("password_hash")
+
+  /// participant | reviewer | super_admin
+  role String @default("participant")
+  /// pending_activation | active | disabled
+  status String @default("pending_activation")
+
+  /// JSON 字符串数组，承载 §5 权限矩阵中「按权限配置」的条目，
+  /// 例如 ["reviews.revoke", "exports.run"]
+  capabilities String @default("[]")
+
+  /// 修改密码后，签发时间早于该时刻的令牌一律失效（design.md §7.2）
+  passwordChangedAt DateTime? @map("password_changed_at")
+  disabledAt        DateTime? @map("disabled_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  activationTokens ActivationToken[]
+  refreshSessions  RefreshSession[]
+  participations   CampaignParticipant[]
+  reviewActions    ReviewAction[]        @relation("ReviewActor")
+  scoreAdjustments ScoreAdjustment[]     @relation("ScoreAdjustmentOperator")
+  auditLogs        AuditLog[]            @relation("AuditActor")
+  jobRuns          JobRun[]              @relation("JobRunTrigger")
+  importBatches    ImportBatch[]         @relation("ImportBatchCreator")
+  entriesCreated   CheckinEntry[]        @relation("EntryCreator")
+  revisionsCreated SubmissionRevision[]  @relation("RevisionSubmitter")
+  snapshotsFrozen  LeaderboardSnapshot[] @relation("SnapshotFreezer")
+
+  @@map("users")
+}
+
+model ActivationToken {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("activation_tokens")
+}
+
+model RefreshSession {
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  deviceInfo String?   @map("device_info")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_sessions")
+}
+
+// ---------------------------------------------------------------------------
+// 活动与赛道
+// ---------------------------------------------------------------------------
+
+model Campaign {
+  id     String @id @default(cuid())
+  name   String
+  description String?
+  /// v1 只接受 Asia/Shanghai，其它值在写入时报错（design.md §18 遗留项）
+  timezone String @default("Asia/Shanghai")
+
+  /// YYYY-MM-DD
+  startDate String @map("start_date")
+  endDate   String @map("end_date")
+
+  /// 每日开放与截止时间，HH:mm，按固定 +08:00 解释
+  dailyOpenTime String @default("00:00") @map("daily_open_time")
+  dailyDeadline String @default("23:59") @map("daily_deadline")
+
+  /// draft | published | active | settling | finished | archived
+  status String @default("draft")
+
+  activateFrom  DateTime? @map("activate_from")
+  activateUntil DateTime? @map("activate_until")
+
+  // ---- 排行榜 ----
+  leaderboardVisible Boolean @default(false) @map("leaderboard_visible")
+  /// 每日快照生成时间，HH:mm（北京时间）
+  leaderboardTime String @default("06:00") @map("leaderboard_time")
+  /// real | masked —— 排行榜是否脱敏显示姓名
+  nameDisplayMode String @default("real") @map("name_display_mode")
+  /// JSON 数组，自定义脱敏函数名；留空使用内置「姓氏＋名字末字」
+  nameMaskConfig String? @map("name_mask_config")
+  /// score_desc_valid_days_desc_reached_at_asc | score_desc_...（design.md §9.3）
+  tieBreakRule String @default("score_desc_valid_days_desc_reached_at_asc") @map("tie_break_rule")
+
+  // ---- 证明材料限制 ----
+  minImages        Int    @default(1) @map("min_images")
+  maxImages        Int    @default(3) @map("max_images")
+  maxImageBytes    Int    @default(10485760) @map("max_image_bytes")
+  /// JSON 字符串数组，例如 ["image/jpeg","image/png","image/webp"]
+  allowedMimeTypes String @default("[\"image/jpeg\",\"image/png\",\"image/webp\"]") @map("allowed_mime_types")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  campaignTracks       CampaignTrack[]
+  participants         CampaignParticipant[]
+  checkinEntries       CheckinEntry[]
+  scoreAdjustments     ScoreAdjustment[]
+  leaderboardSnapshots LeaderboardSnapshot[]
+  importBatches        ImportBatch[]
+
+  @@index([status])
+  @@map("campaigns")
+}
+
+model Track {
+  id                String  @id @default(cuid())
+  slug              String  @unique
+  name              String
+  description       String?
+  icon              String?
+  /// 该赛道的证明材料要求说明（design.md §7.4）
+  proofInstructions String? @map("proof_instructions")
+  sortOrder         Int     @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  campaignTracks CampaignTrack[]
+  checkinEntries CheckinEntry[]
+
+  @@map("tracks")
+}
+
+model CampaignTrack {
+  id         String @id @default(cuid())
+  campaignId String @map("campaign_id")
+  trackId    String @map("track_id")
+
+  enabled Boolean @default(true)
+
+  /// 每次审核通过获得的分值，整数毫点
+  dailyPoints Int @default(1000) @map("daily_points")
+  /// 单个赛道单个活动日的积分上限，整数毫点；null 表示不限
+  dailyCap Int? @map("daily_cap")
+  /// 单个赛道整个活动的积分上限，整数毫点；null 表示不限。
+  /// 刻意用 null 而非 0 表达「不限」——0 的语义在「不限」和「一分不给」之间有歧义。
+  campaignCap Int? @map("campaign_cap")
+  /// 总榜权重，整数千分比（1000 = 1.0）；0 表示该赛道不计入总榜
+  overallWeight Int @default(1000) @map("overall_weight")
+
+  /// 覆盖 Track.proofInstructions
+  proofInstructions String? @map("proof_instructions")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  track    Track    @relation(fields: [trackId], references: [id])
+
+  @@unique([campaignId, trackId])
+  @@map("campaign_tracks")
+}
+
+model CampaignParticipant {
+  id         String @id @default(cuid())
+  campaignId String @map("campaign_id")
+  userId     String @map("user_id")
+
+  studentIdSnapshot String? @map("student_id_snapshot")
+  nameSnapshot      String? @map("name_snapshot")
+  className         String? @map("class_name")
+  phoneSuffix       String? @map("phone_suffix")
+  remark            String?
+
+  /// active | disabled | anonymized
+  status   String   @default("active")
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  campaign         Campaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkinEntries   CheckinEntry[]
+  scoreAdjustments ScoreAdjustment[]
+  leaderboardRows  LeaderboardRow[]
+
+  @@unique([campaignId, userId])
+  @@index([campaignId, status])
+  @@map("campaign_participants")
+}
+
+// ---------------------------------------------------------------------------
+// 打卡
+// ---------------------------------------------------------------------------
+
+model CheckinEntry {
+  id         String @id @default(cuid())
+  campaignId String @map("campaign_id")
+  /// 指向 campaign_participants.id，使槽位唯一约束天然按活动隔离
+  participantId String @map("participant_id")
+  trackId       String @map("track_id")
+
+  /// YYYY-MM-DD，业务日期
+  activityDate String @map("activity_date")
+
+  /// pending | approved | rejected | revoked | void
+  status String @default("pending")
+
+  currentRevisionId String? @unique @map("current_revision_id")
+
+  /// 每次状态流转自增，用于审核的乐观并发控制（design.md §8.2）
+  version Int @default(0)
+
+  /// 冗余自 submission_revisions.submitted_at —— §11.2 要求 (status, submitted_at)
+  /// 索引，但两列分属不同表，无法跨表建索引
+  currentSubmittedAt DateTime @default(now()) @map("current_submitted_at")
+
+  reviewedAt      DateTime? @map("reviewed_at")
+  reviewedBy      String?   @map("reviewed_by")
+  rejectionReason String?   @map("rejection_reason")
+  rejectionCode   String?   @map("rejection_code")
+
+  /// 管理员临时重新开放该槽位的截止时间；无时限的重开会永久绕过节流校验
+  reopenExpiresAt DateTime? @map("reopen_expires_at")
+
+  isManual  Boolean @default(false) @map("is_manual")
+  createdBy String? @map("created_by")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  campaign         Campaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  participant      CampaignParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  track            Track              @relation(fields: [trackId], references: [id])
+  creator          User?              @relation("EntryCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  currentRevision  SubmissionRevision? @relation("CurrentRevision", fields: [currentRevisionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  revisions        SubmissionRevision[] @relation("EntryRevisions")
+  reviewActions    ReviewAction[]
+
+  @@unique([participantId, trackId, activityDate])
+  @@index([status, currentSubmittedAt])
+  @@index([participantId, activityDate])
+  @@index([campaignId, status, activityDate])
+  @@index([trackId])
+  @@map("checkin_entries")
+}
+
+model SubmissionRevision {
+  id            String @id @default(cuid())
+  entryId       String @map("entry_id")
+  revisionNumber Int   @map("revision_number")
+
+  note        String?
+  submittedAt DateTime @default(now()) @map("submitted_at")
+  submittedBy String?  @map("submitted_by")
+
+  /// 防重复点击：同一 entry 下同一 client_token 只产生一个版本（design.md §7.4）
+  clientToken String? @map("client_token")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  entry           CheckinEntry     @relation("EntryRevisions", fields: [entryId], references: [id], onDelete: Cascade)
+  currentForEntry CheckinEntry?    @relation("CurrentRevision")
+  assets          SubmissionAsset[]
+  reviewActions   ReviewAction[]
+  submitter       User?            @relation("RevisionSubmitter", fields: [submittedBy], references: [id], onDelete: SetNull)
+
+  @@unique([entryId, revisionNumber])
+  @@unique([entryId, clientToken])
+  @@map("submission_revisions")
+}
+
+model SubmissionAsset {
+  id         String @id @default(cuid())
+  revisionId String @map("revision_id")
+
+  objectKey String @unique @map("object_key")
+  mimeType  String @map("mime_type")
+  size      Int
+  width     Int?
+  height    Int?
+  /// 处理后内容摘要，用于提示「疑似重复证明」，不作为违规结论（design.md §13）
+  sha256    String
+  sortOrder Int    @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  revision SubmissionRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+
+  @@index([sha256])
+  @@index([revisionId])
+  @@map("submission_assets")
+}
+
+model ReviewAction {
+  id         String  @id @default(cuid())
+  entryId    String  @map("entry_id")
+  revisionId String? @map("revision_id")
+  reviewerId String? @map("reviewer_id")
+
+  /// approve | reject | reopen | revoke | void | manual_create
+  action     String
+  reason     String?
+  reasonCode String? @map("reason_code")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  entry    CheckinEntry        @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  revision SubmissionRevision? @relation(fields: [revisionId], references: [id], onDelete: SetNull)
+  reviewer User?               @relation("ReviewActor", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([entryId, createdAt])
+  @@index([reviewerId, createdAt])
+  @@index([createdAt])
+  @@map("review_actions")
+}
+
+model ScoreAdjustment {
+  id            String @id @default(cuid())
+  campaignId    String @map("campaign_id")
+  participantId String @map("participant_id")
+  /// 赛道 slug，或总榜哨兵值 __overall__
+  trackId       String @map("track_id")
+
+  /// 整数毫点，可为负
+  pointsDelta Int
+  reason      String
+
+  operatorId String? @map("operator_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  campaign    Campaign            @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  participant CampaignParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  operator    User?               @relation("ScoreAdjustmentOperator", fields: [operatorId], references: [id], onDelete: SetNull)
+
+  @@index([campaignId, participantId, trackId])
+  @@map("score_adjustments")
+}
+
+// ---------------------------------------------------------------------------
+// 排行榜
+// ---------------------------------------------------------------------------
+
+model LeaderboardSnapshot {
+  id         String @id @default(cuid())
+  campaignId String @map("campaign_id")
+  /// 统计截止活动日，YYYY-MM-DD
+  cutoffDate String @map("cutoff_date")
+
+  /// generating | ready | failed
+  status     String    @default("generating")
+  isFinal    Boolean   @default(false) @map("is_final")
+  generatedAt DateTime @default(now()) @map("generated_at")
+
+  frozenAt DateTime? @map("frozen_at")
+  frozenBy String?   @map("frozen_by")
+
+  /// cron | manual
+  trigger     String  @default("cron")
+  triggeredBy String? @map("triggered_by")
+
+  /// 生成失败时保留上一份有效快照，此字段用于首页告警（design.md §14）
+  errorSummary String? @map("error_summary")
+  rowCount     Int     @default(0) @map("row_count")
+
+  campaign Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  freezer  User?            @relation("SnapshotFreezer", fields: [frozenBy], references: [id], onDelete: SetNull)
+  rows     LeaderboardRow[]
+
+  /// 幂等基础：同一活动、同一统计截止日期只能有一份快照（design.md §9.2）
+  @@unique([campaignId, cutoffDate])
+  @@index([campaignId, isFinal])
+  @@map("leaderboard_snapshots")
+}
+
+model LeaderboardRow {
+  id         String @id @default(cuid())
+  snapshotId String @map("snapshot_id")
+  participantId String @map("participant_id")
+
+  /// 赛道 slug，或总榜哨兵值 __overall__。
+  /// 刻意不设外键：外键无法容纳哨兵行，而可空列在 SQLite 中 NULL 互不相等，
+  /// 会让唯一约束失效（design.md §11.2）。
+  trackId String @map("track_id")
+
+  rank      Int
+  /// 整数毫点
+  score     Int
+  validDays Int @map("valid_days")
+  /// 同分判定第 ③ 项：累计积分首次达到最终值的时刻（design.md §9.3）
+  reachedAt DateTime? @map("reached_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  snapshot    LeaderboardSnapshot   @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  participant CampaignParticipant   @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([snapshotId, trackId, participantId])
+  @@index([snapshotId, trackId, rank])
+  @@map("leaderboard_rows")
+}
+
+// ---------------------------------------------------------------------------
+// 审计与运维
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id         String  @id @default(cuid())
+  actorId    String? @map("actor_id")
+  action     String
+  targetType String? @map("target_type")
+  targetId   String? @map("target_id")
+
+  /// JSON 字符串
+  beforeData String? @map("before_data")
+  afterData  String? @map("after_data")
+
+  requestId String? @map("request_id")
+  ip        String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  actor User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model JobRun {
+  id      String @id @default(cuid())
+  jobName String @map("job_name")
+
+  startedAt  DateTime  @default(now()) @map("started_at")
+  finishedAt DateTime? @map("finished_at")
+
+  /// running | success | failed | skipped_locked
+  status         String  @default("running")
+  processedCount Int     @default(0) @map("processed_count")
+  errorSummary   String? @map("error_summary")
+
+  /// cron | manual
+  trigger     String  @default("cron")
+  triggeredBy String? @map("triggered_by")
+
+  triggeredByUser User? @relation("JobRunTrigger", fields: [triggeredBy], references: [id], onDelete: SetNull)
+
+  @@index([jobName, startedAt])
+  @@index([startedAt])
+  @@map("job_runs")
+}
+
+model JobLock {
+  name      String   @id
+  lockedAt  DateTime @default(now()) @map("locked_at")
+  expiresAt DateTime @map("expires_at")
+  holder    String?
+
+  @@index([expiresAt])
+  @@map("job_locks")
+}
+
+model ImportBatch {
+  id         String @id @default(cuid())
+  campaignId String @map("campaign_id")
+
+  fileSha256 String @map("file_sha256")
+  /// 预览时落盘的原始 CSV，提交时重新解析，不信任客户端回传的解析结果
+  stagedPath String @map("staged_path")
+  fileName   String? @map("file_name")
+
+  /// previewed | committed | failed | expired
+  status String @default("previewed")
+
+  /// JSON：{ total, valid, errors: [...], duplicates: [...] }
+  summary String?
+
+  createdBy   String    @map("created_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  committedAt DateTime? @map("committed_at")
+
+  campaign  Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creator   User     @relation("ImportBatchCreator", fields: [createdBy], references: [id])
+
+  @@index([campaignId, createdAt])
+  @@index([fileSha256])
+  @@map("import_batches")
+}
