@@ -56,3 +56,61 @@ body {
   align-items: center;
   justify-content: center;
 }
+
+/* ---- 底部导航 ---- */
+.bottom-nav__item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  /* 触控目标不小于 44px，否则手机上点不准 */
+  min-height: 44px;
+  color: rgba(0, 0, 0, 0.45);
+  text-decoration: none;
+  font-size: 12px;
+  /* 点击时不出现灰色高亮块，更接近原生 */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav__item .bottom-nav__icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.bottom-nav__item.is-active {
+  color: #1677ff;
+  font-weight: 500;
+}
+
+/* ---- 页面通用 ---- */
+.page {
+  padding: 16px;
+}
+
+.page__title {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.page__subtitle {
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 13px;
+}
+
+/* 居中卡片式页面（登录、激活） */
+.centered-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: #f5f5f5;
+}
+
+.centered-page__card {
+  width: 100%;
+  max-width: 400px;
+}
