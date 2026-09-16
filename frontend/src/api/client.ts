@@ -207,6 +207,21 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
 }
 
 /**
+ * 拿原始响应，不解析 JSON。
+ *
+ * 给二进制下载用（§8.3 的导出名册、§12.4 的导出打卡明细）。
+ * 这些接口同样挂在鉴权之后，而 `<a href>` 带不上 Bearer 令牌 ——
+ * 所以必须自己取字节再落盘。
+ *
+ * 复用同一套 401 分类与刷新逻辑，而不是在下载处再写一遍：
+ * 「会话失效该怎么处理」只有一处实现，这也是 upload.ts 当初只换
+ * 传输层、不换错误语义的原因。
+ */
+export async function requestRaw(path: string, options: RequestOptions = {}): Promise<Response> {
+  return sendRaw(path, options, { retried: false, forceRetried: false })
+}
+
+/**
  * 重试状态。
  *
  * 两个标志位分开，而不是一个 boolean：
@@ -221,7 +236,15 @@ interface RetryState {
   forceRetried: boolean
 }
 
-async function send<T>(path: string, options: RequestOptions, state: RetryState): Promise<T> {
+/**
+ * 请求的传输与重试，返回成功响应本身。
+ *
+ * 分成 sendRaw 与 send 两层，是为了让「怎么解析响应体」与
+ * 「怎么鉴权、怎么重试」互不干扰：JSON 接口在这里拿到 Response 后
+ * 自行 `json()`，下载接口则去读它的字节与响应头。
+ * 重试发生在这一层，所以两条路径都自动获得同一套 401 语义。
+ */
+async function sendRaw(path: string, options: RequestOptions, state: RetryState): Promise<Response> {
   const generationAtStart = authGeneration
 
   const headers = buildHeaders(path, options.headers)
@@ -242,10 +265,7 @@ async function send<T>(path: string, options: RequestOptions, state: RetryState)
     signal: options.signal,
   })
 
-  if (response.ok) {
-    if (response.status === 204) return undefined as T
-    return (await response.json()) as T
-  }
+  if (response.ok) return response
 
   const errorBody = await parseErrorBody(response)
   const code: ErrorCode | 'UNKNOWN' = errorBody?.code ?? 'UNKNOWN'
@@ -283,7 +303,7 @@ async function send<T>(path: string, options: RequestOptions, state: RetryState)
 
   // 出发时是这一代、回来时已经变了 —— 别的请求刚刷过，直接复用新令牌重放
   if (!force && authGeneration > generationAtStart && getAccessToken()) {
-    return send<T>(path, options, nextState)
+    return sendRaw(path, options, nextState)
   }
 
   try {
@@ -293,7 +313,15 @@ async function send<T>(path: string, options: RequestOptions, state: RetryState)
     throw error
   }
 
-  return send<T>(path, options, nextState)
+  return sendRaw(path, options, nextState)
+}
+
+/** 解析 JSON 响应的那一层，见 sendRaw 的说明 */
+async function send<T>(path: string, options: RequestOptions, state: RetryState): Promise<T> {
+  const response = await sendRaw(path, options, state)
+  // 204 没有响应体，`json()` 会抛
+  if (response.status === 204) return undefined as T
+  return (await response.json()) as T
 }
 
 /** 供测试与特定流程使用 */
