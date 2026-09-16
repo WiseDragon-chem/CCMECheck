@@ -5,6 +5,7 @@ import { campaignStateJob } from './definitions/campaign-state.job.js'
 import { cleanupOrphanUploadsJob } from './definitions/cleanup-orphan-uploads.job.js'
 import { cleanupSessionsJob } from './definitions/cleanup-sessions.job.js'
 import { databaseBackupJob } from './definitions/database-backup.job.js'
+import { leaderboardRebuildJob } from './definitions/leaderboard-rebuild.job.js'
 import { leaderboardSnapshotJob } from './definitions/leaderboard-snapshot.job.js'
 import { purgeExpiredEvidenceJob } from './definitions/purge-expired-evidence.job.js'
 import { recoverStaleJobRuns, runJob, type JobDefinition } from './runner.js'
@@ -106,6 +107,11 @@ export function stopScheduler(): void {
   runningTasks.length = 0
 }
 
+/**
+ * 可执行的任务全集，手动触发（POST /admin/jobs/:name/run）按这张表解析任务名。
+ * 它比 SCHEDULED_JOBS 多出 leaderboard_rebuild：该任务没有 cron 表达式，
+ * 只在管理员需要重算时才跑，因此不出现在调度计划中。
+ */
 const DEFINITIONS: Record<string, JobDefinition> = {
   [leaderboardSnapshotJob.name]: leaderboardSnapshotJob,
   [cleanupSessionsJob.name]: cleanupSessionsJob,
@@ -113,6 +119,7 @@ const DEFINITIONS: Record<string, JobDefinition> = {
   [campaignStateJob.name]: campaignStateJob,
   [databaseBackupJob.name]: databaseBackupJob,
   [purgeExpiredEvidenceJob.name]: purgeExpiredEvidenceJob,
+  [leaderboardRebuildJob.name]: leaderboardRebuildJob,
 }
 
 export function getJobDefinition(name: string): JobDefinition | undefined {

@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { route } from '../../core/route.js'
 import { authenticate, requirePrincipal } from '../../middleware/authenticate.js'
-import { requireRole } from '../../middleware/authorize.js'
+import { requireFreshAuth, requireRole } from '../../middleware/authorize.js'
 import { auditContextFrom } from '../../services/audit.service.js'
 import {
   adminEntryParamsSchema,
@@ -34,8 +34,13 @@ export function createAdminOpsRouter(): Router {
    * 本模块被挂到 /admin，是 /admin 下最外层的一段；若用 router.use 声明超管守卫，
    * 只要父级把本模块注册在 /admin/reviews 之前，审核员的队列请求就会先被这里拦下。
    * 逐路由声明可以让本模块对不属于自己的路径完全无副作用。
+   *
+   * requireFreshAuth 排在 requireRole 之后：本模块五个操作全部不可逆
+   * （重开绕开截止、撤销与作废改变计分、补录绕过上传校验、积分调整直接改榜单），
+   * §13 要求这类敏感操作重新验证权限。先判角色再判新鲜度，
+   * 是为了不让没有权限的人从「请重新登录」这个提示里推断出该接口的存在。
    */
-  const guards = [authenticate, requireRole('super_admin')] as const
+  const guards = [authenticate, requireRole('super_admin'), requireFreshAuth()] as const
 
   /** §8.5 临时重新开放某个打卡槽位：放宽该槽位的截止时间到 reopenExpiresAt */
   router.post(

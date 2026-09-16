@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { OpenAPIRegistry, OpenApiGeneratorV31 } from '@asteasolutions/zod-to-openapi'
-import { REJECT_REASON_CODES } from '../config/constants.js'
+import { JOB_NAMES, REJECT_REASON_CODES } from '../config/constants.js'
 import { activateBodySchema, changePasswordBodySchema, loginBodySchema } from '../modules/auth/schema.js'
 import {
   createCampaignBodySchema,
@@ -9,7 +9,13 @@ import {
 } from '../modules/campaigns/schema.js'
 import { listCheckinsQuerySchema } from '../modules/checkins/schema.js'
 import { latestLeaderboardQuerySchema, myRankQuerySchema } from '../modules/leaderboards/schema.js'
-import { importCommitBodySchema, createParticipantBodySchema, updateParticipantStatusBodySchema } from '../modules/participants/schema.js'
+import {
+  anonymizeParticipantBodySchema,
+  createParticipantBodySchema,
+  importCommitBodySchema,
+  listParticipantsQuerySchema,
+  updateParticipantStatusBodySchema,
+} from '../modules/participants/schema.js'
 import { approveReviewBodySchema, rejectReviewBodySchema, reviewQueueQuerySchema } from '../modules/reviews/schema.js'
 import {
   createManualEntryBodySchema,
@@ -19,17 +25,48 @@ import {
   voidEntryBodySchema,
 } from '../modules/admin-ops/schema.js'
 import {
+  AdminParticipantListResponseSchema,
+  AdminParticipantSchema,
+  AnonymizeParticipantResponseSchema,
   AuditLogEntrySchema,
+  AuditLogListResponseSchema,
   AuthResponseSchema,
+  CampaignConfigResponseSchema,
   CampaignCurrentResponseSchema,
+  CampaignTrackUpdateResponseSchema,
+  CampaignUpdateResponseSchema,
   CheckinDetailSchema,
   CheckinListResponseSchema,
+  DashboardStatsSchema,
+  EntryStateSchema,
   ErrorResponseSchema,
+  ImportCommitResponseSchema,
+  ImportPreviewResponseSchema,
+  ImportPreviewRowSchema,
+  ImportSummarySchema,
+  JobRunListResponseSchema,
   JobRunSchema,
+  JobTriggerResultSchema,
+  LeaderboardFreezeResultSchema,
+  LeaderboardRebuildResultSchema,
   LeaderboardResponseSchema,
+  LeaderboardUnfreezeResultSchema,
+  ManualEntrySchema,
+  PaginationFieldsSchema,
+  ParticipantActivationResponseSchema,
+  ParticipantPasswordResetResponseSchema,
   ParticipantSchema,
+  ParticipantStatusUpdateResponseSchema,
   RejectReasonSchema,
+  ReopenEntryResultSchema,
+  ReviewEntryDetailSchema,
+  ReviewProgressSchema,
   ReviewQueueEntrySchema,
+  ReviewQueueResponseSchema,
+  ReviewResultSchema,
+  ScheduledJobSchema,
+  ScheduledJobsResponseSchema,
+  ScoreAdjustmentSchema,
   SignedAssetUrlSchema,
   SubmitCheckinResponseSchema,
   TodayOverviewSchema,
@@ -62,7 +99,9 @@ const idParams = z.object({ entryId: z.string() })
 const participantParams = z.object({ participantId: z.string() })
 const assetParams = z.object({ entryId: z.string(), assetId: z.string() })
 const trackParams = z.object({ trackId: z.string() })
-const jobParams = z.object({ name: z.string() })
+// 与路由上的 jobNameParamsSchema 一致：取 JobName 枚举而不是 string，
+// 否则文档会声称任意字符串都合法，而实现只会对已知任务名放行。
+const jobParams = z.object({ name: z.enum(JOB_NAMES) })
 
 const paginated = z.object({
   page: z.coerce.number().int().min(1).default(1).optional(),
@@ -86,6 +125,37 @@ export function buildOpenApiDocument() {
   registry.register('ReviewQueueEntry', ReviewQueueEntrySchema)
   registry.register('AuditLogEntry', AuditLogEntrySchema)
   registry.register('JobRun', JobRunSchema)
+  registry.register('PaginationFields', PaginationFieldsSchema)
+  registry.register('AdminParticipant', AdminParticipantSchema)
+  registry.register('AdminParticipantListResponse', AdminParticipantListResponseSchema)
+  registry.register('CampaignConfigResponse', CampaignConfigResponseSchema)
+  registry.register('CampaignUpdateResponse', CampaignUpdateResponseSchema)
+  registry.register('CampaignTrackUpdateResponse', CampaignTrackUpdateResponseSchema)
+  registry.register('ParticipantActivationResponse', ParticipantActivationResponseSchema)
+  registry.register('ParticipantStatusUpdateResponse', ParticipantStatusUpdateResponseSchema)
+  registry.register('ParticipantPasswordResetResponse', ParticipantPasswordResetResponseSchema)
+  registry.register('AnonymizeParticipantResponse', AnonymizeParticipantResponseSchema)
+  registry.register('ImportSummary', ImportSummarySchema)
+  registry.register('ImportPreviewRow', ImportPreviewRowSchema)
+  registry.register('ImportPreviewResponse', ImportPreviewResponseSchema)
+  registry.register('ImportCommitResponse', ImportCommitResponseSchema)
+  registry.register('ReviewProgress', ReviewProgressSchema)
+  registry.register('ReviewQueueResponse', ReviewQueueResponseSchema)
+  registry.register('ReviewEntryDetail', ReviewEntryDetailSchema)
+  registry.register('ReviewResult', ReviewResultSchema)
+  registry.register('EntryState', EntryStateSchema)
+  registry.register('ReopenEntryResult', ReopenEntryResultSchema)
+  registry.register('ManualEntry', ManualEntrySchema)
+  registry.register('ScoreAdjustment', ScoreAdjustmentSchema)
+  registry.register('LeaderboardRebuildResult', LeaderboardRebuildResultSchema)
+  registry.register('LeaderboardFreezeResult', LeaderboardFreezeResultSchema)
+  registry.register('LeaderboardUnfreezeResult', LeaderboardUnfreezeResultSchema)
+  registry.register('ScheduledJob', ScheduledJobSchema)
+  registry.register('ScheduledJobsResponse', ScheduledJobsResponseSchema)
+  registry.register('JobTriggerResult', JobTriggerResultSchema)
+  registry.register('DashboardStats', DashboardStatsSchema)
+  registry.register('AuditLogListResponse', AuditLogListResponseSchema)
+  registry.register('JobRunListResponse', JobRunListResponseSchema)
 
   // -------------------------------------------------------------------------
   // 认证
@@ -325,7 +395,7 @@ export function buildOpenApiDocument() {
     summary: '首页统计与任务告警',
     description: 'design.md §8.1：参赛人数、今日提交/通过/驳回、各赛道提交率、下次排行榜更新时间、任务异常。',
     responses: {
-      200: jsonResponse('统计信息', z.object({}).passthrough()),
+      200: jsonResponse('统计信息', DashboardStatsSchema),
       ...errorResponses(401, 403),
     },
   })
@@ -336,7 +406,7 @@ export function buildOpenApiDocument() {
     tags: ['管理后台'],
     summary: '读取活动配置',
     responses: {
-      200: jsonResponse('活动与赛道', CampaignCurrentResponseSchema),
+      200: jsonResponse('活动与赛道', CampaignConfigResponseSchema),
       ...errorResponses(401, 403, 409),
     },
   })
@@ -349,7 +419,7 @@ export function buildOpenApiDocument() {
     description: '新建的活动状态为 draft，需显式切换到 active 才会开放打卡。',
     request: jsonBody(createCampaignBodySchema),
     responses: {
-      201: jsonResponse('创建成功', CampaignCurrentResponseSchema),
+      201: jsonResponse('创建成功', CampaignConfigResponseSchema),
       ...errorResponses(400, 401, 403),
     },
   })
@@ -364,7 +434,7 @@ export function buildOpenApiDocument() {
       '修改前后的值一并写入审计日志。需要 5 分钟内的新鲜认证。',
     request: jsonBody(updateCampaignBodySchema),
     responses: {
-      200: jsonResponse('更新成功', z.object({}).passthrough()),
+      200: jsonResponse('更新成功', CampaignUpdateResponseSchema),
       ...errorResponses(400, 401, 403, 409),
     },
   })
@@ -376,7 +446,7 @@ export function buildOpenApiDocument() {
     summary: '更新赛道计分规则',
     request: { params: trackParams, ...jsonBody(updateCampaignTrackBodySchema) },
     responses: {
-      200: jsonResponse('更新成功', z.object({}).passthrough()),
+      200: jsonResponse('更新成功', CampaignTrackUpdateResponseSchema),
       ...errorResponses(400, 401, 403, 404),
     },
   })
@@ -386,8 +456,9 @@ export function buildOpenApiDocument() {
     path: '/api/v1/admin/participants',
     tags: ['名单管理'],
     summary: '查询参赛者名单',
+    request: { query: listParticipantsQuerySchema },
     responses: {
-      200: jsonResponse('名单', z.object({ items: z.array(ParticipantSchema) }).passthrough()),
+      200: jsonResponse('名单', AdminParticipantListResponseSchema),
       ...errorResponses(401, 403),
     },
   })
@@ -400,7 +471,7 @@ export function buildOpenApiDocument() {
     description: '返回的激活码明文只出现这一次，系统只保存其哈希。',
     request: jsonBody(createParticipantBodySchema),
     responses: {
-      201: jsonResponse('添加成功', z.object({}).passthrough()),
+      201: jsonResponse('添加成功', ParticipantActivationResponseSchema),
       ...errorResponses(400, 401, 403, 409),
     },
   })
@@ -413,7 +484,7 @@ export function buildOpenApiDocument() {
     description: '禁用会同时撤销该账号的所有登录会话，立即生效。',
     request: { params: participantParams, ...jsonBody(updateParticipantStatusBodySchema) },
     responses: {
-      200: jsonResponse('更新成功', z.object({}).passthrough()),
+      200: jsonResponse('更新成功', ParticipantStatusUpdateResponseSchema),
       ...errorResponses(400, 401, 403, 404),
     },
   })
@@ -426,7 +497,7 @@ export function buildOpenApiDocument() {
     description: '旧的一次性激活码会被删除，返回值中的明文只出现一次。',
     request: { params: participantParams },
     responses: {
-      200: jsonResponse('新激活码', z.object({}).passthrough()),
+      200: jsonResponse('新激活码', ParticipantActivationResponseSchema),
       ...errorResponses(401, 403, 404),
     },
   })
@@ -439,8 +510,25 @@ export function buildOpenApiDocument() {
     description: '首期没有绑定邮箱，忘记密码由管理员生成一次性重置码。会撤销该账号全部会话。',
     request: { params: participantParams },
     responses: {
-      200: jsonResponse('新密码（只出现一次）', z.object({}).passthrough()),
+      200: jsonResponse('新密码（只出现一次）', ParticipantPasswordResetResponseSchema),
       ...errorResponses(401, 403, 404),
+    },
+  })
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/v1/admin/participants/{participantId}/anonymize',
+    tags: ['名单管理'],
+    summary: '匿名化参赛者',
+    description:
+      'design.md §8.3：已有正式记录的参赛者不允许直接删除，改为抹除身份 —— ' +
+      '保留打卡记录（榜单与审计需要），清空姓名、学号、班级、手机尾号与备注，' +
+      '撤销全部登录会话，并在 delete_evidence 为 true 时一并删除证明材料' +
+      '（截图里常带姓名，留着等于匿名化只做了一半）。**不可逆**，因此需要 5 分钟内的新鲜认证。',
+    request: { params: participantParams, ...jsonBody(anonymizeParticipantBodySchema) },
+    responses: {
+      200: jsonResponse('已匿名化', AnonymizeParticipantResponseSchema),
+      ...errorResponses(400, 401, 403, 404, 409),
     },
   })
 
@@ -479,7 +567,7 @@ export function buildOpenApiDocument() {
       },
     },
     responses: {
-      201: jsonResponse('预览结果', z.object({}).passthrough()),
+      201: jsonResponse('预览结果', ImportPreviewResponseSchema),
       ...errorResponses(400, 401, 403),
     },
   })
@@ -492,7 +580,7 @@ export function buildOpenApiDocument() {
     description: '整批在一个事务内写入；返回的激活码明文只出现一次。',
     request: jsonBody(importCommitBodySchema),
     responses: {
-      200: jsonResponse('导入结果', z.object({}).passthrough()),
+      200: jsonResponse('导入结果', ImportCommitResponseSchema),
       ...errorResponses(400, 401, 403, 409),
     },
   })
@@ -505,7 +593,7 @@ export function buildOpenApiDocument() {
     description: '按提交时间升序（先进先出），并附带队列进度统计。',
     request: { query: reviewQueueQuerySchema },
     responses: {
-      200: jsonResponse('队列', z.object({ entries: z.array(ReviewQueueEntrySchema) }).passthrough()),
+      200: jsonResponse('队列', ReviewQueueResponseSchema),
       ...errorResponses(401, 403),
     },
   })
@@ -518,7 +606,7 @@ export function buildOpenApiDocument() {
     description: '审核页右侧面板所需：参赛者、赛道、活动日、提交时间、历史记录与审核操作。',
     request: { params: idParams },
     responses: {
-      200: jsonResponse('详情', z.object({}).passthrough()),
+      200: jsonResponse('详情', ReviewEntryDetailSchema),
       ...errorResponses(401, 403, 404),
     },
   })
@@ -533,7 +621,7 @@ export function buildOpenApiDocument() {
       '刷新后重试即可。',
     request: { params: idParams, ...jsonBody(approveReviewBodySchema) },
     responses: {
-      200: jsonResponse('已通过', z.object({}).passthrough()),
+      200: jsonResponse('已通过', ReviewResultSchema),
       ...errorResponses(400, 401, 403, 404, 409),
     },
   })
@@ -546,7 +634,7 @@ export function buildOpenApiDocument() {
     description: '驳回必须填写原因。预设原因码见 RejectReason；选择 other 时必须补充文字说明。',
     request: { params: idParams, ...jsonBody(rejectReviewBodySchema) },
     responses: {
-      200: jsonResponse('已驳回', z.object({}).passthrough()),
+      200: jsonResponse('已驳回', ReviewResultSchema),
       ...errorResponses(400, 401, 403, 404, 409),
     },
   })
@@ -568,7 +656,7 @@ export function buildOpenApiDocument() {
       '带时限的重开。成功提交后时限即被消费，避免永久绕过每日截止校验。需要新鲜认证且必须填写原因。',
     request: { params: idParams, ...jsonBody(reopenEntryBodySchema) },
     responses: {
-      200: jsonResponse('已重新开放', z.object({}).passthrough()),
+      200: jsonResponse('已重新开放', ReopenEntryResultSchema),
       ...errorResponses(400, 401, 403, 404, 409),
     },
   })
@@ -578,10 +666,10 @@ export function buildOpenApiDocument() {
     path: '/api/v1/admin/checkins/{entryId}/revoke',
     tags: ['异常处理'],
     summary: '撤销审核结果',
-    description: '仅对已通过的记录有效。撤销后该记录不再计分。',
+    description: '仅对已通过的记录有效。撤销后该记录不再计分。不可逆，需要新鲜认证。',
     request: { params: idParams, ...jsonBody(revokeEntryBodySchema) },
     responses: {
-      200: jsonResponse('已撤销', z.object({}).passthrough()),
+      200: jsonResponse('已撤销', EntryStateSchema),
       ...errorResponses(400, 401, 403, 404, 409),
     },
   })
@@ -591,10 +679,10 @@ export function buildOpenApiDocument() {
     path: '/api/v1/admin/checkins/{entryId}/void',
     tags: ['异常处理'],
     summary: '作废违规记录',
-    description: '对任意状态均可作废（本身已是 void 的除外）。',
+    description: '对任意状态均可作废（本身已是 void 的除外）。作废是终态，需要新鲜认证。',
     request: { params: idParams, ...jsonBody(voidEntryBodySchema) },
     responses: {
-      200: jsonResponse('已作废', z.object({}).passthrough()),
+      200: jsonResponse('已作废', EntryStateSchema),
       ...errorResponses(400, 401, 403, 404, 409),
     },
   })
@@ -604,10 +692,12 @@ export function buildOpenApiDocument() {
     path: '/api/v1/admin/checkins/manual',
     tags: ['异常处理'],
     summary: '管理员补录',
-    description: '为指定参赛者在指定活动日补录一条记录，标记为人工录入。同一槽位已存在记录时会冲突。',
+    description:
+      '为指定参赛者在指定活动日补录一条记录，标记为人工录入。同一槽位已存在记录时会冲突。' +
+      '补录绕过了正常的截止与图片校验，因此需要新鲜认证。',
     request: jsonBody(createManualEntryBodySchema),
     responses: {
-      201: jsonResponse('补录成功', z.object({}).passthrough()),
+      201: jsonResponse('补录成功', ManualEntrySchema),
       ...errorResponses(400, 401, 403, 404, 409),
     },
   })
@@ -619,10 +709,10 @@ export function buildOpenApiDocument() {
     summary: '积分调整',
     description:
       '只新增调整记录，**从不改写原始积分字段**（design.md §9.1）。' +
-      '调整不受赛道积分上限约束，否则管理员加分会被上限静默吃掉。',
+      '调整不受赛道积分上限约束，否则管理员加分会被上限静默吃掉。直接改变榜单结果，需要新鲜认证。',
     request: jsonBody(createScoreAdjustmentBodySchema),
     responses: {
-      201: jsonResponse('调整成功', z.object({}).passthrough()),
+      201: jsonResponse('调整成功', ScoreAdjustmentSchema),
       ...errorResponses(400, 401, 403, 404),
     },
   })
@@ -635,7 +725,7 @@ export function buildOpenApiDocument() {
     description: '同一活动、同一统计截止日期只会存在一份快照，重复执行是幂等的。',
     request: jsonBody(z.object({ cutoff_date: z.string().optional(), reason: z.string() })),
     responses: {
-      200: jsonResponse('重算结果', z.object({}).passthrough()),
+      200: jsonResponse('重算结果', LeaderboardRebuildResultSchema),
       ...errorResponses(400, 401, 403, 409),
     },
   })
@@ -648,7 +738,7 @@ export function buildOpenApiDocument() {
     description: '仍有待审核记录时会被拒绝，必须先清空队列。冻结后快照行永不被重写。',
     request: jsonBody(z.object({ cutoff_date: z.string().optional(), reason: z.string() })),
     responses: {
-      200: jsonResponse('已冻结', z.object({}).passthrough()),
+      200: jsonResponse('已冻结', LeaderboardFreezeResultSchema),
       ...errorResponses(400, 401, 403, 404, 409),
     },
   })
@@ -660,7 +750,7 @@ export function buildOpenApiDocument() {
     summary: '解冻榜单',
     request: jsonBody(z.object({ cutoff_date: z.string(), reason: z.string() })),
     responses: {
-      200: jsonResponse('已解冻', z.object({}).passthrough()),
+      200: jsonResponse('已解冻', LeaderboardUnfreezeResultSchema),
       ...errorResponses(400, 401, 403, 404),
     },
   })
@@ -709,7 +799,7 @@ export function buildOpenApiDocument() {
       }),
     },
     responses: {
-      200: jsonResponse('审计日志（倒序）', z.object({ items: z.array(AuditLogEntrySchema) }).passthrough()),
+      200: jsonResponse('审计日志（倒序）', AuditLogListResponseSchema),
       ...errorResponses(401, 403),
     },
   })
@@ -719,7 +809,8 @@ export function buildOpenApiDocument() {
     path: '/api/v1/admin/jobs/scheduled',
     tags: ['定时任务'],
     summary: '查看已注册的调度计划',
-    responses: { 200: jsonResponse('调度计划', z.object({ jobs: z.array(z.object({}).passthrough()) })) },
+    description: '只列出配了 cron 表达式的任务；仅支持管理员手动触发的任务（如重算排行榜）不在其中。',
+    responses: { 200: jsonResponse('调度计划', ScheduledJobsResponseSchema) },
   })
 
   registry.registerPath({
@@ -734,7 +825,7 @@ export function buildOpenApiDocument() {
       }),
     },
     responses: {
-      200: jsonResponse('执行历史（倒序）', z.object({ items: z.array(JobRunSchema) }).passthrough()),
+      200: jsonResponse('执行历史（倒序）', JobRunListResponseSchema),
       ...errorResponses(401, 403),
     },
   })
@@ -744,10 +835,12 @@ export function buildOpenApiDocument() {
     path: '/api/v1/admin/jobs/{name}/run',
     tags: ['定时任务'],
     summary: '手动触发任务',
-    description: '与定时触发共用同一套互斥锁与执行记录。已被占用时返回 skipped_locked。',
+    description:
+      '与定时触发共用同一套互斥锁与执行记录。已被占用时返回 skipped_locked。' +
+      '执行失败同样返回 200 —— 失败信息在 error 字段里，这是本次执行的结果而非请求错误。',
     request: { params: jobParams },
     responses: {
-      200: jsonResponse('执行结果', z.object({}).passthrough()),
+      200: jsonResponse('执行结果', JobTriggerResultSchema),
       ...errorResponses(400, 401, 403, 404),
     },
   })

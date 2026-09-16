@@ -149,6 +149,26 @@ describe('排行榜快照幂等性', () => {
     expect(await db.leaderboardSnapshot.count({ where: { campaignId, cutoffDate: CUTOFF } })).toBe(1)
   })
 
+  it('管理员手动触发的 leaderboard_rebuild 任务重算的是当前活动的最新一份快照（§14）', async () => {
+    const initial = await generateSnapshot({ campaignId, cutoffDate: CUTOFF })
+
+    // §14 把「重算排行榜」列为任务，且只接受管理员触发
+    const response = await authed(adminToken).post('/api/v1/admin/jobs/leaderboard_rebuild/run')
+
+    expect(response.status, JSON.stringify(response.body)).toBe(200)
+    expect(response.body.status).toBe('success')
+    expect(response.body.processed).toBeGreaterThan(0)
+
+    // 未指定截止日时落在已有快照上，而不是另建一份
+    const snapshots = await db.leaderboardSnapshot.findMany({ where: { campaignId } })
+    expect(snapshots).toHaveLength(1)
+    expect(snapshots[0]!.id).toBe(initial.snapshotId)
+
+    const run = await db.jobRun.findFirstOrThrow({ where: { jobName: 'leaderboard_rebuild' } })
+    expect(run.trigger).toBe('manual')
+    expect(run.status).toBe('success')
+  })
+
   it('重算必须填写原因（§8.5 所有异常操作留痕）', async () => {
     const response = await authed(adminToken)
       .post('/api/v1/admin/leaderboards/rebuild')

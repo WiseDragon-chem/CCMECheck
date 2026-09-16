@@ -137,6 +137,11 @@ describe('打卡截止时间', () => {
 
       const entry = await db.checkinEntry.findUniqueOrThrow({ where: { id: entryId } })
 
+      // 重开是敏感操作，要求 5 分钟内的新鲜认证（§13）。beforeEach 里的登录发生在
+      // 真实时间，而上面已经把时钟推到了 2026-10-01 23:30 —— 在系统看来那个令牌
+      // 已经签发了半个月，必然被判为需要重新验证。因此按冻结后的时钟重新登录一次。
+      adminToken = (await login('admin1', TEST_PASSWORD)).accessToken
+
       // 重开 30 分钟
       const reopened = await authed(adminToken)
         .post(`/api/v1/admin/checkins/${entryId}/reopen`)
@@ -170,7 +175,11 @@ describe('打卡截止时间', () => {
       const created = await submit()
       const entry = await db.checkinEntry.findUniqueOrThrow({ where: { id: created.body.entry_id as string } })
 
-      const response = await authed(adminToken)
+      // 同前：新鲜认证看的是令牌签发时刻与当前时钟的距离，时钟一冻结就得重新登录，
+      // 否则请求会先被 REAUTH_REQUIRED 拦下，验证不到「必须填写原因」这条规则。
+      const freshAdminToken = (await login('admin1', TEST_PASSWORD)).accessToken
+
+      const response = await authed(freshAdminToken)
         .post(`/api/v1/admin/checkins/${created.body.entry_id as string}/reopen`)
         .send({ version: entry.version, reason: '' })
 
