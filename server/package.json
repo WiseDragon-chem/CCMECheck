@@ -17,6 +17,7 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
+    "campaign:init": "tsx prisma/init-campaign.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
