@@ -38,6 +38,11 @@ export type AdminCampaignConfig = Schemas['CampaignConfigResponse']
 export type AdminParticipant = Schemas['AdminParticipant']
 export type AdminParticipantList = Schemas['AdminParticipantListResponse']
 
+export type ImportSummary = Schemas['ImportSummary']
+export type ImportPreviewRow = Schemas['ImportPreviewRow']
+export type ImportPreviewResponse = Schemas['ImportPreviewResponse']
+export type ImportCommitResponse = Schemas['ImportCommitResponse']
+
 export type ReviewQueue = Schemas['ReviewQueueResponse']
 export type ReviewQueueEntry = Schemas['ReviewQueueEntry']
 export type ReviewProgress = Schemas['ReviewProgress']
