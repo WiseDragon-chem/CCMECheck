@@ -3508,6 +3508,7 @@ export interface components {
             rejection_code: string | null;
             submitted_at: string | null;
             reviewed_at: string | null;
+            reopen_expires_at: string | null;
             valid_days: number;
             /** @description 毫点 */
             track_score: number;

@@ -124,6 +124,8 @@ export const TodayCardSchema = z
     rejection_code: z.string().nullable(),
     submitted_at: z.string().nullable(),
     reviewed_at: z.string().nullable(),
+    /** 该槽位被管理员临时重新开放到什么时候；null 表示没有重开 */
+    reopen_expires_at: z.string().nullable(),
     valid_days: z.number().int(),
     track_score: z.number().int().openapi({ description: '毫点' }),
     daily_points: z.number().int(),

@@ -19,6 +19,7 @@ function card(overrides: Partial<TodayCard>): TodayCard {
     rejection_code: null,
     submitted_at: null,
     reviewed_at: null,
+    reopen_expires_at: null,
     valid_days: 0,
     track_score: 0,
     daily_points: 1000,

@@ -114,3 +114,174 @@ body {
   width: 100%;
   max-width: 400px;
 }
+
+/* ---- 图片选择与排序 ---- */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.image-thumb,
+.image-picker__add {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #d9d9d9;
+  background: #fafafa;
+}
+
+.image-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* 阻止浏览器把拖拽当成「保存图片」 */
+  -webkit-user-drag: none;
+}
+
+.image-thumb.is-dragging {
+  opacity: 0.6;
+  z-index: 2;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* 排序提示：拖动时用它代替鼠标样式，触屏上没有 cursor 一说 */
+.image-thumb__handle {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  font-size: 12px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 4px;
+  padding: 1px 5px;
+  pointer-events: none;
+}
+
+.image-thumb__order {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  font-size: 11px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 9px;
+  pointer-events: none;
+}
+
+.image-thumb__remove {
+  position: absolute;
+  right: 0;
+  top: 0;
+  color: #fff !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  border-radius: 0 8px 0 8px !important;
+  /* 触控目标不能太小 */
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.image-picker__add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  border-style: dashed;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.image-picker__add:hover {
+  border-color: #1677ff;
+  color: #1677ff;
+}
+
+/* ---- 提交进度 ---- */
+.submit-progress {
+  margin: 16px 0;
+}
+
+/* ---- 排行榜 ---- */
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.lb-row:last-child {
+  border-bottom: none;
+}
+
+/* 本人高亮：左侧色条 + 底色 + 名字旁的「我」标记，三重区分 */
+.lb-row.is-me {
+  background: #e6f4ff;
+  box-shadow: inset 3px 0 0 #1677ff;
+}
+
+.lb-row__rank {
+  flex: 0 0 28px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+/* 前三名给一点区别，但不依赖颜色单独表意 */
+.lb-row:nth-child(1) .lb-row__rank {
+  color: #d48806;
+}
+
+.lb-row__who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.lb-row__name {
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lb-row__meta {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.lb-row__score {
+  flex: 0 0 auto;
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #1677ff;
+}
+
+/* 自己不在列表里时底部固定的那一行 */
+.my-rank-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
+  max-width: var(--participant-max-width);
+  margin: 0 auto;
+  background: #fff;
+  border-top: 1px solid #1677ff;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+  z-index: 9;
+}
+
+.lb-row.is-compact {
+  border-bottom: none;
+}

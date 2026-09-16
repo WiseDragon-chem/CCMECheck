@@ -36,6 +36,13 @@ export interface TodayCard {
   rejection_code: string | null
   submitted_at: string | null
   reviewed_at: string | null
+  /**
+   * 该槽位被管理员临时重新开放到什么时候（design.md §8.5）。
+   *
+   * 没有这个字段，接口会因为重开而返回 can_submit: true，
+   * 但前端无从解释「为什么已过截止还能交」、也说不清何时失效。
+   */
+  reopen_expires_at: string | null
   valid_days: number
   track_score: number
   daily_points: number
@@ -244,6 +251,7 @@ export async function getTodayOverview(principal: AuthPrincipal, now: Date = new
       rejection_code: entry?.rejectionCode ?? null,
       submitted_at: entry?.currentSubmittedAt.toISOString() ?? null,
       reviewed_at: entry?.reviewedAt?.toISOString() ?? null,
+      reopen_expires_at: entry?.reopenExpiresAt?.toISOString() ?? null,
       valid_days: trackScore.validDays,
       track_score: trackScore.score,
       daily_points: campaignTrack.dailyPoints,

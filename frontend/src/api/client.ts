@@ -167,6 +167,14 @@ export function setAuthLostHandler(handler: AuthLostHandler | null): void {
   onAuthLost = handler
 }
 
+/**
+ * 供其它传输层（目前只有 upload.ts 的 XHR）上报会话失效。
+ * 会话失效的处理只有一处，不应该因为传输方式不同而各写一份。
+ */
+export function notifyAuthLost(error: ApiError): void {
+  onAuthLost?.(error)
+}
+
 // ---------------------------------------------------------------------------
 // 请求
 // ---------------------------------------------------------------------------
