@@ -10,7 +10,7 @@ import type { CheckinListItem } from '@/api/types'
 import { formatActivityDate, formatCstFriendly } from '@/lib/datetime'
 import { zh } from '@/locales/zh-CN'
 import { paths } from '@/routes/paths'
-import { CHECKIN_STATUS_META, type EntryStatusKey } from '../statusMeta'
+import { CHECKIN_STATUS_META, type EntryStatusKey } from '@/components/entryStatusMeta'
 
 /**
  * 打卡记录（design.md §7.5）。

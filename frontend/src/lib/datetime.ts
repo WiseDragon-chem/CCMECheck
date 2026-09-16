@@ -1,4 +1,4 @@
-import dayjs from 'dayjs'
+import dayjs, { type Dayjs } from 'dayjs'
 import { zh } from '@/locales/zh-CN'
 import utc from 'dayjs/plugin/utc'
 
@@ -75,6 +75,7 @@ export function clockOffsetMs(serverTimeIso: string): number {
 }
 
 /** 把秒数格式化成「还有 3 小时 12 分」这类中文提示 */
+
 export function formatRemaining(seconds: number): string {
   if (seconds <= 0) return zh.dateTime.deadlinePassed
   const total = Math.floor(seconds)
@@ -84,4 +85,26 @@ export function formatRemaining(seconds: number): string {
   if (hours > 0) return zh.dateTime.remainingHoursMinutes(hours, minutes)
   if (minutes > 0) return zh.dateTime.remainingMinutesSeconds(minutes, total % 60)
   return zh.dateTime.remainingSeconds(total)
+}
+
+/**
+ * `YYYY-MM-DD` → 选择器需要的 dayjs 值（管理端的日期筛选）。
+ *
+ * 用 `T00:00:00` 拼成本地午夜，而不是 `dayjs('2026-10-01')`：
+ * 后者在需要 customParseFormat 插件的前提下才按指定格式解析，
+ * 而直接传字符串给 dayjs 会走本地时区推断 —— 这两种行为都依赖
+ * 一个「别忘了装插件」的前提。拼上时间部分就没有歧义了。
+ */
+export function toPickerDate(date: string | null | undefined): Dayjs | null {
+  return date ? dayjs(`${date}T00:00:00`) : null
+}
+
+/**
+ * 选择器的值 → 接口要的 `YYYY-MM-DD`。
+ *
+ * 格式化成字符串而不是 `toISOString()`：后者会转成 UTC，
+ * 北京时间凌晨选的日期会退成前一天。
+ */
+export function fromPickerDate(value: Dayjs | null | undefined): string | undefined {
+  return value ? value.format('YYYY-MM-DD') : undefined
 }

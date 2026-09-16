@@ -27,6 +27,42 @@ export type SignedAssetUrl = Schemas['SignedAssetUrl']
 export type Leaderboard = Schemas['LeaderboardResponse']
 export type LeaderboardRow = Schemas['LeaderboardRow']
 
+// ---- 管理后台 ----
+
+export type DashboardStats = Schemas['DashboardStats']
+export type DashboardWarning = DashboardStats['warnings'][number]
+export type TrackStat = DashboardStats['tracks'][number]
+
+export type AdminCampaignConfig = Schemas['CampaignConfigResponse']
+
+export type AdminParticipant = Schemas['AdminParticipant']
+export type AdminParticipantList = Schemas['AdminParticipantListResponse']
+
+export type ReviewQueue = Schemas['ReviewQueueResponse']
+export type ReviewQueueEntry = Schemas['ReviewQueueEntry']
+export type ReviewProgress = Schemas['ReviewProgress']
+export type ReviewEntryDetail = Schemas['ReviewEntryDetail']
+export type ReviewResult = Schemas['ReviewResult']
+export type ReviewAction = ReviewEntryDetail['history']['review_actions'][number]
+export type RejectReason = Schemas['RejectReason']
+export type RejectReasonCode = RejectReason['code']
+
+export type EntryState = Schemas['EntryState']
+export type ReopenEntryResult = Schemas['ReopenEntryResult']
+export type ManualEntry = Schemas['ManualEntry']
+export type ScoreAdjustment = Schemas['ScoreAdjustment']
+
+export type ScheduledJob = Schemas['ScheduledJob']
+export type JobRun = Schemas['JobRun']
+export type JobTriggerResult = Schemas['JobTriggerResult']
+export type JobStatus = JobRun['status']
+
+export type AuditLogEntry = Schemas['AuditLogEntry']
+export type AuditLogList = Schemas['AuditLogListResponse']
+
+/** 各列表接口共用的分页字段 */
+export type PaginationFields = Schemas['PaginationFields']
+
 /**
  * 错误码联合类型，直接来自契约。
  *

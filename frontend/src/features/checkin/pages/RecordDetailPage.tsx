@@ -7,7 +7,7 @@ import SignedImage from '@/components/SignedImage'
 import { formatActivityDateLong, formatCst } from '@/lib/datetime'
 import { zh } from '@/locales/zh-CN'
 import { paths } from '@/routes/paths'
-import { CHECKIN_STATUS_META } from '../statusMeta'
+import { CHECKIN_STATUS_META } from '@/components/entryStatusMeta'
 
 /**
  * 打卡详情（design.md §7.5）。

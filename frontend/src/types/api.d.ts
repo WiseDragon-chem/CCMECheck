@@ -954,9 +954,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["DashboardStats"];
                     };
                 };
                 /** @description 未认证或令牌失效 */
@@ -1010,7 +1008,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["CampaignCurrentResponse"];
+                        "application/json": components["schemas"]["CampaignConfigResponse"];
                     };
                 };
                 /** @description 未认证或令牌失效 */
@@ -1084,9 +1082,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["CampaignUpdateResponse"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -1196,7 +1192,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["CampaignCurrentResponse"];
+                        "application/json": components["schemas"]["CampaignConfigResponse"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -1271,9 +1267,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["CampaignTrackUpdateResponse"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -1331,7 +1325,13 @@ export interface paths {
         /** 查询参赛者名单 */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    page?: number;
+                    page_size?: number;
+                    status?: "active" | "disabled" | "anonymized";
+                    class_name?: string;
+                    keyword?: string;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -1344,11 +1344,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            items: components["schemas"]["Participant"][];
-                        } & {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["AdminParticipantListResponse"];
                     };
                 };
                 /** @description 未认证或令牌失效 */
@@ -1401,9 +1397,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["ParticipantActivationResponse"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -1491,9 +1485,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["ParticipantStatusUpdateResponse"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -1566,9 +1558,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["ParticipantActivationResponse"];
                     };
                 };
                 /** @description 未认证或令牌失效 */
@@ -1636,9 +1626,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["ParticipantPasswordResetResponse"];
                     };
                 };
                 /** @description 未认证或令牌失效 */
@@ -1661,6 +1649,100 @@ export interface paths {
                 };
                 /** @description 资源不存在 */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/participants/{participantId}/anonymize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 匿名化参赛者
+         * @description design.md §8.3：已有正式记录的参赛者不允许直接删除，改为抹除身份 —— 保留打卡记录（榜单与审计需要），清空姓名、学号、班级、手机尾号与备注，撤销全部登录会话，并在 delete_evidence 为 true 时一并删除证明材料（截图里常带姓名，留着等于匿名化只做了一半）。**不可逆**，因此需要 5 分钟内的新鲜认证。
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    participantId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                        /** @default true */
+                        delete_evidence?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description 已匿名化 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AnonymizeParticipantResponse"];
+                    };
+                };
+                /** @description 请求参数校验未通过 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description 未认证或令牌失效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description 权限不足 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description 资源不存在 */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description 与当前状态冲突 */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1786,9 +1868,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["ImportPreviewResponse"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -1860,9 +1940,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["ImportCommitResponse"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -1941,11 +2019,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            entries: components["schemas"]["ReviewQueueEntry"][];
-                        } & {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["ReviewQueueResponse"];
                     };
                 };
                 /** @description 未认证或令牌失效 */
@@ -2004,9 +2078,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["ReviewEntryDetail"];
                     };
                 };
                 /** @description 未认证或令牌失效 */
@@ -2083,9 +2155,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["ReviewResult"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -2180,9 +2250,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["ReviewResult"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -2315,9 +2383,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["ReopenEntryResult"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -2384,7 +2450,7 @@ export interface paths {
         put?: never;
         /**
          * 撤销审核结果
-         * @description 仅对已通过的记录有效。撤销后该记录不再计分。
+         * @description 仅对已通过的记录有效。撤销后该记录不再计分。不可逆，需要新鲜认证。
          */
         post: {
             parameters: {
@@ -2410,9 +2476,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["EntryState"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -2479,7 +2543,7 @@ export interface paths {
         put?: never;
         /**
          * 作废违规记录
-         * @description 对任意状态均可作废（本身已是 void 的除外）。
+         * @description 对任意状态均可作废（本身已是 void 的除外）。作废是终态，需要新鲜认证。
          */
         post: {
             parameters: {
@@ -2505,9 +2569,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["EntryState"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -2574,7 +2636,7 @@ export interface paths {
         put?: never;
         /**
          * 管理员补录
-         * @description 为指定参赛者在指定活动日补录一条记录，标记为人工录入。同一槽位已存在记录时会冲突。
+         * @description 为指定参赛者在指定活动日补录一条记录，标记为人工录入。同一槽位已存在记录时会冲突。补录绕过了正常的截止与图片校验，因此需要新鲜认证。
          */
         post: {
             parameters: {
@@ -2606,9 +2668,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["ManualEntry"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -2675,7 +2735,7 @@ export interface paths {
         put?: never;
         /**
          * 积分调整
-         * @description 只新增调整记录，**从不改写原始积分字段**（design.md §9.1）。调整不受赛道积分上限约束，否则管理员加分会被上限静默吃掉。
+         * @description 只新增调整记录，**从不改写原始积分字段**（design.md §9.1）。调整不受赛道积分上限约束，否则管理员加分会被上限静默吃掉。直接改变榜单结果，需要新鲜认证。
          */
         post: {
             parameters: {
@@ -2701,9 +2761,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["ScoreAdjustment"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -2785,9 +2843,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["LeaderboardRebuildResult"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -2869,9 +2925,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["LeaderboardFreezeResult"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -2959,9 +3013,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["LeaderboardUnfreezeResult"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -3163,11 +3215,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            items: components["schemas"]["AuditLogEntry"][];
-                        } & {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["AuditLogListResponse"];
                     };
                 };
                 /** @description 未认证或令牌失效 */
@@ -3205,7 +3253,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查看已注册的调度计划 */
+        /**
+         * 查看已注册的调度计划
+         * @description 只列出配了 cron 表达式的任务；仅支持管理员手动触发的任务（如重算排行榜）不在其中。
+         */
         get: {
             parameters: {
                 query?: never;
@@ -3221,11 +3272,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            jobs: {
-                                [key: string]: unknown;
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ScheduledJobsResponse"];
                     };
                 };
             };
@@ -3266,11 +3313,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            items: components["schemas"]["JobRun"][];
-                        } & {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["JobRunListResponse"];
                     };
                 };
                 /** @description 未认证或令牌失效 */
@@ -3312,14 +3355,14 @@ export interface paths {
         put?: never;
         /**
          * 手动触发任务
-         * @description 与定时触发共用同一套互斥锁与执行记录。已被占用时返回 skipped_locked。
+         * @description 与定时触发共用同一套互斥锁与执行记录。已被占用时返回 skipped_locked。执行失败同样返回 200 —— 失败信息在 error 字段里，这是本次执行的结果而非请求错误。
          */
         post: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    name: string;
+                    name: "leaderboard_snapshot" | "cleanup_sessions" | "cleanup_orphan_uploads" | "purge_expired_evidence" | "campaign_state_transition" | "leaderboard_rebuild" | "database_backup";
                 };
                 cookie?: never;
             };
@@ -3331,9 +3374,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            [key: string]: unknown;
-                        };
+                        "application/json": components["schemas"]["JobTriggerResult"];
                     };
                 };
                 /** @description 请求参数校验未通过 */
@@ -3649,11 +3690,13 @@ export interface components {
         ReviewQueueEntry: {
             entry_id: string;
             participant: {
+                id: string;
                 student_id: string;
                 name: string;
                 class_name: string | null;
             };
             track: {
+                id: string;
                 slug: string;
                 name: string;
             };
@@ -3699,6 +3742,341 @@ export interface components {
             finished_at: string | null;
             processed_count: number;
             error_summary: string | null;
+        };
+        PaginationFields: {
+            /** @description 满足筛选条件的总条数，与当前页无关 */
+            total: number;
+            page: number;
+            page_size: number;
+        };
+        AdminParticipant: components["schemas"]["Participant"] & {
+            phone_suffix: string | null;
+            remark: string | null;
+            activated: boolean;
+        };
+        AdminParticipantListResponse: components["schemas"]["PaginationFields"] & {
+            /** @description 按学号升序，便于与纸质名单核对 */
+            items: components["schemas"]["AdminParticipant"][];
+        };
+        CampaignConfigResponse: {
+            campaign: components["schemas"]["Campaign"];
+            tracks: components["schemas"]["Track"][];
+        };
+        CampaignUpdateResponse: components["schemas"]["CampaignConfigResponse"] & {
+            /** @description 活动已开始却改动了计分字段时的风险提示；null 表示本次改动无影响 */
+            impact_warning: string | null;
+            actor: string;
+        };
+        CampaignTrackUpdateResponse: {
+            track: components["schemas"]["Track"] & (Record<string, never> | null);
+            impact_warning: string | null;
+        };
+        ParticipantActivationResponse: {
+            participant: components["schemas"]["AdminParticipant"];
+            /** @description 明文只在此响应中出现一次，库里只保存哈希 */
+            activation_code: string;
+        };
+        ParticipantStatusUpdateResponse: {
+            participant: components["schemas"]["AdminParticipant"];
+            /** @description 被一并撤销的登录会话数 */
+            revoked_sessions: number;
+        };
+        ParticipantPasswordResetResponse: {
+            participant: components["schemas"]["AdminParticipant"];
+            /** @description 一次性初始密码，只在此响应中出现一次 */
+            password: string;
+        };
+        AnonymizeParticipantResponse: {
+            participant: components["schemas"]["AdminParticipant"];
+            /** @description 被删除的证明材料数量；保留证据时为 0 */
+            deleted_assets: number;
+            revoked_sessions: number;
+        };
+        ImportSummary: {
+            total: number;
+            valid: number;
+            invalid: number;
+            /** @description 学号已存在、提交时会走更新的行数 */
+            existing_users: number;
+            /** @description 同一文件内重复出现（第二次及以后）的行数 */
+            duplicates_in_file: number;
+        };
+        ImportPreviewRow: {
+            /** @description 原始 CSV 中的行号，便于管理员直接定位到那一行 */
+            line: number;
+            student_id: string;
+            name: string;
+            class_name: string | null;
+            /** @enum {string} */
+            status: "ok" | "error";
+            errors: string[];
+            /** @description true 表示该学号已有账号，提交后是更新而不是新建 */
+            existing: boolean;
+        };
+        ImportPreviewResponse: {
+            /** @description 正式导入时必须原样回传的批次标识 */
+            batch_id: string;
+            summary: components["schemas"]["ImportSummary"];
+            rows: components["schemas"]["ImportPreviewRow"][];
+            /** @description true 表示 rows 被截断，summary 仍是精确值 */
+            rows_truncated: boolean;
+        };
+        ImportCommitResponse: {
+            batch_id: string;
+            /** @description 新建的账号数 */
+            created: number;
+            /** @description 已存在因而走更新的行数 */
+            updated: number;
+            /** @description 校验未通过因而没有写入的行数 */
+            skipped: number;
+            /** @description 只为新建账号发放；明文只出现一次，之后无法再导出（库里只有哈希） */
+            activation_codes: {
+                student_id: string;
+                name: string;
+                activation_code: string;
+            }[];
+        };
+        ReviewProgress: {
+            pending_total: number;
+            reviewed_today: number;
+            /** @description 只统计此刻仍是通过的记录，被撤销的不计入 */
+            approved_today: number;
+            rejected_today: number;
+        };
+        ReviewQueueResponse: components["schemas"]["PaginationFields"] & {
+            /** @description 按提交时间升序，先进先审 */
+            entries: components["schemas"]["ReviewQueueEntry"][];
+            progress: components["schemas"]["ReviewProgress"];
+        };
+        ReviewEntryDetail: {
+            entry_id: string;
+            /** @enum {string} */
+            status: "pending" | "approved" | "rejected" | "revoked" | "void";
+            /** @description 乐观并发令牌，审核请求必须原样回传 */
+            version: number;
+            activity_date: string;
+            submitted_at: string;
+            /** @description true 表示管理员补录，没有参赛者上传的材料 */
+            is_manual: boolean;
+            is_resubmission: boolean;
+            reopen_expires_at: string | null;
+            participant: {
+                id: string;
+                user_id: string;
+                student_id: string;
+                name: string;
+                class_name: string | null;
+                phone_suffix: string | null;
+                remark: string | null;
+                status: string;
+            };
+            campaign: {
+                id: string;
+                name: string;
+                status: string;
+            };
+            track: {
+                id: string;
+                slug: string;
+                name: string;
+            };
+            current_revision: {
+                revision_id: string;
+                revision_number: number;
+                note: string | null;
+                submitted_at: string;
+                assets: {
+                    asset_id: string;
+                    width: number | null;
+                    height: number | null;
+                    sort_order: number;
+                }[];
+            } | null;
+            history: {
+                review_actions: {
+                    id: string;
+                    /** @enum {string} */
+                    action: "approve" | "reject" | "reopen" | "revoke" | "void" | "manual_create";
+                    reason: string | null;
+                    reason_code: string | null;
+                    revision_id: string | null;
+                    reviewer: {
+                        id: string;
+                        name: string;
+                    } | null;
+                    created_at: string;
+                }[];
+                previous_revisions: {
+                    revision_number: number;
+                    submitted_at: string;
+                    note: string | null;
+                    asset_count: number;
+                }[];
+            };
+        };
+        ReviewResult: {
+            entry_id: string;
+            /** @enum {string} */
+            status: "pending" | "approved" | "rejected" | "revoked" | "void";
+            /** @description 自增后的新版本，下一次操作要回传它 */
+            version: number;
+            reviewed_at: string | null;
+            reviewed_by: string | null;
+            rejection_code: string | null;
+            rejection_reason: string | null;
+            /** @enum {string} */
+            action: "approve" | "reject" | "reopen" | "revoke" | "void" | "manual_create";
+        };
+        EntryState: {
+            entry_id: string;
+            /** @enum {string} */
+            status: "pending" | "approved" | "rejected" | "revoked" | "void";
+            version: number;
+            activity_date: string;
+            reviewed_at: string | null;
+            reviewed_by: string | null;
+            rejection_code: string | null;
+            rejection_reason: string | null;
+            reopen_expires_at: string | null;
+            is_manual: boolean;
+        };
+        ReopenEntryResult: components["schemas"]["EntryState"] & {
+            campaign_submittable: boolean;
+            warning: string | null;
+        };
+        ManualEntry: components["schemas"]["EntryState"] & {
+            participant_id: string;
+            track_id: string;
+            track_slug: string;
+            /** @description 补录同时创建的版本，详情页要按它取材料 */
+            revision_id: string;
+        };
+        ScoreAdjustment: {
+            adjustment_id: string;
+            campaign_id: string;
+            participant_id: string;
+            /** @description 赛道 slug；总榜为 __overall__ 哨兵值，因此不是外键 */
+            track_id: string;
+            /** @description 毫点，可为负 */
+            points_delta: number;
+            reason: string;
+            operator_id: string | null;
+            created_at: string;
+        };
+        LeaderboardRebuildResult: {
+            snapshot_id: string;
+            cutoff_date: string;
+            /** @description 本次写入的快照行数 */
+            row_count: number;
+            generated_at: string;
+            /** @description true 表示覆盖了同一切算日的旧快照 */
+            regenerated: boolean;
+        };
+        LeaderboardFreezeResult: {
+            snapshot_id: string;
+            cutoff_date: string;
+            row_count: number;
+            /**
+             * @description 冻结成功后恒为 true
+             * @enum {boolean}
+             */
+            is_final: true;
+        };
+        LeaderboardUnfreezeResult: {
+            cutoff_date: string;
+            /**
+             * @description 解冻后恒为 false
+             * @enum {boolean}
+             */
+            is_final: false;
+        };
+        ScheduledJob: {
+            /** @enum {string} */
+            name: "leaderboard_snapshot" | "cleanup_sessions" | "cleanup_orphan_uploads" | "purge_expired_evidence" | "campaign_state_transition" | "leaderboard_rebuild" | "database_backup";
+            /** @description cron 表达式，时区固定北京时间 */
+            expression: string;
+            description: string;
+        };
+        ScheduledJobsResponse: {
+            jobs: components["schemas"]["ScheduledJob"][];
+        };
+        JobTriggerResult: {
+            /** @enum {string} */
+            job_name: "leaderboard_snapshot" | "cleanup_sessions" | "cleanup_orphan_uploads" | "purge_expired_evidence" | "campaign_state_transition" | "leaderboard_rebuild" | "database_backup";
+            /** @enum {string} */
+            status: "running" | "success" | "failed" | "skipped_locked";
+            /** @description 处理数量；失败与跳过锁时为 0 */
+            processed: number;
+            error: string | null;
+        };
+        DashboardStats: {
+            campaign: {
+                id: string;
+                name: string;
+                status: string;
+                start_date: string;
+                end_date: string;
+                leaderboard_visible: boolean;
+            };
+            counts: {
+                /** @description 在册（active）的参赛者数 */
+                participants_total: number;
+                participants_activated: number;
+                participants_pending_activation: number;
+                participants_disabled: number;
+                today_submitted: number;
+                today_approved: number;
+                today_rejected: number;
+                pending_total: number;
+                pending_today: number;
+                entries_total: number;
+                approved_total: number;
+            };
+            tracks: {
+                slug: string;
+                name: string;
+                enabled: boolean;
+                submitted_today: number;
+                approved_today: number;
+                /** @description 今日提交人数 / 在册人数，保留三位小数 */
+                submission_rate: number;
+            }[];
+            leaderboard: {
+                next_update_at: string | null;
+                seconds_until_next_update: number | null;
+                latest_snapshot: {
+                    id: string;
+                    cutoff_date: string;
+                    generated_at: string;
+                    is_final: boolean;
+                    status: string;
+                } | null;
+                /** @description 最新一份快照生成失败，首页需要标红 */
+                has_failure: boolean;
+            };
+            last_job_run: {
+                job_name: string;
+                status: string;
+                started_at: string;
+                finished_at: string | null;
+                processed_count: number;
+                error_summary: string | null;
+            } | null;
+            warnings: {
+                /** @example job_failed */
+                kind: string;
+                message: string;
+                at: string;
+            }[];
+            scheduled_jobs: components["schemas"]["ScheduledJob"][];
+        };
+        AuditLogListResponse: components["schemas"]["PaginationFields"] & {
+            /** @description 按时间倒序 */
+            items: components["schemas"]["AuditLogEntry"][];
+        };
+        JobRunListResponse: components["schemas"]["PaginationFields"] & {
+            /** @description 按开始时间倒序 */
+            items: components["schemas"]["JobRun"][];
         };
         RejectReason: {
             /** @enum {string} */
