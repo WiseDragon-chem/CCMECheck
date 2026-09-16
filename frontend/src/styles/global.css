@@ -305,3 +305,296 @@ body {
   background: #fafafa;
   border-radius: 8px;
 }
+
+/* ---- 管理后台布局（桌面优先）---- */
+.admin-sider__brand {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px !important;
+  background: #fff !important;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.admin-content {
+  /* 后台是桌面端的重界面，给它足够的空间；页面内部自己滚 */
+  padding: 16px;
+  overflow: auto;
+}
+
+.admin-suspense {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+}
+
+/**
+ * 审核流水线：三栏 + 底栏，整体占满视口高度，各栏独立滚动。
+ *
+ * 关键约束是**页面本身不滚动** —— §8.2 要求 1280×720 下不滚动页面
+ * 就能完成一次完整审核，键盘流的全部意义就在这里。
+ */
+.review-pipeline {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 56px - 32px);
+  min-height: 480px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.review-pipeline__body {
+  flex: 1;
+  display: flex;
+  min-height: 0; /* 没有它，子项的 overflow 不会生效 */
+}
+
+.review-pipeline__col {
+  overflow: auto;
+  min-height: 0;
+}
+
+.review-pipeline__col--queue {
+  flex: 0 0 300px;
+  border-right: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  /* 覆盖 .review-pipeline__col 的 overflow: 筛选条与进度固定在顶端，
+     只有队列本身滚动。否则翻到第 40 条时筛选器也跟着滚走了，
+     而「换个赛道继续审」正是要在这时做的事 */
+  overflow: hidden;
+}
+
+.review-pipeline__col--materials {
+  flex: 1;
+  min-width: 0;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+}
+
+.review-pipeline__col--context {
+  flex: 0 0 360px;
+  border-left: 1px solid #f0f0f0;
+  padding: 12px;
+}
+
+.review-pipeline__footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-top: 1px solid #f0f0f0;
+  background: #fff;
+}
+
+/* 队列项 */
+.queue-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f5f5f5;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+}
+
+.queue-item:hover {
+  background: #fafafa;
+}
+
+.queue-item.is-current {
+  background: #e6f4ff;
+  border-left-color: #1677ff;
+}
+
+.queue-item__name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.queue-item__meta {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* 材料区：图片居中，留白不抢视线 */
+.materials-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+
+.materials-stage img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.materials-thumbs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding-top: 8px;
+}
+
+.materials-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+  background: #f0f0f0;
+}
+
+.materials-thumb.is-active {
+  border-color: #1677ff;
+}
+
+.materials-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* 左栏：筛选 + 进度 */
+.queue-filters {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.queue-progress {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.queue-progress__row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.queue-progress__cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.queue-progress__value {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.queue-progress__label {
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.queue-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.queue-more {
+  padding: 12px;
+  text-align: center;
+}
+
+/* 中栏：工具栏与画布 */
+.materials-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  gap: 8px;
+}
+
+/**
+ * 缩放与旋转都加在这一层，而不是 img 上。
+ *
+ * SignedImage 自己管着加载态与重签（签名到期时它要换一个 img 节点），
+ * 把 transform 写进它的样式里会在它重建节点时丢掉。外面包一层，
+ * 变换的归属就清楚了：这一层管视角，里面那层管图本身。
+ */
+.materials-canvas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  max-height: 100%;
+  transition: transform 0.12s ease-out;
+  transform-origin: center center;
+}
+
+.materials-canvas img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* 全屏时容器是那个黑底 stage，图片铺满它 */
+.materials-stage:fullscreen {
+  background: #000;
+  padding: 0;
+}
+
+.review-pipeline__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 右栏：参赛者备注 */
+.context-note {
+  margin-top: 12px;
+}
+
+/* 异常处理：按 ID 查到的那条记录的摘要 */
+.op-entry-preview {
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+}
+
+/* 按钮里的快捷键角标 */
+.hotkey-hint {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 16px;
+  color: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.06);
+}
