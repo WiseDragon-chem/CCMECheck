@@ -13,4 +13,13 @@ export const paths = {
   recordDetail: (entryId: string) => `/records/${entryId}`,
   leaderboard: '/leaderboard',
   me: '/me',
+
+  // ---- 管理后台（§8）----
+  admin: {
+    dashboard: '/admin',
+    review: '/admin/review',
+    reviewEntry: (entryId: string) => `/admin/review/${entryId}`,
+    ops: '/admin/ops',
+    audit: '/admin/audit',
+  },
 } as const

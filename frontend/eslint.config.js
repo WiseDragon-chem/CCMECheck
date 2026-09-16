@@ -86,4 +86,18 @@ export default tseslint.config(
       'no-irregular-whitespace': ['error', { skipTemplates: true, skipStrings: true }],
     },
   },
+
+  {
+    /**
+     * 路由配置不是组件文件，热更新对它的约束不适用。
+     *
+     * 它用 React.lazy 在模块顶层声明懒加载页面（React Router 的标准写法），
+     * 并导出一个非组件的 router 对象 —— react-refresh 会把这当成
+     * 「组件与非组件混在一个文件里」，但它本来就不是一个会被热替换的模块。
+     */
+    files: ['src/routes/router.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 )

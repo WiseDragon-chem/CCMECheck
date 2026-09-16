@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { App as AntdApp, Button, Card, Descriptions, Divider, Form, Input, Typography } from 'antd'
+import { ControlOutlined } from '@ant-design/icons'
 import { changePassword } from '@/api/endpoints/auth'
 import { presentError } from '@/api/presentError'
 import { setAccessToken } from '@/api/tokenStore'
@@ -80,6 +81,17 @@ export default function ProfilePage() {
           {t.nameLockNotice}
         </Typography.Text>
       </Card>
+
+      {/*
+        §5：审核员与超管也可以同时是参赛者。给他们一个回后台的入口，
+        否则既是审核员又要给自己打卡的人只能手敲 URL。
+        后端才是真正的权限边界，这里只决定要不要渲染入口。
+      */}
+      {(user?.role === 'reviewer' || user?.role === 'super_admin') && (
+        <Button block icon={<ControlOutlined />} style={{ marginBottom: 16 }} onClick={() => navigate(paths.admin.dashboard)}>
+          {zh.admin.enterAdmin}
+        </Button>
+      )}
 
       <Card title={t.changePassword} size="small">
         <Form<FormValues> form={form} layout="vertical" onFinish={onChangePassword} requiredMark={false}>

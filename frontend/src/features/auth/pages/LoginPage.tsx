@@ -4,6 +4,7 @@ import { Alert, Button, Form, Input, Typography, App as AntdApp } from 'antd'
 import { presentError } from '@/api/presentError'
 import AuthLayout from '@/layouts/AuthLayout'
 import { zh } from '@/locales/zh-CN'
+import { landingFor } from '@/routes/roles'
 import { paths } from '@/routes/paths'
 import { useAuthStore } from '@/stores/auth.store'
 
@@ -22,15 +23,16 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // 从被拦截的页面跳过来时回到原处
-  const from = (location.state as { from?: string } | null)?.from ?? paths.home
+  // 从被拦截的页面跳过来时回到原处；否则按角色落地 ——
+  // 审核员与超管落到后台，参赛者落到主页面
+  const from = (location.state as { from?: string } | null)?.from
 
   const onFinish = async (values: FormValues) => {
     setSubmitting(true)
     setError(null)
     try {
-      await login(values.student_id.trim(), values.password)
-      navigate(from, { replace: true })
+      const user = await login(values.student_id.trim(), values.password)
+      navigate(from ?? landingFor(user.role), { replace: true })
     } catch (caught) {
       const presented = presentError(caught)
 
