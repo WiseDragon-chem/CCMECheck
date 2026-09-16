@@ -49,6 +49,22 @@ export const updateParticipantStatusBodySchema = z.object({
   status: z.enum(['active', 'disabled']),
 })
 
+/**
+ * 匿名化（§8.3 末段）：已有正式记录的参赛者不允许删除，改为抹除身份。
+ *
+ * 不可逆，因此必须填写原因。
+ */
+export const anonymizeParticipantBodySchema = z.object({
+  reason: z.string().trim().min(2, '请填写匿名化的原因').max(500),
+  /**
+   * 是否同时删除证明材料。
+   *
+   * 默认删除 —— 截图里往往带着姓名或账号，留着它们等于匿名化没做完。
+   * 只有在需要保留证据（例如争议尚未了结）时才关掉。
+   */
+  delete_evidence: z.boolean().default(true),
+})
+
 export type ParticipantParams = z.infer<typeof participantParamsSchema>
 export type ImportCommitBody = z.infer<typeof importCommitBodySchema>
 export type ListParticipantsQuery = z.infer<typeof listParticipantsQuerySchema>

@@ -240,6 +240,11 @@ export interface RankableRow {
  *
  * 展示顺序依次比较：积分降序 → 有效天数降序 → 达到积分时间升序 → 内部稳定标识。
  * 前三项全部相同才算真正的并列；第四项只用来让展示顺序稳定可复现。
+ *
+ * 活动配置里的 `tieBreakRule` 必须与这里实现的规则一致。目前只支持一种取值
+ * （TIE_BREAK_RULES 里也只有它），因此真正的问题是：将来有人往
+ * TIE_BREAK_RULES 里加了第二种，而忘了改这个函数 —— 那时配置会被静默忽略。
+ * buildScoredRows 会校验这一点，直接报错而不是默默按默认排序。
  */
 export function compareRanking(a: RankableRow, b: RankableRow): number {
   if (a.score !== b.score) return b.score - a.score
@@ -284,7 +289,12 @@ export function assignRanks(rows: readonly RankableRow[]): number[] {
 export interface ScoringInputs {
   configs: TrackScoringConfig[]
   byParticipant: Map<string, ParticipantScoringInput>
+  /** 活动配置的排序规则；buildScoredRows 会校验它是否被支持 */
+  tieBreakRule: string
 }
+
+/** compareRanking 实际实现的规则。加新规则时这里和那个函数要一起改。 */
+export const IMPLEMENTED_TIE_BREAK_RULE = 'score_desc_valid_days_desc_reached_at_asc'
 
 /**
  * 装载某活动在 cutoffDate（含）之前的全部计分输入。
@@ -298,7 +308,8 @@ export async function loadScoringInputs(
   cutoffDate: string,
   db: Db = getPrismaClient(),
 ): Promise<ScoringInputs> {
-  const [campaignTracks, participants, entries, adjustments] = await Promise.all([
+  const [campaign, campaignTracks, participants, entries, adjustments] = await Promise.all([
+    db.campaign.findUniqueOrThrow({ where: { id: campaignId }, select: { tieBreakRule: true } }),
     db.campaignTrack.findMany({
       where: { campaignId },
       include: { track: { select: { slug: true } } },
@@ -371,7 +382,7 @@ export async function loadScoringInputs(
     })
   }
 
-  return { configs, byParticipant }
+  return { configs, byParticipant, tieBreakRule: campaign.tieBreakRule }
 }
 
 export interface ScoredRow extends RankableRow {
@@ -384,6 +395,16 @@ export interface ScoredRow extends RankableRow {
  * 调用方负责把结果写入 leaderboard_rows。
  */
 export function buildScoredRows(inputs: ScoringInputs): ScoredRow[] {
+  // 活动配置里的排序规则必须与 compareRanking 实现的一致。
+  // 校验而不是静默忽略：将来往 TIE_BREAK_RULES 加了第二种取值却忘了改
+  // compareRanking 时，这里会直接报错 —— 否则新规则会被无声地当成默认规则，
+  // 而排行榜看起来「正常」，没人会发现。
+  if (inputs.tieBreakRule !== IMPLEMENTED_TIE_BREAK_RULE) {
+    throw new Error(
+      `不支持的排名同分规则：${inputs.tieBreakRule}（当前只实现了 ${IMPLEMENTED_TIE_BREAK_RULE}）`,
+    )
+  }
+
   const activeConfigs = inputs.configs.filter((config) => config.enabled)
   const results: ScoredRow[] = []
 

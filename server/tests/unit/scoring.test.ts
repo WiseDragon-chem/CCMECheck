@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { OVERALL_TRACK_SENTINEL } from '../../src/config/constants.js'
 import {
+  IMPLEMENTED_TIE_BREAK_RULE,
   assignRanks,
+  buildScoredRows,
   compareRanking,
   computeParticipantScore,
   computeTrackScore,
@@ -295,5 +297,30 @@ describe('排序与并列（§9.3）', () => {
     ]
     const sorted = [...ranked].sort(compareRanking)
     expect(assignRanks(sorted)).toEqual([1, 1])
+  })
+})
+
+describe('排序规则的校验', () => {
+  /**
+   * 活动配置里的 tieBreakRule 与 compareRanking 实际实现的规则必须一致。
+   *
+   * 这条校验的价值在于「将来」：有人往 TIE_BREAK_RULES 里加了第二种取值，
+   * 却忘了改 compareRanking。没有它，新规则会被无声地当成默认规则，
+   * 排行榜看起来一切正常，没人会发现配置根本没生效。
+   */
+  it('支持当前实现的规则', () => {
+    expect(() => buildScoredRows({ configs: [], byParticipant: new Map(), tieBreakRule: IMPLEMENTED_TIE_BREAK_RULE }))
+      .not.toThrow()
+  })
+
+  it('遇到没实现的规则直接报错，而不是静默按默认排序', () => {
+    expect(() =>
+      buildScoredRows({ configs: [], byParticipant: new Map(), tieBreakRule: 'some_future_rule' }),
+    ).toThrow(/不支持的排名同分规则/)
+  })
+
+  it('常量的值就是设计文档 §9.3 描述的那条规则', () => {
+    // 名字本身就是规则的自述：积分降序 → 有效天数降序 → 达到时间升序
+    expect(IMPLEMENTED_TIE_BREAK_RULE).toBe('score_desc_valid_days_desc_reached_at_asc')
   })
 })

@@ -4,10 +4,11 @@ import { AppError, validationFailed } from '../../core/errors.js'
 import { route } from '../../core/route.js'
 import { paginationToSkipTake } from '../../core/validation.js'
 import { authenticate, requirePrincipal } from '../../middleware/authenticate.js'
-import { requireRole } from '../../middleware/authorize.js'
+import { requireFreshAuth, requireRole } from '../../middleware/authorize.js'
 import { auditContextFrom } from '../../services/audit.service.js'
 import {
   createParticipantBodySchema,
+  anonymizeParticipantBodySchema,
   importCommitBodySchema,
   listParticipantsQuerySchema,
   participantParamsSchema,
@@ -185,6 +186,30 @@ export function createAdminParticipantsRouter(): Router {
       })
       res.json(result)
     }),
+  )
+
+  /**
+   * ---- 匿名化（§8.3 末段）----
+   *
+   * 不可逆，因此要求新鲜认证（§13 的「敏感操作重新验证权限」）——
+   * 与冻结榜单、撤销审核同级。
+   */
+  router.post(
+    '/:participantId/anonymize',
+    requireFreshAuth(),
+    route(
+      { params: participantParamsSchema, body: anonymizeParticipantBodySchema },
+      async ({ req, res, params, body }) => {
+        requirePrincipal(req)
+        const result = await participantsService.anonymizeParticipant({
+          participantId: params.participantId,
+          deleteEvidence: body.delete_evidence,
+          reason: body.reason,
+          actor: auditContextFrom(req),
+        })
+        res.json(result)
+      },
+    ),
   )
 
   return router

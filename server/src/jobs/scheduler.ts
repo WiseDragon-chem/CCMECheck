@@ -6,6 +6,7 @@ import { cleanupOrphanUploadsJob } from './definitions/cleanup-orphan-uploads.jo
 import { cleanupSessionsJob } from './definitions/cleanup-sessions.job.js'
 import { databaseBackupJob } from './definitions/database-backup.job.js'
 import { leaderboardSnapshotJob } from './definitions/leaderboard-snapshot.job.js'
+import { purgeExpiredEvidenceJob } from './definitions/purge-expired-evidence.job.js'
 import { recoverStaleJobRuns, runJob, type JobDefinition } from './runner.js'
 
 /**
@@ -57,6 +58,13 @@ const SCHEDULED_JOBS: ScheduledJob[] = [
     expression: '47 4 * * *',
     description: '每日数据库备份',
   },
+  {
+    definition: purgeExpiredEvidenceJob,
+    // 备份之后跑，且刻意排在备份的下一分钟 —— 万一清理写错了什么，
+    // 当天凌晨的备份还在
+    expression: '23 5 * * *',
+    description: '按保留期清理证明材料（默认不启用）',
+  },
 ]
 
 const runningTasks: ScheduledTask[] = []
@@ -104,6 +112,7 @@ const DEFINITIONS: Record<string, JobDefinition> = {
   [cleanupOrphanUploadsJob.name]: cleanupOrphanUploadsJob,
   [campaignStateJob.name]: campaignStateJob,
   [databaseBackupJob.name]: databaseBackupJob,
+  [purgeExpiredEvidenceJob.name]: purgeExpiredEvidenceJob,
 }
 
 export function getJobDefinition(name: string): JobDefinition | undefined {

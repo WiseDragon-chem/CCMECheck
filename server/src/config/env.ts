@@ -44,6 +44,14 @@ const EnvSchema = z.object({
   /** 备份保留时长（天），超出的会被清理任务删除 */
   BACKUP_RETENTION_DAYS: z.coerce.number().int().min(1).max(365).default(30),
 
+  /**
+   * 证明材料在活动结束后的保留天数（design.md §18.8）。
+   *
+   * **0 表示永不自动删除**，这也是默认值 —— 自动删除用户上传的材料
+   * 属于不可逆的破坏性操作，必须由组织者显式开启，不能靠默认值生效。
+   */
+  EVIDENCE_RETENTION_DAYS: z.coerce.number().int().min(0).max(3650).default(0),
+
   /** 设为 false 可关闭进程内定时任务（测试与本地调试用） */
   SCHEDULER_ENABLED: z
     .enum(['true', 'false'])
@@ -111,6 +119,7 @@ export const env = {
   storageRoot: resolveStorageRoot(raw.STORAGE_ROOT),
   backupRoot: resolveStorageRoot(raw.BACKUP_ROOT),
   backupRetentionDays: raw.BACKUP_RETENTION_DAYS,
+  evidenceRetentionDays: raw.EVIDENCE_RETENTION_DAYS,
   schedulerEnabled: raw.SCHEDULER_ENABLED,
 
   seedAdmin: {

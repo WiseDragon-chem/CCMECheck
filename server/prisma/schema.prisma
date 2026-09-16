@@ -120,11 +120,14 @@ model Campaign {
   leaderboardVisible Boolean @default(false) @map("leaderboard_visible")
   /// 每日快照生成时间，HH:mm（北京时间）
   leaderboardTime String @default("06:00") @map("leaderboard_time")
-  /// real | masked —— 排行榜是否脱敏显示姓名
+  /// real | masked —— 排行榜是否脱敏显示姓名。
+  /// 目前 masked 只有一种实现（姓氏＋名字末字，见 core/text.ts 的 maskName）；
+  /// 若要支持别的脱敏形式，扩展 maskName 并在这里增加取值即可 ——
+  /// 曾经有个 name_mask_config 字段，但代码从不读它，留着等于承诺了做不到的事。
   nameDisplayMode String @default("real") @map("name_display_mode")
-  /// JSON 数组，自定义脱敏函数名；留空使用内置「姓氏＋名字末字」
-  nameMaskConfig String? @map("name_mask_config")
-  /// score_desc_valid_days_desc_reached_at_asc | score_desc_...（design.md §9.3）
+  /// design.md §9.3 的排序规则。取值必须与 scoring.service.ts 里
+  /// compareRanking 实际实现的那一种保持一致 —— buildScoredRows 会校验，
+  /// 不支持的值直接报错而不是静默按默认排序。
   tieBreakRule String @default("score_desc_valid_days_desc_reached_at_asc") @map("tie_break_rule")
 
   // ---- 证明材料限制 ----

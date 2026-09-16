@@ -72,7 +72,6 @@ export const ERROR_HANDLING: Record<ErrorCode, ErrorHandling> = {
   ROLE_REQUIRED: { surface: 'toast', text: '当前账号权限不足' },
   CAPABILITY_REQUIRED: { surface: 'toast', text: '当前账号没有执行该操作的权限' },
   NOT_ENTRY_OWNER: { surface: 'toast', text: '只能查看自己的证明材料' },
-  ACCOUNT_LOCKED: { surface: 'toast', text: '账号已被锁定，请联系管理员' },
 
   // ---- 资源 ----
   NOT_FOUND: { surface: 'toast', text: '内容不存在或已被删除' },

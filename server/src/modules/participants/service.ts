@@ -1067,3 +1067,159 @@ export async function buildActivationCodesCsv(): Promise<string> {
 
   return withBom(stringify(records, { header: true, columns: [...ACTIVATION_CODE_EXPORT_HEADERS], ...csvFormulaCast }))
 }
+
+// ---------------------------------------------------------------------------
+// 匿名化（§8.3 末段）
+// ---------------------------------------------------------------------------
+
+export interface AnonymizeResult {
+  participant: PublicAdminParticipant
+  deleted_assets: number
+  revoked_sessions: number
+}
+
+/**
+ * 抹除参赛者的身份，但保留其打卡记录。
+ *
+ * §8.3：「已有正式记录的参赛者不允许直接删除，可进行禁用或匿名化处理」。
+ * 之所以不能删，是因为记录要用于统计与审计；而匿名化是另一种选择 ——
+ * 保留记录、去掉与人的关联。
+ *
+ * 具体抹掉什么：
+ *   * users 的姓名与学号（学号换成随机占位符，唯一约束仍然成立）
+ *   * campaign_participants 上的姓名快照、班级、手机尾号、备注
+ *   * 全部登录会话
+ *   * 默认连证明材料一起删 —— 截图里常常带着姓名或账号，
+ *     留着它们等于匿名化只做了一半
+ *
+ * 保留什么：打卡记录本体（日期、赛道、状态、积分）与审核行为。
+ * 这些不含身份信息，且是榜单与审计所必需的。
+ *
+ * **不可逆**，因此调用方必须带原因，并写入审计。
+ */
+export async function anonymizeParticipant(params: {
+  participantId: string
+  deleteEvidence: boolean
+  reason: string
+  actor: ActorContext
+}): Promise<AnonymizeResult> {
+  if (!params.actor.actorId) throw new AppError('UNAUTHENTICATED', '请先登录')
+
+  const prisma = getPrismaClient()
+  const campaign = await requireCurrentCampaign(prisma)
+  const participant = await requireParticipantInCampaign(prisma, campaign.id, params.participantId)
+
+  if (participant.status === 'anonymized') {
+    throw conflict('STATE_TRANSITION_INVALID', '该参赛者已经匿名化过了')
+  }
+
+  const before = {
+    name: participant.user.name,
+    student_id: participant.user.studentId,
+    class_name: participant.className,
+    participant_status: participant.status,
+  }
+
+  // 先收集要删的文件，事务里删库、事务外删文件。
+  //
+  // 顺序很关键：如果先删文件而事务失败，库里会留下一堆指向空文件的记录 ——
+  // 界面上就是「有记录但图片全裂」。反过来先删库，最坏情况只是留下孤儿文件，
+  // 由 cleanup_orphan_uploads 任务在宽限期后回收。
+  const objectKeys: string[] = []
+  if (params.deleteEvidence) {
+    const assets = await prisma.submissionAsset.findMany({
+      where: { revision: { entry: { participantId: participant.id } } },
+      select: { objectKey: true },
+    })
+    objectKeys.push(...assets.map((asset) => asset.objectKey))
+  }
+
+  const outcome = await runInTransaction(prisma, async (tx) => {
+    // 占位学号仍需满足唯一约束，用随机串而不是可推导的值
+    const placeholderStudentId = `anon-${randomToken(8)}`
+
+    await tx.user.update({
+      where: { id: participant.userId },
+      data: {
+        name: '匿名用户',
+        studentId: placeholderStudentId,
+        status: 'disabled',
+        disabledAt: new Date(),
+        // 匿名化后不应再能登录
+        passwordHash: null,
+      },
+    })
+
+    const sessions = await tx.refreshSession.updateMany({
+      where: { userId: participant.userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    })
+
+    await tx.activationToken.deleteMany({ where: { userId: participant.userId } })
+
+    await tx.campaignParticipant.update({
+      where: { id: participant.id },
+      data: {
+        status: 'anonymized',
+        className: null,
+        phoneSuffix: null,
+        remark: null,
+        studentIdSnapshot: null,
+        nameSnapshot: null,
+      },
+    })
+
+    let deletedAssets = 0
+    if (params.deleteEvidence) {
+      // 备注是参赛者自由填写的内容，可能包含姓名，属于证明材料的一部分
+      await tx.submissionRevision.updateMany({
+        where: { entry: { participantId: participant.id } },
+        data: { note: null },
+      })
+      const deleted = await tx.submissionAsset.deleteMany({
+        where: { revision: { entry: { participantId: participant.id } } },
+      })
+      deletedAssets = deleted.count
+    }
+
+    await recordAudit(
+      {
+        ...params.actor,
+        action: 'participant.anonymize',
+        targetType: 'campaign_participant',
+        targetId: participant.id,
+        before,
+        after: {
+          reason: params.reason,
+          delete_evidence: params.deleteEvidence,
+          deleted_assets: deletedAssets,
+          revoked_sessions: sessions.count,
+        },
+      },
+      tx,
+    )
+
+    return { deletedAssets, revokedSessions: sessions.count }
+  })
+
+  // 文件删除放在事务之后：失败也只是留下孤儿文件，不会造成「有记录无文件」
+  if (objectKeys.length > 0) {
+    const storage = getStorage()
+    for (const key of objectKeys) {
+      try {
+        await storage.delete(key)
+      } catch (error) {
+        // 单个文件删不掉不该让整个匿名化失败 —— 记录已经被抹掉了，
+        // 剩下的文件会被孤儿清理任务收走
+        void error
+      }
+    }
+  }
+
+  const full = await requireParticipantInCampaign(prisma, campaign.id, participant.id)
+  return {
+    participant: toAdminParticipant(full),
+    deleted_assets: outcome.deletedAssets,
+    revoked_sessions: outcome.revokedSessions,
+  }
+}

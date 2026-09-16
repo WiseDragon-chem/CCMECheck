@@ -141,7 +141,6 @@ export const CampaignScalarFieldEnum = {
   leaderboardVisible: 'leaderboardVisible',
   leaderboardTime: 'leaderboardTime',
   nameDisplayMode: 'nameDisplayMode',
-  nameMaskConfig: 'nameMaskConfig',
   tieBreakRule: 'tieBreakRule',
   minImages: 'minImages',
   maxImages: 'maxImages',

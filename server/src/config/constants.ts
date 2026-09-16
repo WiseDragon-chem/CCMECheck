@@ -32,7 +32,6 @@ export const ERROR_STATUS = {
   ROLE_REQUIRED: 403,
   CAPABILITY_REQUIRED: 403,
   NOT_ENTRY_OWNER: 403,
-  ACCOUNT_LOCKED: 403,
 
   NOT_FOUND: 404,
 
@@ -156,9 +155,6 @@ export type RejectReasonCode = (typeof REJECT_REASON_CODES)[number]['code']
 
 export const REJECT_REASON_CODE_VALUES = REJECT_REASON_CODES.map((item) => item.code) as unknown as readonly RejectReasonCode[]
 
-/** 每赛道每日打卡一次，因此同一活动日同一赛道只有一条有效记录（design.md §6.3） */
-export const CHECKIN_CLIENT_TOKEN_HEADER = 'x-client-token'
-
 /**
  * §8.5 临时重新开放的默认时长与上限（分钟）。
  *
@@ -179,9 +175,6 @@ export const MAX_REOPEN_MINUTES = 24 * 60 * 7
  */
 export const OVERALL_TRACK_SENTINEL = '__overall__'
 
-export const SNAPSHOT_STATUSES = ['generating', 'ready', 'failed'] as const
-export type SnapshotStatus = (typeof SNAPSHOT_STATUSES)[number]
-
 export const JOB_TRIGGERS = ['cron', 'manual'] as const
 export type JobTrigger = (typeof JOB_TRIGGERS)[number]
 
@@ -192,6 +185,7 @@ export const JOB_NAMES = [
   'leaderboard_snapshot',
   'cleanup_sessions',
   'cleanup_orphan_uploads',
+  'purge_expired_evidence',
   'campaign_state_transition',
   'leaderboard_rebuild',
   'database_backup',
@@ -265,6 +259,3 @@ export const ORPHAN_UPLOAD_GRACE_HOURS = 24
 
 /** 任务锁的默认持有时长 */
 export const JOB_LOCK_TTL_SECONDS = 30 * 60
-
-/** campaign_participants 表在数据库中的原始表名，锁行时使用 */
-export const JOB_LOCK_HOLDER_PREFIX = 'pid'

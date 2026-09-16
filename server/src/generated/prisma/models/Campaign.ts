@@ -53,7 +53,6 @@ export type CampaignMinAggregateOutputType = {
   leaderboardVisible: boolean | null
   leaderboardTime: string | null
   nameDisplayMode: string | null
-  nameMaskConfig: string | null
   tieBreakRule: string | null
   minImages: number | null
   maxImages: number | null
@@ -78,7 +77,6 @@ export type CampaignMaxAggregateOutputType = {
   leaderboardVisible: boolean | null
   leaderboardTime: string | null
   nameDisplayMode: string | null
-  nameMaskConfig: string | null
   tieBreakRule: string | null
   minImages: number | null
   maxImages: number | null
@@ -103,7 +101,6 @@ export type CampaignCountAggregateOutputType = {
   leaderboardVisible: number
   leaderboardTime: number
   nameDisplayMode: number
-  nameMaskConfig: number
   tieBreakRule: number
   minImages: number
   maxImages: number
@@ -142,7 +139,6 @@ export type CampaignMinAggregateInputType = {
   leaderboardVisible?: true
   leaderboardTime?: true
   nameDisplayMode?: true
-  nameMaskConfig?: true
   tieBreakRule?: true
   minImages?: true
   maxImages?: true
@@ -167,7 +163,6 @@ export type CampaignMaxAggregateInputType = {
   leaderboardVisible?: true
   leaderboardTime?: true
   nameDisplayMode?: true
-  nameMaskConfig?: true
   tieBreakRule?: true
   minImages?: true
   maxImages?: true
@@ -192,7 +187,6 @@ export type CampaignCountAggregateInputType = {
   leaderboardVisible?: true
   leaderboardTime?: true
   nameDisplayMode?: true
-  nameMaskConfig?: true
   tieBreakRule?: true
   minImages?: true
   maxImages?: true
@@ -304,7 +298,6 @@ export type CampaignGroupByOutputType = {
   leaderboardVisible: boolean
   leaderboardTime: string
   nameDisplayMode: string
-  nameMaskConfig: string | null
   tieBreakRule: string
   minImages: number
   maxImages: number
@@ -352,7 +345,6 @@ export type CampaignWhereInput = {
   leaderboardVisible?: Prisma.BoolFilter<"Campaign"> | boolean
   leaderboardTime?: Prisma.StringFilter<"Campaign"> | string
   nameDisplayMode?: Prisma.StringFilter<"Campaign"> | string
-  nameMaskConfig?: Prisma.StringNullableFilter<"Campaign"> | string | null
   tieBreakRule?: Prisma.StringFilter<"Campaign"> | string
   minImages?: Prisma.IntFilter<"Campaign"> | number
   maxImages?: Prisma.IntFilter<"Campaign"> | number
@@ -383,7 +375,6 @@ export type CampaignOrderByWithRelationInput = {
   leaderboardVisible?: Prisma.SortOrder
   leaderboardTime?: Prisma.SortOrder
   nameDisplayMode?: Prisma.SortOrder
-  nameMaskConfig?: Prisma.SortOrderInput | Prisma.SortOrder
   tieBreakRule?: Prisma.SortOrder
   minImages?: Prisma.SortOrder
   maxImages?: Prisma.SortOrder
@@ -417,7 +408,6 @@ export type CampaignWhereUniqueInput = Prisma.AtLeast<{
   leaderboardVisible?: Prisma.BoolFilter<"Campaign"> | boolean
   leaderboardTime?: Prisma.StringFilter<"Campaign"> | string
   nameDisplayMode?: Prisma.StringFilter<"Campaign"> | string
-  nameMaskConfig?: Prisma.StringNullableFilter<"Campaign"> | string | null
   tieBreakRule?: Prisma.StringFilter<"Campaign"> | string
   minImages?: Prisma.IntFilter<"Campaign"> | number
   maxImages?: Prisma.IntFilter<"Campaign"> | number
@@ -448,7 +438,6 @@ export type CampaignOrderByWithAggregationInput = {
   leaderboardVisible?: Prisma.SortOrder
   leaderboardTime?: Prisma.SortOrder
   nameDisplayMode?: Prisma.SortOrder
-  nameMaskConfig?: Prisma.SortOrderInput | Prisma.SortOrder
   tieBreakRule?: Prisma.SortOrder
   minImages?: Prisma.SortOrder
   maxImages?: Prisma.SortOrder
@@ -481,7 +470,6 @@ export type CampaignScalarWhereWithAggregatesInput = {
   leaderboardVisible?: Prisma.BoolWithAggregatesFilter<"Campaign"> | boolean
   leaderboardTime?: Prisma.StringWithAggregatesFilter<"Campaign"> | string
   nameDisplayMode?: Prisma.StringWithAggregatesFilter<"Campaign"> | string
-  nameMaskConfig?: Prisma.StringNullableWithAggregatesFilter<"Campaign"> | string | null
   tieBreakRule?: Prisma.StringWithAggregatesFilter<"Campaign"> | string
   minImages?: Prisma.IntWithAggregatesFilter<"Campaign"> | number
   maxImages?: Prisma.IntWithAggregatesFilter<"Campaign"> | number
@@ -506,7 +494,6 @@ export type CampaignCreateInput = {
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
-  nameMaskConfig?: string | null
   tieBreakRule?: string
   minImages?: number
   maxImages?: number
@@ -537,7 +524,6 @@ export type CampaignUncheckedCreateInput = {
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
-  nameMaskConfig?: string | null
   tieBreakRule?: string
   minImages?: number
   maxImages?: number
@@ -568,7 +554,6 @@ export type CampaignUpdateInput = {
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
-  nameMaskConfig?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tieBreakRule?: Prisma.StringFieldUpdateOperationsInput | string
   minImages?: Prisma.IntFieldUpdateOperationsInput | number
   maxImages?: Prisma.IntFieldUpdateOperationsInput | number
@@ -599,7 +584,6 @@ export type CampaignUncheckedUpdateInput = {
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
-  nameMaskConfig?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tieBreakRule?: Prisma.StringFieldUpdateOperationsInput | string
   minImages?: Prisma.IntFieldUpdateOperationsInput | number
   maxImages?: Prisma.IntFieldUpdateOperationsInput | number
@@ -630,7 +614,6 @@ export type CampaignCreateManyInput = {
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
-  nameMaskConfig?: string | null
   tieBreakRule?: string
   minImages?: number
   maxImages?: number
@@ -655,7 +638,6 @@ export type CampaignUpdateManyMutationInput = {
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
-  nameMaskConfig?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tieBreakRule?: Prisma.StringFieldUpdateOperationsInput | string
   minImages?: Prisma.IntFieldUpdateOperationsInput | number
   maxImages?: Prisma.IntFieldUpdateOperationsInput | number
@@ -680,7 +662,6 @@ export type CampaignUncheckedUpdateManyInput = {
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
-  nameMaskConfig?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tieBreakRule?: Prisma.StringFieldUpdateOperationsInput | string
   minImages?: Prisma.IntFieldUpdateOperationsInput | number
   maxImages?: Prisma.IntFieldUpdateOperationsInput | number
@@ -705,7 +686,6 @@ export type CampaignCountOrderByAggregateInput = {
   leaderboardVisible?: Prisma.SortOrder
   leaderboardTime?: Prisma.SortOrder
   nameDisplayMode?: Prisma.SortOrder
-  nameMaskConfig?: Prisma.SortOrder
   tieBreakRule?: Prisma.SortOrder
   minImages?: Prisma.SortOrder
   maxImages?: Prisma.SortOrder
@@ -736,7 +716,6 @@ export type CampaignMaxOrderByAggregateInput = {
   leaderboardVisible?: Prisma.SortOrder
   leaderboardTime?: Prisma.SortOrder
   nameDisplayMode?: Prisma.SortOrder
-  nameMaskConfig?: Prisma.SortOrder
   tieBreakRule?: Prisma.SortOrder
   minImages?: Prisma.SortOrder
   maxImages?: Prisma.SortOrder
@@ -761,7 +740,6 @@ export type CampaignMinOrderByAggregateInput = {
   leaderboardVisible?: Prisma.SortOrder
   leaderboardTime?: Prisma.SortOrder
   nameDisplayMode?: Prisma.SortOrder
-  nameMaskConfig?: Prisma.SortOrder
   tieBreakRule?: Prisma.SortOrder
   minImages?: Prisma.SortOrder
   maxImages?: Prisma.SortOrder
@@ -893,7 +871,6 @@ export type CampaignCreateWithoutCampaignTracksInput = {
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
-  nameMaskConfig?: string | null
   tieBreakRule?: string
   minImages?: number
   maxImages?: number
@@ -923,7 +900,6 @@ export type CampaignUncheckedCreateWithoutCampaignTracksInput = {
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
-  nameMaskConfig?: string | null
   tieBreakRule?: string
   minImages?: number
   maxImages?: number
@@ -969,7 +945,6 @@ export type CampaignUpdateWithoutCampaignTracksInput = {
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
-  nameMaskConfig?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tieBreakRule?: Prisma.StringFieldUpdateOperationsInput | string
   minImages?: Prisma.IntFieldUpdateOperationsInput | number
   maxImages?: Prisma.IntFieldUpdateOperationsInput | number
@@ -999,7 +974,6 @@ export type CampaignUncheckedUpdateWithoutCampaignTracksInput = {
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
-  nameMaskConfig?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tieBreakRule?: Prisma.StringFieldUpdateOperationsInput | string
   minImages?: Prisma.IntFieldUpdateOperationsInput | number
   maxImages?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1029,7 +1003,6 @@ export type CampaignCreateWithoutParticipantsInput = {
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
-  nameMaskConfig?: string | null
   tieBreakRule?: string
   minImages?: number
   maxImages?: number
@@ -1059,7 +1032,6 @@ export type CampaignUncheckedCreateWithoutParticipantsInput = {
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
-  nameMaskConfig?: string | null
   tieBreakRule?: string
   minImages?: number
   maxImages?: number
@@ -1105,7 +1077,6 @@ export type CampaignUpdateWithoutParticipantsInput = {
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
-  nameMaskConfig?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tieBreakRule?: Prisma.StringFieldUpdateOperationsInput | string
   minImages?: Prisma.IntFieldUpdateOperationsInput | number
   maxImages?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1135,7 +1106,6 @@ export type CampaignUncheckedUpdateWithoutParticipantsInput = {
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
-  nameMaskConfig?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tieBreakRule?: Prisma.StringFieldUpdateOperationsInput | string
   minImages?: Prisma.IntFieldUpdateOperationsInput | number
   maxImages?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1165,7 +1135,6 @@ export type CampaignCreateWithoutCheckinEntriesInput = {
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
-  nameMaskConfig?: string | null
   tieBreakRule?: string
   minImages?: number
   maxImages?: number
@@ -1195,7 +1164,6 @@ export type CampaignUncheckedCreateWithoutCheckinEntriesInput = {
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
-  nameMaskConfig?: string | null
   tieBreakRule?: string
   minImages?: number
   maxImages?: number
@@ -1241,7 +1209,6 @@ export type CampaignUpdateWithoutCheckinEntriesInput = {
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
-  nameMaskConfig?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tieBreakRule?: Prisma.StringFieldUpdateOperationsInput | string
   minImages?: Prisma.IntFieldUpdateOperationsInput | number
   maxImages?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1271,7 +1238,6 @@ export type CampaignUncheckedUpdateWithoutCheckinEntriesInput = {
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
-  nameMaskConfig?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tieBreakRule?: Prisma.StringFieldUpdateOperationsInput | string
   minImages?: Prisma.IntFieldUpdateOperationsInput | number
   maxImages?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1301,7 +1267,6 @@ export type CampaignCreateWithoutScoreAdjustmentsInput = {
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
-  nameMaskConfig?: string | null
   tieBreakRule?: string
   minImages?: number
   maxImages?: number
@@ -1331,7 +1296,6 @@ export type CampaignUncheckedCreateWithoutScoreAdjustmentsInput = {
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
-  nameMaskConfig?: string | null
   tieBreakRule?: string
   minImages?: number
   maxImages?: number
@@ -1377,7 +1341,6 @@ export type CampaignUpdateWithoutScoreAdjustmentsInput = {
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
-  nameMaskConfig?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tieBreakRule?: Prisma.StringFieldUpdateOperationsInput | string
   minImages?: Prisma.IntFieldUpdateOperationsInput | number
   maxImages?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1407,7 +1370,6 @@ export type CampaignUncheckedUpdateWithoutScoreAdjustmentsInput = {
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
-  nameMaskConfig?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tieBreakRule?: Prisma.StringFieldUpdateOperationsInput | string
   minImages?: Prisma.IntFieldUpdateOperationsInput | number
   maxImages?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1437,7 +1399,6 @@ export type CampaignCreateWithoutLeaderboardSnapshotsInput = {
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
-  nameMaskConfig?: string | null
   tieBreakRule?: string
   minImages?: number
   maxImages?: number
@@ -1467,7 +1428,6 @@ export type CampaignUncheckedCreateWithoutLeaderboardSnapshotsInput = {
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
-  nameMaskConfig?: string | null
   tieBreakRule?: string
   minImages?: number
   maxImages?: number
@@ -1513,7 +1473,6 @@ export type CampaignUpdateWithoutLeaderboardSnapshotsInput = {
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
-  nameMaskConfig?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tieBreakRule?: Prisma.StringFieldUpdateOperationsInput | string
   minImages?: Prisma.IntFieldUpdateOperationsInput | number
   maxImages?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1543,7 +1502,6 @@ export type CampaignUncheckedUpdateWithoutLeaderboardSnapshotsInput = {
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
-  nameMaskConfig?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tieBreakRule?: Prisma.StringFieldUpdateOperationsInput | string
   minImages?: Prisma.IntFieldUpdateOperationsInput | number
   maxImages?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1573,7 +1531,6 @@ export type CampaignCreateWithoutImportBatchesInput = {
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
-  nameMaskConfig?: string | null
   tieBreakRule?: string
   minImages?: number
   maxImages?: number
@@ -1603,7 +1560,6 @@ export type CampaignUncheckedCreateWithoutImportBatchesInput = {
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
-  nameMaskConfig?: string | null
   tieBreakRule?: string
   minImages?: number
   maxImages?: number
@@ -1649,7 +1605,6 @@ export type CampaignUpdateWithoutImportBatchesInput = {
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
-  nameMaskConfig?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tieBreakRule?: Prisma.StringFieldUpdateOperationsInput | string
   minImages?: Prisma.IntFieldUpdateOperationsInput | number
   maxImages?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1679,7 +1634,6 @@ export type CampaignUncheckedUpdateWithoutImportBatchesInput = {
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
-  nameMaskConfig?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tieBreakRule?: Prisma.StringFieldUpdateOperationsInput | string
   minImages?: Prisma.IntFieldUpdateOperationsInput | number
   maxImages?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1785,7 +1739,6 @@ export type CampaignSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   leaderboardVisible?: boolean
   leaderboardTime?: boolean
   nameDisplayMode?: boolean
-  nameMaskConfig?: boolean
   tieBreakRule?: boolean
   minImages?: boolean
   maxImages?: boolean
@@ -1817,7 +1770,6 @@ export type CampaignSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   leaderboardVisible?: boolean
   leaderboardTime?: boolean
   nameDisplayMode?: boolean
-  nameMaskConfig?: boolean
   tieBreakRule?: boolean
   minImages?: boolean
   maxImages?: boolean
@@ -1842,7 +1794,6 @@ export type CampaignSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   leaderboardVisible?: boolean
   leaderboardTime?: boolean
   nameDisplayMode?: boolean
-  nameMaskConfig?: boolean
   tieBreakRule?: boolean
   minImages?: boolean
   maxImages?: boolean
@@ -1867,7 +1818,6 @@ export type CampaignSelectScalar = {
   leaderboardVisible?: boolean
   leaderboardTime?: boolean
   nameDisplayMode?: boolean
-  nameMaskConfig?: boolean
   tieBreakRule?: boolean
   minImages?: boolean
   maxImages?: boolean
@@ -1877,7 +1827,7 @@ export type CampaignSelectScalar = {
   updatedAt?: boolean
 }
 
-export type CampaignOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "timezone" | "startDate" | "endDate" | "dailyOpenTime" | "dailyDeadline" | "status" | "activateFrom" | "activateUntil" | "leaderboardVisible" | "leaderboardTime" | "nameDisplayMode" | "nameMaskConfig" | "tieBreakRule" | "minImages" | "maxImages" | "maxImageBytes" | "allowedMimeTypes" | "createdAt" | "updatedAt", ExtArgs["result"]["campaign"]>
+export type CampaignOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "timezone" | "startDate" | "endDate" | "dailyOpenTime" | "dailyDeadline" | "status" | "activateFrom" | "activateUntil" | "leaderboardVisible" | "leaderboardTime" | "nameDisplayMode" | "tieBreakRule" | "minImages" | "maxImages" | "maxImageBytes" | "allowedMimeTypes" | "createdAt" | "updatedAt", ExtArgs["result"]["campaign"]>
 export type CampaignInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   campaignTracks?: boolean | Prisma.Campaign$campaignTracksArgs<ExtArgs>
   participants?: boolean | Prisma.Campaign$participantsArgs<ExtArgs>
@@ -1930,15 +1880,16 @@ export type $CampaignPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
      */
     leaderboardTime: string
     /**
-     * real | masked —— 排行榜是否脱敏显示姓名
+     * real | masked —— 排行榜是否脱敏显示姓名。
+     * 目前 masked 只有一种实现（姓氏＋名字末字，见 core/text.ts 的 maskName）；
+     * 若要支持别的脱敏形式，扩展 maskName 并在这里增加取值即可 ——
+     * 曾经有个 name_mask_config 字段，但代码从不读它，留着等于承诺了做不到的事。
      */
     nameDisplayMode: string
     /**
-     * JSON 数组，自定义脱敏函数名；留空使用内置「姓氏＋名字末字」
-     */
-    nameMaskConfig: string | null
-    /**
-     * score_desc_valid_days_desc_reached_at_asc | score_desc_...（design.md §9.3）
+     * design.md §9.3 的排序规则。取值必须与 scoring.service.ts 里
+     * compareRanking 实际实现的那一种保持一致 —— buildScoredRows 会校验，
+     * 不支持的值直接报错而不是静默按默认排序。
      */
     tieBreakRule: string
     minImages: number
@@ -2393,7 +2344,6 @@ export interface CampaignFieldRefs {
   readonly leaderboardVisible: Prisma.FieldRef<"Campaign", 'Boolean'>
   readonly leaderboardTime: Prisma.FieldRef<"Campaign", 'String'>
   readonly nameDisplayMode: Prisma.FieldRef<"Campaign", 'String'>
-  readonly nameMaskConfig: Prisma.FieldRef<"Campaign", 'String'>
   readonly tieBreakRule: Prisma.FieldRef<"Campaign", 'String'>
   readonly minImages: Prisma.FieldRef<"Campaign", 'Int'>
   readonly maxImages: Prisma.FieldRef<"Campaign", 'Int'>

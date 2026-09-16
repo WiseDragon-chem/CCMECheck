@@ -96,6 +96,8 @@ npm run dev
 
 - `STORAGE_ROOT` —— 证明材料与导入预览文件的私有根目录，默认为 `./storage`。
 - `SCHEDULER_ENABLED` —— 设为 `false` 可关闭进程内定时任务，测试与本地调试用。
+- `EVIDENCE_RETENTION_DAYS` —— 活动结束多少天后自动删除证明材料。**默认 0，即永不删除。**
+  自动删除用户上传的材料不可逆，必须由组织者显式开启。对应 design.md §18.8 的遗留问题。
 
 测试环境不读取 `.env`（`NODE_ENV=test` 时跳过），全部变量由 `tests/test-env.ts` 提供，
 避免开发库的连接串覆盖测试库。
@@ -187,6 +189,7 @@ Zod schema 在 `schema.ts`（同时供 OpenAPI 注册）。
 | PATCH | `/admin/participants/:participantId` | super_admin | 启用/禁用 |
 | POST | `/admin/participants/:participantId/activation-code` | super_admin | 重发激活码 |
 | POST | `/admin/participants/:participantId/reset-password` | super_admin | 重置密码 |
+| POST | `/admin/participants/:participantId/anonymize` | super_admin | 匿名化（不可逆） |
 | GET | `/admin/participants/template.csv` | super_admin | 名单模板 |
 | GET | `/admin/participants/activation-codes.csv` | super_admin | 激活码状态导出 |
 | POST | `/admin/participants/import/preview` | super_admin | 校验并预览名单 |
@@ -281,6 +284,7 @@ ISO 文本的字典序与时间序一致，因此既能范围查询，也能让�
 | 每小时（:17） | 清理失效会话与激活码 |
 | 每日 03:33 | 清理孤儿上传 |
 | 每日 04:47 | 数据库备份（`VACUUM INTO`） |
+| 每日 05:23 | 按保留期清理证明材料（**默认不启用**） |
 | 每 5 分钟 | 活动状态边界切换 |
 
 快照任务没有写死 `0 6 * * *`，而是每小时触发后比对活动配置的排行榜时间 ——
@@ -289,7 +293,26 @@ ISO 文本的字典序与时间序一致，因此既能范围查询，也能让�
 每个任务统一经 `runJob` 执行，从而获得 `job_locks` 互斥与 `job_runs` 记录。
 进程启动时会回收上次崩溃残留的 `running` 记录。
 
-### 7.6 安全
+### 7.6 匿名化与材料保留
+
+§8.3 要求「已有正式记录的参赛者不允许直接删除，可进行禁用或匿名化处理」——
+不能删是因为记录要用于统计与审计，匿名化则是保留记录、去掉与人的关联。
+
+`POST /admin/participants/:id/anonymize` 抹除：姓名与学号（换成随机占位符，
+唯一约束仍成立）、姓名快照、班级、手机尾号、备注、全部登录会话与激活码。
+**默认连证明材料一起删** —— 截图里常常带着姓名或账号，留着等于只做了一半。
+争议未了结时可传 `delete_evidence: false` 保留。
+
+保留的是打卡记录本体（日期、赛道、状态、积分）与审核行为，它们不含身份信息
+且是榜单与审计所必需。匿名化后该参赛者不再出现在排行榜上。
+
+材料的**保留期**由 `EVIDENCE_RETENTION_DAYS` 控制，默认不自动删除（§18.8）。
+清理任务只删材料与备注，同样保留打卡记录。
+
+两处都是不可逆操作，都写审计；且都**先删库、后删文件** ——
+反过来一旦事务失败，库里会留下指向空文件的记录，界面上就是「有记录但图片全裂」。
+
+### 7.7 安全
 
 - 密码使用 Argon2id（19 MiB / 2 次迭代）；账号不存在时也做一次哈希校验，避免计时侧信道枚举学号。
 - 激活码与刷新令牌只存 SHA-256 哈希，明文只在生成时返回一次。
@@ -346,8 +369,12 @@ ISO 文本的字典序与时间序一致，因此既能范围查询，也能让�
 
 ### 8.4 仍待确认
 
-- §18 列出的活动日期、赛道证明要求、默认分值、同分奖项分配、脱敏规则、激活码发放渠道、
-  图片保留期限、部署环境等，均需业务方确认后才能定稿配置。
+§18 列出的活动日期、赛道证明要求、默认分值与权重、同分奖项分配、姓名脱敏规则、
+激活码发放渠道、部署环境等，均需业务方确认后才能定稿配置。
+
+其中**图片保留期限**已经从「代码缺口」变成了纯粹的配置决定：
+机制已就绪（`EVIDENCE_RETENTION_DAYS` + 每日清理任务），
+差的是组织者给出一个天数，以及决定是否开启。
 
 ---
 
