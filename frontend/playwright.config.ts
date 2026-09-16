@@ -37,6 +37,20 @@ export default defineConfig({
       name: 'mobile-chrome',
       // 参赛者端是手机优先的，端到端也用手机尺寸跑
       use: { ...devices['Pixel 7'] },
+      // 管理后台是三栏的桌面界面，在手机尺寸下测不出真实行为（见 admin.spec.ts）
+      testIgnore: '**/admin.spec.ts',
+    },
+    {
+      /**
+       * 管理后台跑在桌面尺寸上。
+       *
+       * 不是为了「更接近真实环境」这种泛泛的理由：审核页的布局是
+       * `calc(100vh - 页头)` 的三栏，在 412px 宽下三栏会被压到无法阅读，
+       * 断言键盘流时连「光标在哪一条」都会因为元素被挤出视口而失败。
+       */
+      name: 'desktop-chrome',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: '**/admin.spec.ts',
     },
   ],
 })
