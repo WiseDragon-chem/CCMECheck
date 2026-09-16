@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router'
 import { Alert, Button, Form, Input, Typography, App as AntdApp } from 'antd'
 import { presentError } from '@/api/presentError'
 import AuthLayout from '@/layouts/AuthLayout'
+import { zh } from '@/locales/zh-CN'
 import { paths } from '@/routes/paths'
 import { useAuthStore } from '@/stores/auth.store'
 
@@ -16,6 +17,7 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { message } = AntdApp.useApp()
+  const t = zh.auth
 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -34,7 +36,7 @@ export default function LoginPage() {
 
       // 账号未激活不是错误，是「你还没走激活流程」——给个去激活的入口更实用
       if (presented.code === 'ACCOUNT_NOT_ACTIVATED') {
-        message.info('该账号尚未激活，请先使用激活码完成激活')
+        message.info(t.login.notActivatedNotice)
         navigate(paths.activate)
         return
       }
@@ -47,34 +49,34 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthLayout title="登录" subtitle="使用学号与密码登录">
+    <AuthLayout title={t.login.title} subtitle={t.login.subtitle}>
       {error && <Alert type="error" message={error} showIcon style={{ marginBottom: 16 }} />}
 
       <Form<FormValues> layout="vertical" onFinish={onFinish} requiredMark={false} size="large">
         <Form.Item
           name="student_id"
-          label="学号"
-          rules={[{ required: true, message: '请填写学号' }]}
+          label={t.login.studentId}
+          rules={[{ required: true, message: t.login.studentIdRequired }]}
         >
-          <Input placeholder="请输入学号" autoComplete="username" inputMode="numeric" />
+          <Input placeholder={t.login.studentIdPlaceholder} autoComplete="username" inputMode="numeric" />
         </Form.Item>
 
-        <Form.Item name="password" label="密码" rules={[{ required: true, message: '请填写密码' }]}>
-          <Input.Password placeholder="请输入密码" autoComplete="current-password" />
+        <Form.Item name="password" label={t.login.password} rules={[{ required: true, message: t.login.passwordRequired }]}>
+          <Input.Password placeholder={t.login.passwordPlaceholder} autoComplete="current-password" />
         </Form.Item>
 
         <Button type="primary" htmlType="submit" block loading={submitting}>
-          登录
+          {t.login.submit}
         </Button>
       </Form>
 
       <div style={{ marginTop: 16, textAlign: 'center' }}>
-        <Typography.Text type="secondary">还没有激活？</Typography.Text>{' '}
-        <Link to={paths.activate}>去激活</Link>
+        <Typography.Text type="secondary">{t.login.notActivatedYet}</Typography.Text>{' '}
+        <Link to={paths.activate}>{t.login.goActivate}</Link>
       </div>
 
       <Typography.Paragraph type="secondary" style={{ fontSize: 12, marginTop: 16, marginBottom: 0 }}>
-        忘记密码请联系活动管理员重置。
+        {t.login.forgotPassword}
       </Typography.Paragraph>
     </AuthLayout>
   )

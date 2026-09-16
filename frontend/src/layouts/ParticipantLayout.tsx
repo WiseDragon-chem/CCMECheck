@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router'
 import { BarChartOutlined, HomeOutlined, UnorderedListOutlined, UserOutlined } from '@ant-design/icons'
+import { zh } from '@/locales/zh-CN'
 import { paths } from '@/routes/paths'
 
 /**
@@ -13,10 +14,10 @@ import { paths } from '@/routes/paths'
 
 /** 图标与文案并用 —— design.md §7.3 对无障碍的要求同样适用于导航 */
 const NAV_ITEMS = [
-  { key: 'home', label: '首页', to: paths.home, icon: <HomeOutlined /> },
-  { key: 'records', label: '记录', to: paths.records, icon: <UnorderedListOutlined /> },
-  { key: 'leaderboard', label: '排行榜', to: paths.leaderboard, icon: <BarChartOutlined /> },
-  { key: 'me', label: '我的', to: paths.me, icon: <UserOutlined /> },
+  { key: 'home', label: zh.nav.home, to: paths.home, icon: <HomeOutlined /> },
+  { key: 'records', label: zh.nav.records, to: paths.records, icon: <UnorderedListOutlined /> },
+  { key: 'leaderboard', label: zh.nav.leaderboard, to: paths.leaderboard, icon: <BarChartOutlined /> },
+  { key: 'me', label: zh.nav.me, to: paths.me, icon: <UserOutlined /> },
 ] as const
 
 export default function ParticipantLayout() {
@@ -24,7 +25,7 @@ export default function ParticipantLayout() {
     <div className="participant-shell participant-shell--with-nav">
       <Outlet />
 
-      <nav className="bottom-nav" aria-label="主导航">
+      <nav className="bottom-nav" aria-label={zh.nav.label}>
         {NAV_ITEMS.map((item) => (
           <NavLink
             key={item.key}

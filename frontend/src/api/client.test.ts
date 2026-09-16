@@ -14,7 +14,6 @@ import { clearAccessToken, getAccessToken, setAccessToken } from './tokenStore'
 const API = 'http://localhost:3000/api/v1'
 
 let refreshCalls = 0
-let requestCalls = 0
 /** 每个用例自行决定 /auth/refresh 返回成功还是 401 */
 let refreshBehaviour: () => Response = () =>
   HttpResponse.json({ access_token: 'fresh-token', token_type: 'Bearer', expires_in: 900, user: {} })
@@ -31,7 +30,6 @@ afterAll(() => server.close())
 
 beforeEach(() => {
   refreshCalls = 0
-  requestCalls = 0
   refreshBehaviour = () =>
     HttpResponse.json({ access_token: 'fresh-token', token_type: 'Bearer', expires_in: 900, user: {} })
   clearAccessToken()
@@ -58,7 +56,6 @@ function guardedEndpoint(options: { failFirstWith: string; succeeding: unknown }
   server.use(
     http.get(`${API}/campaigns/current`, ({ request: req }) => {
       calls += 1
-      requestCalls += 1
       const auth = req.headers.get('authorization')
       if (calls === 1) return errorResponse(options.failFirstWith)
       return HttpResponse.json({ ...(options.succeeding as object), _auth: auth })

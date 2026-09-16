@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router'
 import { Button, Result } from 'antd'
+import { zh } from '@/locales/zh-CN'
 import { paths } from '@/routes/paths'
 
 export default function NotFoundPage() {
@@ -8,11 +9,11 @@ export default function NotFoundPage() {
     <div className="centered-page">
       <Result
         status="404"
-        title="页面不存在"
-        subTitle="链接可能已经失效，或者地址输错了。"
+        title={zh.error.notFoundTitle}
+        subTitle={zh.error.notFoundSubtitle}
         extra={
           <Button type="primary" onClick={() => navigate(paths.home)}>
-            回到首页
+            {zh.common.backHome}
           </Button>
         }
       />

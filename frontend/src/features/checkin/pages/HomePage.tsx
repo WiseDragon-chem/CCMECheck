@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Alert, Card, Empty, Result, Skeleton, Space, Typography } from 'antd'
@@ -8,6 +8,7 @@ import { qk } from '@/api/queryKeys'
 import type { TodayCard } from '@/api/types'
 import { serverNow, syncServerClock, useTicker } from '@/hooks/useServerClock'
 import { formatActivityDate, formatRemaining } from '@/lib/datetime'
+import { zh } from '@/locales/zh-CN'
 import { paths } from '@/routes/paths'
 import { resolveCardDisplayState } from '../cardStateMeta'
 import TrackCard from '../components/TrackCard'
@@ -20,8 +21,9 @@ import TrackCard from '../components/TrackCard'
  */
 export default function HomePage() {
   const navigate = useNavigate()
-  // 每秒触发一次重算。时间本身取 serverNow()，不用设备时钟。
-  const tick = useTicker(1000)
+  // 每秒触发一次重渲染，倒计时因此保持更新。
+  // 不接返回值：这个 hook 的重渲染靠它内部的定时器驱动，值本身用不上。
+  useTicker(1000)
 
   const campaignQuery = useQuery({
     queryKey: qk.campaign,
@@ -48,14 +50,17 @@ export default function HomePage() {
    *
    * 响应里的 `seconds_to_deadline` 是**那一刻的快照**，直接展示的话它永远不动。
    * 要用它和 `server_time` 反推出截止的绝对时刻，再减去校正后的当前时间。
+   *
+   * 不用 useMemo：这个计算很便宜，而组件每秒都会因为 useTicker 重渲染一次，
+   * 直接在渲染期算最直白。用 useMemo 反而要显式把 tick 放进依赖里 ——
+   * 那个依赖在 lint 看来是多余的，需要额外解释。
    */
-  const secondsToDeadline = useMemo(() => {
+  const secondsToDeadline = (() => {
     const data = todayQuery.data
     if (!data || data.seconds_to_deadline === null) return null
     const deadlineMs = Date.parse(data.server_time) + data.seconds_to_deadline * 1000
     return Math.max(0, Math.floor((deadlineMs - serverNow()) / 1000))
-    // tick 让这个值每秒重算一次
-  }, [todayQuery.data, tick])
+  })()
 
   /**
    * 倒计时归零时重新拉取，让服务器给结论。
@@ -90,9 +95,9 @@ export default function HomePage() {
       <div className="page">
         <Result
           status="warning"
-          title="没能加载今日打卡"
-          subTitle="请检查网络后重试。"
-          extra={<a onClick={() => void todayQuery.refetch()}>重新加载</a>}
+          title={zh.checkin.home.loadFailed}
+          subTitle={zh.common.loadFailed}
+          extra={<a onClick={() => void todayQuery.refetch()}>{zh.common.retry}</a>}
         />
       </div>
     )
@@ -123,10 +128,10 @@ export default function HomePage() {
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description={
             <span>
-              当前账号不是本次活动的参赛者。
+              {zh.checkin.home.notParticipant}
               <br />
               <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                如需参赛，请联系管理员把你加入参赛名单。
+                {zh.checkin.home.notParticipantHint}
               </Typography.Text>
             </span>
           }
@@ -149,7 +154,7 @@ export default function HomePage() {
         </Typography.Text>
         {remaining && (
           <Typography.Text style={{ fontSize: 13, color: '#faad14' }}>
-            距今日截止 {remaining}
+            {zh.checkin.home.countdown(remaining)}
           </Typography.Text>
         )}
       </Space>
@@ -165,12 +170,12 @@ export default function HomePage() {
           style={{ marginBottom: 12 }}
           message={
             campaign.status === 'settling'
-              ? '活动已进入结算阶段，停止提交打卡'
+              ? zh.checkin.home.campaignSettling
               : campaign.status === 'finished'
-                ? '活动已结束'
-                : '活动当前未开放打卡'
+                ? zh.checkin.home.campaignFinished
+                : zh.checkin.home.campaignNotOpen
           }
-          description="已有记录的审核结果仍可查看。"
+          description={zh.checkin.home.campaignStatusDetail}
         />
       )}
 
@@ -189,7 +194,7 @@ export default function HomePage() {
       {campaign.leaderboard_visible && (
         <Card size="small" style={{ marginTop: 4 }}>
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            排行榜每日 {campaign.leaderboard_time} 更新，今日通过的记录将在下次更新后计入。
+            {zh.checkin.home.leaderboardCadence(campaign.leaderboard_time)}
           </Typography.Text>
         </Card>
       )}

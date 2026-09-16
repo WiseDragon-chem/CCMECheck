@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env'
+import { zh } from '@/locales/zh-CN'
 import { clearAccessToken, getAccessToken, setAccessToken } from './tokenStore'
 import type { ErrorCode, ErrorResponseBody } from './types'
 
@@ -127,7 +128,7 @@ async function performRefresh(): Promise<string> {
     throw new ApiError({
       code: body?.code ?? 'UNKNOWN',
       status: response.status,
-      message: body?.message ?? '登录状态已失效',
+      message: body?.message ?? zh.upload.sessionExpired,
       requestId: body?.request_id,
       details: body?.details,
     })
@@ -251,7 +252,7 @@ async function send<T>(path: string, options: RequestOptions, state: RetryState)
   const error = new ApiError({
     code,
     status: response.status,
-    message: errorBody?.message ?? `请求失败（${response.status}）`,
+    message: errorBody?.message ?? zh.upload.requestFailed(response.status),
     requestId: errorBody?.request_id,
     details: errorBody?.details,
   })

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Alert, App as AntdApp, Button, Card, Input, Progress, Result, Skeleton, Space, Typography } from 'antd'
@@ -10,8 +10,10 @@ import { submitCheckin } from '@/api/upload'
 import { serverNow, syncServerClock, useTicker } from '@/hooks/useServerClock'
 import { newClientToken } from '@/lib/clientToken'
 import { formatActivityDate, formatCstTime, formatRemaining } from '@/lib/datetime'
+import { zh } from '@/locales/zh-CN'
 import { paths } from '@/routes/paths'
-import ImagePicker, { type SelectedImage } from '../components/ImagePicker'
+import ImagePicker from '../components/ImagePicker'
+import type { SelectedImage } from '../components/imagePicker.utils'
 import { resolveCardDisplayState } from '../cardStateMeta'
 
 /**
@@ -41,11 +43,20 @@ export default function SubmitPage() {
    *
    * 反过来，内容没变时（比如网络失败后重试）保持同一个键，
    * 才是真正的防重复提交。
+   *
+   * 用 useMemo 而不是「state + effect 里 setState」：后者会在每次内容变化时
+   * 触发一次额外的渲染，而且 react-hooks 明确禁止在 effect 里同步 setState。
+   * useMemo 的语义正好对得上这里的需求 —— 依赖不变就复用，变了才重新生成。
+   *
+   * 理论上 React 可以丢弃 memo 重算，那会为同样的内容生成一个新键，
+   * 后果是同一槽位多出一个内容相同的版本 —— 不会错数据，只是多一条历史。
+   *
+   * eslint-disable-next-line：这两个依赖**不是**回调里用到的值，
+   * 而是「内容变了就换键」的触发器本身。exhaustive-deps 判断的是
+   * 「依赖有没有在回调里用到」，无法表达「仅作为失效信号」这种用法。
    */
-  const [clientToken, setClientToken] = useState(() => newClientToken())
-  useEffect(() => {
-    setClientToken(newClientToken())
-  }, [images, note])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const clientToken = useMemo(() => newClientToken(), [images, note])
 
   const campaignQuery = useQuery({ queryKey: qk.campaign, queryFn: fetchCurrentCampaign, staleTime: Infinity })
   const todayQuery = useQuery({ queryKey: qk.today, queryFn: fetchToday, staleTime: 15_000 })
@@ -67,8 +78,8 @@ export default function SubmitPage() {
       }),
     onSuccess: (result) => {
       // 命中幂等键说明上一次其实已经落库了，对用户来说同样是成功
-      if (result.idempotent_replay) message.info('这次提交此前已经完成')
-      else message.success('已提交，等待审核')
+      if (result.idempotent_replay) message.info(zh.checkin.submit.alreadySubmitted)
+      else message.success(zh.checkin.submit.submitted)
 
       void queryClient.invalidateQueries({ queryKey: qk.today })
       void queryClient.invalidateQueries({ queryKey: ['checkins', 'list'] })
@@ -93,9 +104,9 @@ export default function SubmitPage() {
       <div className="page">
         <Result
           status="warning"
-          title="没能加载打卡信息"
-          subTitle="请检查网络后重试。"
-          extra={<a onClick={() => void todayQuery.refetch()}>重新加载</a>}
+          title={zh.checkin.submit.loadFailed}
+          subTitle={zh.common.loadFailed}
+          extra={<a onClick={() => void todayQuery.refetch()}>{zh.common.retry}</a>}
         />
       </div>
     )
@@ -110,9 +121,9 @@ export default function SubmitPage() {
       <div className="page">
         <Result
           status="404"
-          title="赛道不存在"
-          subTitle="该赛道不在此活动中，或已停用。"
-          extra={<Button type="primary" onClick={() => navigate(paths.home)}>回到首页</Button>}
+          title={zh.checkin.submit.trackNotFound}
+          subTitle={zh.checkin.submit.trackNotFoundDetail}
+          extra={<Button type="primary" onClick={() => navigate(paths.home)}>{zh.common.backHome}</Button>}
         />
       </div>
     )
@@ -127,13 +138,13 @@ export default function SubmitPage() {
       <div className="page">
         <Result
           status="info"
-          title={displayState === 'approved' ? '该记录已审核通过' : '该记录已失效'}
+          title={displayState === 'approved' ? zh.checkin.submit.alreadyApprovedTitle : zh.checkin.submit.invalidTitle}
           subTitle={
             displayState === 'approved'
-              ? '如需修改，请联系管理员重新打开该记录。'
-              : '该记录已被管理员处置，无法再次提交。'
+              ? zh.checkin.submit.alreadyApprovedDetail
+              : zh.checkin.submit.invalidDetail
           }
-          extra={<Button type="primary" onClick={() => navigate(paths.home)}>回到首页</Button>}
+          extra={<Button type="primary" onClick={() => navigate(paths.home)}>{zh.common.backHome}</Button>}
         />
       </div>
     )
@@ -144,9 +155,9 @@ export default function SubmitPage() {
       <div className="page">
         <Result
           status="warning"
-          title={displayState === 'submit_closed' ? '活动已停止提交' : '今日打卡已截止'}
-          subTitle="本活动日的打卡不能再提交或修改。"
-          extra={<Button type="primary" onClick={() => navigate(paths.home)}>回到首页</Button>}
+          title={displayState === 'submit_closed' ? zh.checkin.submit.closedTitle : zh.checkin.submit.missedTitle}
+          subTitle={zh.checkin.submit.closedDetail}
+          extra={<Button type="primary" onClick={() => navigate(paths.home)}>{zh.common.backHome}</Button>}
         />
       </div>
     )
@@ -178,7 +189,7 @@ export default function SubmitPage() {
         </Typography.Title>
         <Typography.Text type="secondary" style={{ fontSize: 13 }}>
           {formatActivityDate(todayQuery.data.activity_date)}
-          {remainingSeconds !== null && remainingSeconds > 0 && ` · 距截止 ${formatRemaining(remainingSeconds)}`}
+          {remainingSeconds !== null && remainingSeconds > 0 && zh.checkin.home.deadlineCountdownHint(formatRemaining(remainingSeconds))}
         </Typography.Text>
       </Space>
 
@@ -187,8 +198,8 @@ export default function SubmitPage() {
           type="warning"
           showIcon
           style={{ marginBottom: 12 }}
-          message={`管理员已临时重新开放至 ${formatCstTime(reopenExpiresAt)}`}
-          description="请在此时间前完成提交。"
+          message={zh.checkin.submit.reopenBanner(formatCstTime(reopenExpiresAt))}
+          description={zh.checkin.submit.reopenDetail}
         />
       )}
 
@@ -201,20 +212,20 @@ export default function SubmitPage() {
           type="info"
           showIcon
           style={{ marginBottom: 16 }}
-          message="有效证明要求"
+          message={zh.checkin.submit.proofRequirement}
           description={<span style={{ whiteSpace: 'pre-wrap' }}>{trackConfig.proof_instructions}</span>}
         />
       )}
 
-      <Card size="small" title="证明材料" style={{ marginBottom: 16 }}>
+      <Card size="small" title={zh.checkin.submit.materials} style={{ marginBottom: 16 }}>
         <ImagePicker value={images} onChange={setImages} rules={rules} disabled={submitting} />
       </Card>
 
-      <Card size="small" title="文字备注" style={{ marginBottom: 16 }}>
+      <Card size="small" title={zh.checkin.submit.note} style={{ marginBottom: 16 }}>
         <Input.TextArea
           value={note}
           onChange={(event) => setNote(event.target.value)}
-          placeholder="可选，补充说明本次打卡的内容"
+          placeholder={zh.checkin.submit.notePlaceholder}
           maxLength={1000}
           showCount
           autoSize={{ minRows: 2, maxRows: 5 }}
@@ -238,7 +249,7 @@ export default function SubmitPage() {
         <div className="submit-progress">
           <Progress percent={percent} status="active" />
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            {percent < 100 ? '正在上传证明材料…' : '服务器正在处理图片…'}
+            {percent < 100 ? zh.checkin.submit.uploading : zh.checkin.submit.processing}
           </Typography.Text>
         </div>
       )}
@@ -251,17 +262,17 @@ export default function SubmitPage() {
         disabled={tooFew}
         onClick={() => submit.mutate()}
       >
-        {submit.isError ? '重试提交' : '提交'}
+        {submit.isError ? zh.common.retrySubmit : zh.common.submit}
       </Button>
 
       {tooFew && (
         <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', textAlign: 'center', marginTop: 8 }}>
-          至少需要 {rules.min_images} 张证明材料
+          {zh.checkin.submit.minImages(rules.min_images)}
         </Typography.Text>
       )}
 
       <Typography.Paragraph type="secondary" style={{ fontSize: 12, marginTop: 16, marginBottom: 24 }}>
-        提交后可在今日截止前重新提交，审核仅以最新一次为准。
+        {zh.checkin.submit.resubmittedNotice}
       </Typography.Paragraph>
     </div>
   )

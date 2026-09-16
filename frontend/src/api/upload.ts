@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env'
+import { zh } from '@/locales/zh-CN'
 import { ApiError, notifyAuthLost, refreshAccessToken } from './client'
 import { getAccessToken } from './tokenStore'
 import type { ErrorCode, SubmitCheckinResult } from './types'
@@ -90,7 +91,7 @@ async function uploadWithProgress(
         new ApiError({
           code: (body?.code as ErrorCode | undefined) ?? 'UNKNOWN',
           status: xhr.status,
-          message: body?.message ?? `上传失败（${xhr.status}）`,
+          message: body?.message ?? zh.upload.failed(xhr.status),
           requestId: body?.request_id,
           details: body?.details,
         }),
@@ -98,13 +99,13 @@ async function uploadWithProgress(
     }
 
     xhr.onerror = () =>
-      reject(new ApiError({ code: 'UNKNOWN', status: 0, message: '网络异常，请检查网络后重试' }))
+      reject(new ApiError({ code: 'UNKNOWN', status: 0, message: zh.upload.networkError }))
 
     xhr.ontimeout = () =>
-      reject(new ApiError({ code: 'UNKNOWN', status: 0, message: '上传超时，请重试' }))
+      reject(new ApiError({ code: 'UNKNOWN', status: 0, message: zh.upload.timeout }))
 
     xhr.onabort = () =>
-      reject(new ApiError({ code: 'UNKNOWN', status: 0, message: '已取消上传' }))
+      reject(new ApiError({ code: 'UNKNOWN', status: 0, message: zh.upload.aborted }))
 
     input.signal?.addEventListener('abort', () => xhr.abort(), { once: true })
 

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Card, Typography } from 'antd'
+import { zh } from '@/locales/zh-CN'
 
 /**
  * 登录与激活页的共用外壳。
@@ -17,9 +18,9 @@ export default function AuthLayout({ title, subtitle, children }: {
       <div className="centered-page__card">
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <Typography.Title level={3} style={{ marginBottom: 4 }}>
-            国庆打卡
+            {zh.app.name}
           </Typography.Title>
-          <Typography.Text type="secondary">化学与分子工程学院</Typography.Text>
+          <Typography.Text type="secondary">{zh.app.subtitle}</Typography.Text>
         </div>
 
         <Card>

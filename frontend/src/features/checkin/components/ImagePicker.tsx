@@ -6,7 +6,15 @@ import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates, useS
 import { CSS } from '@dnd-kit/utilities'
 import { Button, Typography } from 'antd'
 import { CloseOutlined, HolderOutlined, PlusOutlined } from '@ant-design/icons'
-import { detectImageTypeFromFile, type DetectedImageType } from '@/lib/imageMagicBytes'
+import { zh } from '@/locales/zh-CN'
+import {
+  createSelectedImage,
+  describeRules,
+  releaseSelectedImages,
+  validateFile,
+  type SelectedImage,
+  type UploadRules,
+} from './imagePicker.utils'
 
 /**
  * 证明材料的选取、预览与排序（design.md §7.4）。
@@ -14,89 +22,16 @@ import { detectImageTypeFromFile, type DetectedImageType } from '@/lib/imageMagi
  * 用 dnd-kit 而不是手写拖拽，是因为它自带 KeyboardSensor：
  * 空格拿起、方向键移动、空格放下 —— 键盘用户与读屏用户同样能用。
  * 单独再配一套「左移/右移」按钮反而重复。
+ *
+ * 类型与纯函数都在 imagePicker.utils.ts。组件文件里一旦出现非组件的导出，
+ * 热更新就会退化成整页刷新 —— 改一行样式都要重新走一遍登录。
  */
-
-export interface SelectedImage {
-  /** 稳定标识，用作 React key 与拖拽 id。不能用文件名（可能重名） */
-  id: string
-  file: File
-  /** 预览用的 object URL，卸载或移除时必须 revoke */
-  previewUrl: string
-}
-
-export interface UploadRules {
-  min_images: number
-  max_images: number
-  max_image_bytes: number
-  allowed_mime_types: string[]
-}
-
 export interface ImagePickerProps {
   value: SelectedImage[]
   onChange: (images: SelectedImage[]) => void
   rules: UploadRules
   disabled?: boolean
 }
-
-let idCounter = 0
-function nextId(): string {
-  idCounter += 1
-  return `img-${idCounter}`
-}
-
-export function createSelectedImage(file: File): SelectedImage {
-  return { id: nextId(), file, previewUrl: URL.createObjectURL(file) }
-}
-
-/** 释放不再使用的 object URL，否则手机上反复重选会吃光内存 */
-export function releaseSelectedImages(images: SelectedImage[]): void {
-  for (const image of images) URL.revokeObjectURL(image.previewUrl)
-}
-
-const MIME_LABELS: Record<string, string> = {
-  'image/jpeg': 'JPEG',
-  'image/png': 'PNG',
-  'image/webp': 'WebP',
-}
-
-function describeRules(rules: UploadRules): string {
-  const formats = rules.allowed_mime_types.map((mime) => MIME_LABELS[mime] ?? mime).join('、')
-  const mb = Math.round((rules.max_image_bytes / 1024 / 1024) * 10) / 10
-  return `${rules.min_images}–${rules.max_images} 张，${formats}，单张不超过 ${mb} MB`
-}
-
-function formatSize(bytes: number): string {
-  return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.ceil(bytes / 1024)} KB`
-}
-
-/**
- * 选图前的校验。
- *
- * 全部在本地先拦一遍：手机上传一张 10MB 的图要几十秒，
- * 等传完再被服务端拒绝是对用户时间的浪费。
- */
-export async function validateFile(
-  file: File,
-  rules: UploadRules,
-): Promise<{ ok: true } | { ok: false; reason: string }> {
-  if (file.size > rules.max_image_bytes) {
-    const mb = Math.round((rules.max_image_bytes / 1024 / 1024) * 10) / 10
-    return { ok: false, reason: `「${file.name}」${formatSize(file.size)}，超过单张 ${mb} MB 的限制` }
-  }
-
-  const detected: DetectedImageType = await detectImageTypeFromFile(file)
-  if (!detected) {
-    // §7.4：不接受仅修改扩展名的伪装文件
-    return { ok: false, reason: `「${file.name}」不是有效的图片，可能只是改了扩展名` }
-  }
-  if (!rules.allowed_mime_types.includes(detected)) {
-    return { ok: false, reason: `「${file.name}」是 ${detected}，当前活动不接受该格式` }
-  }
-
-  return { ok: true }
-}
-
-export { describeRules }
 
 export default function ImagePicker({ value, onChange, rules, disabled }: ImagePickerProps) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -107,9 +42,14 @@ export default function ImagePicker({ value, onChange, rules, disabled }: ImageP
    *
    * 用 ref 存一份最新的，是因为卸载时拿不到当时的 props ——
    * 只依赖 [] 的 effect 会捕获到初始的空数组。
+   *
+   * ref 的更新必须放在 effect 里而不是渲染期：渲染期改 ref 在并发渲染下
+   * 会出错（React 可能丢弃或重放一次渲染），而且 react-hooks 会直接报错。
    */
   const latestImages = useRef(value)
-  latestImages.current = value
+  useEffect(() => {
+    latestImages.current = value
+  })
   useEffect(() => () => releaseSelectedImages(latestImages.current), [])
 
   const sensors = useSensors(
@@ -126,11 +66,11 @@ export default function ImagePicker({ value, onChange, rules, disabled }: ImageP
       const incoming = Array.from(files)
       const room = rules.max_images - value.length
       if (room <= 0) {
-        setError(`最多只能上传 ${rules.max_images} 张图片`)
+        setError(zh.checkin.submit.tooManyImages(rules.max_images))
         return
       }
       if (incoming.length > room) {
-        setError(`最多还能再加 ${room} 张，已忽略多余的图片`)
+        setError(zh.checkin.submit.ignoredExtra(room))
       }
 
       const accepted: SelectedImage[] = []
@@ -193,10 +133,10 @@ export default function ImagePicker({ value, onChange, rules, disabled }: ImageP
                 type="button"
                 className="image-picker__add"
                 onClick={() => inputRef.current?.click()}
-                aria-label="添加证明材料"
+                aria-label={zh.checkin.submit.addImage}
               >
                 <PlusOutlined style={{ fontSize: 20 }} />
-                <span style={{ fontSize: 12 }}>添加图片</span>
+                <span style={{ fontSize: 12 }}>{zh.checkin.submit.addImage}</span>
               </button>
             )}
           </div>
@@ -218,7 +158,7 @@ export default function ImagePicker({ value, onChange, rules, disabled }: ImageP
 
       <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
         {describeRules(rules)}
-        {value.length > 1 && ' · 拖动缩略图可调整顺序'}
+        {value.length > 1 && zh.checkin.submit.dragToReorder}
       </Typography.Text>
 
       {error && (
@@ -255,7 +195,7 @@ function SortableThumb({
       {...attributes}
       {...listeners}
     >
-      <img src={image.previewUrl} alt={`证明材料 ${index + 1}`} draggable={false} />
+      <img src={image.previewUrl} alt={zh.checkin.submit.proofAlt(index)} draggable={false} />
 
       <span className="image-thumb__order" aria-hidden>
         {index + 1}
@@ -266,7 +206,7 @@ function SortableThumb({
           type="text"
           size="small"
           className="image-thumb__remove"
-          aria-label={`删除第 ${index + 1} 张`}
+          aria-label={zh.checkin.submit.deleteImage(index)}
           // 阻止冒泡，否则点删除会被当成开始拖拽
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => {

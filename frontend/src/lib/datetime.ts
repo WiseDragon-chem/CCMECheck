@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import { zh } from '@/locales/zh-CN'
 import utc from 'dayjs/plugin/utc'
 
 dayjs.extend(utc)
@@ -10,7 +11,7 @@ dayjs.extend(utc)
 /** 展示时区固定北京时间。中国不实行夏令时，偏移恒定。 */
 export const DISPLAY_UTC_OFFSET_HOURS = 8
 
-const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'] as const
+const WEEKDAYS = zh.dateTime.weekdays
 
 /**
  * 铁律一：`YYYY-MM-DD` 一律当字符串处理，绝不交给 `new Date()`。
@@ -75,12 +76,12 @@ export function clockOffsetMs(serverTimeIso: string): number {
 
 /** 把秒数格式化成「还有 3 小时 12 分」这类中文提示 */
 export function formatRemaining(seconds: number): string {
-  if (seconds <= 0) return '已截止'
+  if (seconds <= 0) return zh.dateTime.deadlinePassed
   const total = Math.floor(seconds)
   const hours = Math.floor(total / 3600)
   const minutes = Math.floor((total % 3600) / 60)
 
-  if (hours > 0) return `${hours} 小时 ${minutes} 分`
-  if (minutes > 0) return `${minutes} 分 ${total % 60} 秒`
-  return `${total} 秒`
+  if (hours > 0) return zh.dateTime.remainingHoursMinutes(hours, minutes)
+  if (minutes > 0) return zh.dateTime.remainingMinutesSeconds(minutes, total % 60)
+  return zh.dateTime.remainingSeconds(total)
 }

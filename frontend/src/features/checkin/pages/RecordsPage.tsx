@@ -8,6 +8,7 @@ import { fetchCheckins } from '@/api/endpoints/checkins'
 import { qk } from '@/api/queryKeys'
 import type { CheckinListItem } from '@/api/types'
 import { formatActivityDate, formatCstFriendly } from '@/lib/datetime'
+import { zh } from '@/locales/zh-CN'
 import { paths } from '@/routes/paths'
 import { CHECKIN_STATUS_META, type EntryStatusKey } from '../statusMeta'
 
@@ -20,12 +21,11 @@ import { CHECKIN_STATUS_META, type EntryStatusKey } from '../statusMeta'
 const PAGE_SIZE = 20
 
 const STATUS_OPTIONS = [
-  { value: '', label: '全部状态' },
-  { value: 'pending', label: '待审核' },
-  { value: 'approved', label: '已通过' },
-  { value: 'rejected', label: '已驳回' },
-  { value: 'revoked', label: '已撤销' },
-  { value: 'void', label: '已作废' },
+  { value: '', label: zh.checkin.records.allStatuses },
+  ...(['pending', 'approved', 'rejected', 'revoked', 'void'] as const).map((status) => ({
+    value: status,
+    label: zh.checkin.status[status],
+  })),
 ]
 
 export default function RecordsPage() {
@@ -55,7 +55,7 @@ export default function RecordsPage() {
 
   const trackOptions = useMemo(() => {
     const tracks = (campaignQuery.data?.tracks ?? []).filter((item) => item.enabled)
-    return [{ value: '', label: '全部赛道' }, ...tracks.map((item) => ({ value: item.slug, label: item.name }))]
+    return [{ value: '', label: zh.checkin.records.allTracks }, ...tracks.map((item) => ({ value: item.slug, label: item.name }))]
   }, [campaignQuery.data])
 
   if (listQuery.isPending || campaignQuery.isPending) {
@@ -71,9 +71,9 @@ export default function RecordsPage() {
       <div className="page">
         <Result
           status="warning"
-          title="没能加载打卡记录"
-          subTitle="请检查网络后重试。"
-          extra={<a onClick={() => void listQuery.refetch()}>重新加载</a>}
+          title={zh.checkin.records.loadFailed}
+          subTitle={zh.common.loadFailed}
+          extra={<a onClick={() => void listQuery.refetch()}>{zh.common.retry}</a>}
         />
       </div>
     )
@@ -85,7 +85,7 @@ export default function RecordsPage() {
   return (
     <div className="page">
       <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 12 }}>
-        打卡记录
+        {zh.checkin.records.title}
       </Typography.Title>
 
       <Space direction="vertical" size={8} style={{ width: '100%', marginBottom: 12 }}>
@@ -118,7 +118,7 @@ export default function RecordsPage() {
           description={
             hasFilter ? (
               <span>
-                当前筛选条件下没有记录。
+                {zh.checkin.records.emptyFiltered}
                 <br />
                 <Button
                   type="link"
@@ -129,11 +129,11 @@ export default function RecordsPage() {
                     setLimit(PAGE_SIZE)
                   }}
                 >
-                  清除筛选
+                  {zh.checkin.records.clearFilters}
                 </Button>
               </span>
             ) : (
-              '还没有打卡记录，去首页完成第一次打卡吧。'
+              zh.checkin.records.empty
             )
           }
         />
@@ -145,12 +145,12 @@ export default function RecordsPage() {
 
           {total > items.length && (
             <Button block style={{ marginTop: 4 }} onClick={() => setLimit((value) => value + PAGE_SIZE)}>
-              加载更多（已显示 {items.length} / {total}）
+              {zh.checkin.records.loadMore(items.length, total)}
             </Button>
           )}
 
           <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 12 }}>
-            共 {total} 条记录
+            {zh.checkin.records.total(total)}
           </Typography.Text>
         </>
       )}
@@ -180,20 +180,21 @@ function RecordRow({ item, onOpen }: { item: CheckinListItem; onOpen: () => void
           </Space>
 
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            {formatActivityDate(item.activity_date)} · 提交于 {formatCstFriendly(item.submitted_at)}
+            {formatActivityDate(item.activity_date)} ·{' '}
+            {zh.checkin.records.submittedAt(formatCstFriendly(item.submitted_at))}
           </Typography.Text>
 
           {/* 驳回原因必须回显给参赛者（§16.6） */}
           {item.status === 'rejected' && item.rejection_reason && (
             <Typography.Text style={{ fontSize: 12, color: '#ff4d4f' }}>
-              驳回原因：{item.rejection_reason}
+              {zh.checkin.records.rejectionPrefix(item.rejection_reason ?? '')}
             </Typography.Text>
           )}
         </Space>
 
         <Space size={4}>
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            {item.asset_count} 张
+            {zh.checkin.records.assetCount(item.asset_count)}
           </Typography.Text>
           <RightOutlined style={{ fontSize: 12, color: 'rgba(0,0,0,0.25)' }} />
         </Space>

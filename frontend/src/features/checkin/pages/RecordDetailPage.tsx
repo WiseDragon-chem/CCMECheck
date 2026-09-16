@@ -5,6 +5,7 @@ import { fetchCheckinDetail } from '@/api/endpoints/checkins'
 import { qk } from '@/api/queryKeys'
 import SignedImage from '@/components/SignedImage'
 import { formatActivityDateLong, formatCst } from '@/lib/datetime'
+import { zh } from '@/locales/zh-CN'
 import { paths } from '@/routes/paths'
 import { CHECKIN_STATUS_META } from '../statusMeta'
 
@@ -37,9 +38,9 @@ export default function RecordDetailPage() {
       <div className="page">
         <Result
           status="warning"
-          title="没能加载记录详情"
-          subTitle="记录可能已被删除，或网络异常。"
-          extra={<Button type="primary" onClick={() => navigate(paths.records)}>返回记录列表</Button>}
+          title={zh.checkin.detail.loadFailed}
+          subTitle={zh.checkin.detail.loadFailedDetail}
+          extra={<Button type="primary" onClick={() => navigate(paths.records)}>{zh.common.backToRecords}</Button>}
         />
       </div>
     )
@@ -70,7 +71,7 @@ export default function RecordDetailPage() {
           type="error"
           showIcon
           style={{ marginBottom: 12 }}
-          message="本条记录被驳回"
+          message={zh.checkin.detail.rejectedTitle}
           description={detail.rejection_reason}
         />
       )}
@@ -80,8 +81,8 @@ export default function RecordDetailPage() {
           type="warning"
           showIcon
           style={{ marginBottom: 12 }}
-          message="审核结果已被管理员撤销"
-          description="该记录不再计分。如有疑问请联系活动管理员。"
+          message={zh.checkin.detail.revokedTitle}
+          description={zh.checkin.detail.revokedDetail}
         />
       )}
 
@@ -90,8 +91,8 @@ export default function RecordDetailPage() {
           type="warning"
           showIcon
           style={{ marginBottom: 12 }}
-          message="该记录已被作废"
-          description="如有疑问请联系活动管理员。"
+          message={zh.checkin.detail.voidTitle}
+          description={zh.checkin.detail.voidDetail}
         />
       )}
 
@@ -100,8 +101,8 @@ export default function RecordDetailPage() {
           type="info"
           showIcon
           style={{ marginBottom: 12 }}
-          message="管理员已临时重新开放"
-          description={`请在此时间前完成重新提交：${formatCst(detail.reopen_expires_at)}`}
+          message={zh.checkin.detail.reopenTitle}
+          description={zh.checkin.detail.reopenDetail(formatCst(detail.reopen_expires_at))}
         />
       )}
 
@@ -114,14 +115,14 @@ export default function RecordDetailPage() {
           type="info"
           showIcon
           style={{ marginBottom: 12 }}
-          message="有效证明要求"
+          message={zh.checkin.submit.proofRequirement}
           description={<span style={{ whiteSpace: 'pre-wrap' }}>{detail.track.proof_instructions}</span>}
         />
       )}
 
-      <Card size="small" title="证明材料" style={{ marginBottom: 12 }}>
+      <Card size="small" title={zh.checkin.submit.materials} style={{ marginBottom: 12 }}>
         {assets.length === 0 ? (
-          <Typography.Text type="secondary">本条记录没有证明材料。</Typography.Text>
+          <Typography.Text type="secondary">{zh.checkin.detail.noAssets}</Typography.Text>
         ) : (
           // PreviewGroup 提供放大、旋转与左右切换，点任意一张即可进入
           <Image.PreviewGroup>
@@ -133,7 +134,7 @@ export default function RecordDetailPage() {
                     assetId={asset.asset_id}
                     width={asset.width}
                     height={asset.height}
-                    alt={`证明材料 ${index + 1}`}
+                    alt={zh.checkin.submit.proofAlt(index)}
                     previewable
                   />
                 </div>
@@ -143,19 +144,19 @@ export default function RecordDetailPage() {
         )}
       </Card>
 
-      <Card size="small" title="提交信息" style={{ marginBottom: 12 }}>
+      <Card size="small" title={zh.checkin.detail.submitInfo} style={{ marginBottom: 12 }}>
         <Descriptions column={1} size="small" colon={false}>
-          <Descriptions.Item label="提交时间">{formatCst(detail.submitted_at)}</Descriptions.Item>
-          <Descriptions.Item label="审核时间">
-            {detail.reviewed_at ? formatCst(detail.reviewed_at) : '尚未审核'}
+          <Descriptions.Item label={zh.checkin.detail.submittedAt}>{formatCst(detail.submitted_at)}</Descriptions.Item>
+          <Descriptions.Item label={zh.checkin.detail.reviewedAt}>
+            {detail.reviewed_at ? formatCst(detail.reviewed_at) : zh.checkin.detail.notReviewed}
           </Descriptions.Item>
           {detail.current_revision && (
-            <Descriptions.Item label="版本">
-              第 {detail.current_revision.revision_number} 版
+            <Descriptions.Item label={zh.checkin.detail.revision}>
+              {zh.checkin.detail.revisionN(detail.current_revision.revision_number)}
             </Descriptions.Item>
           )}
           {detail.current_revision?.note && (
-            <Descriptions.Item label="备注">{detail.current_revision.note}</Descriptions.Item>
+            <Descriptions.Item label={zh.checkin.detail.note}>{detail.current_revision.note}</Descriptions.Item>
           )}
         </Descriptions>
       </Card>
@@ -170,13 +171,13 @@ export default function RecordDetailPage() {
           items={[
             {
               key: 'history',
-              label: `提交历史（${detail.history.length} 个较早版本）`,
+              label: zh.checkin.detail.history(detail.history.length),
               children: (
                 <Space direction="vertical" size={8} style={{ width: '100%' }}>
                   {detail.history.map((revision) => (
                     <div key={revision.revision_number}>
                       <Typography.Text style={{ fontSize: 13 }}>
-                        第 {revision.revision_number} 版 · {revision.asset_count} 张
+                        {zh.checkin.detail.historyItem(revision.revision_number, revision.asset_count)}
                       </Typography.Text>
                       <br />
                       <Typography.Text type="secondary" style={{ fontSize: 12 }}>
@@ -186,7 +187,7 @@ export default function RecordDetailPage() {
                     </div>
                   ))}
                   <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                    审核仅以最新一次提交为准。
+                    {zh.checkin.detail.historyLatestOnly}
                   </Typography.Text>
                 </Space>
               ),
@@ -196,7 +197,7 @@ export default function RecordDetailPage() {
       )}
 
       <Button block style={{ marginTop: 16, marginBottom: 24 }} onClick={() => navigate(paths.records)}>
-        返回记录列表
+        {zh.common.backToRecords}
       </Button>
     </div>
   )

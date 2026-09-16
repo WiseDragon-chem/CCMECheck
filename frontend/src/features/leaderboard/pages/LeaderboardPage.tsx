@@ -8,6 +8,7 @@ import { qk } from '@/api/queryKeys'
 import type { LeaderboardRow } from '@/api/types'
 import { formatCst } from '@/lib/datetime'
 import { formatScore } from '@/lib/milli'
+import { zh } from '@/locales/zh-CN'
 
 /**
  * 排行榜（design.md §7.6）。
@@ -56,9 +57,9 @@ export default function LeaderboardPage() {
       <div className="page">
         <Result
           status="warning"
-          title="没能加载排行榜"
-          subTitle="请检查网络后重试。"
-          extra={<a onClick={() => void leaderboardQuery.refetch()}>重新加载</a>}
+          title={zh.leaderboard.loadFailed}
+          subTitle={zh.common.loadFailed}
+          extra={<a onClick={() => void leaderboardQuery.refetch()}>{zh.common.retry}</a>}
         />
       </div>
     )
@@ -69,13 +70,13 @@ export default function LeaderboardPage() {
 
   const tabs = [
     ...tracks.map((track) => ({ key: track.slug, label: track.name })),
-    { key: OVERALL, label: '总榜' },
+    { key: OVERALL, label: zh.leaderboard.overall },
   ]
 
   return (
     <div className="page">
       <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 8 }}>
-        排行榜
+        {zh.leaderboard.title}
       </Typography.Title>
 
       {/*
@@ -83,7 +84,7 @@ export default function LeaderboardPage() {
         这是本产品最高频的疑问，一行说明就能挡掉。
       */}
       <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 12 }}>
-        每日 {campaign.leaderboard_time} 更新，已通过的记录将在下次更新后计入
+        {zh.leaderboard.cadence(campaign.leaderboard_time)}
       </Typography.Text>
 
       <Tabs
@@ -105,8 +106,8 @@ export default function LeaderboardPage() {
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description={
             data.snapshot === null
-              ? '排行榜尚未生成，请等待管理员完成第一次统计。'
-              : '这个榜单暂时没有数据。'
+              ? zh.leaderboard.notGenerated
+              : zh.leaderboard.empty
           }
         />
       ) : (
@@ -124,7 +125,7 @@ export default function LeaderboardPage() {
               onClick={() => setLimit((value) => value + PAGE_SIZE)}
               loading={leaderboardQuery.isFetching}
             >
-              加载更多（已显示 {data.rows.length} / {data.total}）
+              {zh.leaderboard.loadMore(data.rows.length, data.total)}
             </Button>
           )}
 
@@ -155,10 +156,10 @@ function SnapshotHeader({
   return (
     <div style={{ marginBottom: 12 }}>
       <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-        统计至 {countedThrough} · 生成于 {formatCst(snapshot.generated_at)}
+        {zh.leaderboard.countedThrough(countedThrough ?? '', formatCst(snapshot.generated_at))}
         {snapshot.is_final && (
           <Tag color="gold" style={{ marginLeft: 8 }}>
-            最终榜单
+            {zh.leaderboard.finalBadge}
           </Tag>
         )}
       </Typography.Text>
@@ -168,7 +169,7 @@ function SnapshotHeader({
           type="warning"
           showIcon
           style={{ marginTop: 8 }}
-          message="最近一次快照生成失败，当前显示的仍是上一份有效数据。"
+          message={zh.leaderboard.snapshotFailed}
         />
       )}
     </div>
@@ -190,12 +191,12 @@ function LeaderboardRowItem({ row, compact }: { row: LeaderboardRow; compact?: b
           */}
           {row.is_me && (
             <Tag color="blue" style={{ marginLeft: 6 }}>
-              我
+              {zh.leaderboard.me}
             </Tag>
           )}
         </span>
         <span className="lb-row__meta">
-          {row.class_name ?? '—'} · 有效 {row.valid_days} 天
+          {zh.leaderboard.meMeta(row.class_name ?? '—', row.valid_days)}
         </span>
       </div>
 

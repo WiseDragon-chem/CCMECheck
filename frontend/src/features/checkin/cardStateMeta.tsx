@@ -11,6 +11,7 @@ import {
   WarningOutlined,
 } from '@ant-design/icons'
 import type { TodayCard } from '@/api/types'
+import { zh } from '@/locales/zh-CN'
 
 /**
  * 主页面三张赛道卡片的展示状态（design.md §7.3）。
@@ -51,51 +52,51 @@ export interface CardStateMeta {
  */
 export const CARD_STATE_META: Record<CardDisplayState, CardStateMeta> = {
   before_open: {
-    label: '今日打卡尚未开放',
+    label: zh.checkin.cardState.before_open,
     icon: <ClockCircleOutlined />,
     color: '#8c8c8c',
   },
   can_submit: {
-    label: '今日尚未打卡',
+    label: zh.checkin.cardState.can_submit,
     icon: <PlusCircleOutlined />,
     color: '#1677ff',
   },
   // 后端修复后 can_submit 会真实反映活动状态，但卡片仍需解释「为什么不能提交」。
   // 这个状态是设计文档状态表没覆盖的，属于必要补充。
   submit_closed: {
-    label: '活动已停止提交',
+    label: zh.checkin.cardState.submit_closed,
     icon: <MinusCircleOutlined />,
     color: '#8c8c8c',
   },
   pending: {
-    label: '已提交，等待审核',
+    label: zh.checkin.cardState.pending,
     icon: <HourglassOutlined />,
     color: '#faad14',
   },
   approved: {
-    label: '今日打卡有效',
+    label: zh.checkin.cardState.approved,
     icon: <CheckCircleFilled />,
     color: '#52c41a',
   },
   rejected_open: {
-    label: '已驳回',
+    label: zh.checkin.cardState.rejected_open,
     icon: <ExclamationCircleFilled />,
     color: '#ff4d4f',
   },
   rejected_closed: {
-    label: '今日打卡无效（已截止）',
+    label: zh.checkin.cardState.rejected_closed,
     icon: <CloseCircleFilled />,
     color: '#ff4d4f',
   },
   missed: {
-    label: '今日未完成',
+    label: zh.checkin.cardState.missed,
     icon: <WarningOutlined />,
     color: '#8c8c8c',
   },
   // 对应后端的 revoked / void —— 被管理员处置的记录。
   // 设计文档 §7.3 的状态表同样没有覆盖这两种结果。
   invalid: {
-    label: '记录已失效',
+    label: zh.checkin.cardState.invalid,
     icon: <StopOutlined />,
     color: '#8c8c8c',
   },

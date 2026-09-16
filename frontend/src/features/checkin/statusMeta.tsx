@@ -7,6 +7,7 @@ import {
   StopOutlined,
 } from '@ant-design/icons'
 import type { CheckinListItem } from '@/api/types'
+import { zh } from '@/locales/zh-CN'
 
 /**
  * 打卡记录的状态展示（design.md §6.4 的五种状态）。
@@ -28,9 +29,9 @@ export interface StatusMeta {
 }
 
 export const CHECKIN_STATUS_META: Record<EntryStatusKey, StatusMeta> = {
-  pending: { label: '待审核', icon: <HourglassOutlined />, color: '#faad14' },
-  approved: { label: '已通过', icon: <CheckCircleFilled />, color: '#52c41a' },
-  rejected: { label: '已驳回', icon: <CloseCircleFilled />, color: '#ff4d4f' },
-  revoked: { label: '已撤销', icon: <RollbackOutlined />, color: '#d46b08' },
-  void: { label: '已作废', icon: <StopOutlined />, color: '#8c8c8c' },
+  pending: { label: zh.checkin.status.pending, icon: <HourglassOutlined />, color: '#faad14' },
+  approved: { label: zh.checkin.status.approved, icon: <CheckCircleFilled />, color: '#52c41a' },
+  rejected: { label: zh.checkin.status.rejected, icon: <CloseCircleFilled />, color: '#ff4d4f' },
+  revoked: { label: zh.checkin.status.revoked, icon: <RollbackOutlined />, color: '#d46b08' },
+  void: { label: zh.checkin.status.void, icon: <StopOutlined />, color: '#8c8c8c' },
 }

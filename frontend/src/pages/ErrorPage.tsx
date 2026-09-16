@@ -1,5 +1,6 @@
 import { useNavigate, useRouteError } from 'react-router'
 import { Button, Result, Typography } from 'antd'
+import { zh } from '@/locales/zh-CN'
 import { paths } from '@/routes/paths'
 
 /**
@@ -18,14 +19,14 @@ export default function ErrorPage() {
     <div className="centered-page">
       <Result
         status="error"
-        title="页面出错了"
-        subTitle="请刷新重试。若持续出现，请把下面的信息发给活动管理员。"
+        title={zh.error.pageTitle}
+        subTitle={zh.error.pageSubtitle}
         extra={[
           <Button type="primary" key="home" onClick={() => navigate(paths.home)}>
-            回到首页
+            {zh.common.backHome}
           </Button>,
           <Button key="reload" onClick={() => window.location.reload()}>
-            刷新页面
+            {zh.error.reload}
           </Button>,
         ]}
       >

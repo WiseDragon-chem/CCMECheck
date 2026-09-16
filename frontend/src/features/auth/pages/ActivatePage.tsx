@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { Alert, Button, Form, Input, Typography } from 'antd'
 import { presentError } from '@/api/presentError'
 import AuthLayout from '@/layouts/AuthLayout'
+import { zh } from '@/locales/zh-CN'
 import { paths } from '@/routes/paths'
 import { useAuthStore } from '@/stores/auth.store'
 
@@ -27,6 +28,7 @@ export default function ActivatePage() {
   const navigate = useNavigate()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const t = zh.auth.activate
 
   const onFinish = async (values: FormValues) => {
     setSubmitting(true)
@@ -42,65 +44,65 @@ export default function ActivatePage() {
   }
 
   return (
-    <AuthLayout title="激活账号" subtitle="使用管理员发放的学号与激活码完成首次激活">
+    <AuthLayout title={t.title} subtitle={t.subtitle}>
       {error && <Alert type="error" message={error} showIcon style={{ marginBottom: 16 }} />}
 
       <Form<FormValues> layout="vertical" onFinish={onFinish} requiredMark={false} size="large">
-        <Form.Item name="student_id" label="学号" rules={[{ required: true, message: '请填写学号' }]}>
-          <Input placeholder="请输入学号" inputMode="numeric" autoComplete="username" />
+        <Form.Item name="student_id" label={t.studentId} rules={[{ required: true, message: t.studentIdRequired }]}>
+          <Input placeholder={t.studentIdPlaceholder} inputMode="numeric" autoComplete="username" />
         </Form.Item>
 
         <Form.Item
           name="activation_code"
-          label="激活码"
-          rules={[{ required: true, message: '请填写激活码' }]}
+          label={t.activationCode}
+          rules={[{ required: true, message: t.activationCodeRequired }]}
         >
-          <Input placeholder="请输入激活码" autoComplete="one-time-code" />
+          <Input placeholder={t.activationCodePlaceholder} autoComplete="one-time-code" />
         </Form.Item>
 
         <Form.Item
           name="password"
-          label="设置密码"
+          label={t.password}
           rules={[
-            { required: true, message: '请设置密码' },
-            { min: PASSWORD_MIN, message: `密码至少 ${PASSWORD_MIN} 位` },
-            { max: PASSWORD_MAX, message: `密码不能超过 ${PASSWORD_MAX} 位` },
-            { pattern: /[A-Za-z]/, message: '密码需要包含字母' },
-            { pattern: /\d/, message: '密码需要包含数字' },
+            { required: true, message: t.passwordRequired },
+            { min: PASSWORD_MIN, message: t.passwordMin(PASSWORD_MIN) },
+            { max: PASSWORD_MAX, message: t.passwordMax(PASSWORD_MAX) },
+            { pattern: /[A-Za-z]/, message: t.passwordNeedsLetter },
+            { pattern: /\d/, message: t.passwordNeedsDigit },
           ]}
         >
-          <Input.Password placeholder="至少 8 位，含字母与数字" autoComplete="new-password" />
+          <Input.Password placeholder={t.passwordPlaceholder} autoComplete="new-password" />
         </Form.Item>
 
         <Form.Item
           name="confirm"
-          label="确认密码"
+          label={t.confirm}
           dependencies={['password']}
           rules={[
-            { required: true, message: '请再次输入密码' },
+            { required: true, message: t.confirmRequired },
             ({ getFieldValue }) => ({
               validator: (_rule, value) =>
                 !value || getFieldValue('password') === value
                   ? Promise.resolve()
-                  : Promise.reject(new Error('两次输入的密码不一致')),
+                  : Promise.reject(new Error(t.confirmMismatch)),
             }),
           ]}
         >
-          <Input.Password placeholder="再次输入密码" autoComplete="new-password" />
+          <Input.Password placeholder={t.confirmPlaceholder} autoComplete="new-password" />
         </Form.Item>
 
         <Button type="primary" htmlType="submit" block loading={submitting}>
-          激活并登录
+          {t.submit}
         </Button>
       </Form>
 
       <div style={{ marginTop: 16, textAlign: 'center' }}>
-        <Typography.Text type="secondary">已经激活过？</Typography.Text>{' '}
-        <Link to={paths.login}>去登录</Link>
+        <Typography.Text type="secondary">{t.alreadyActivated}</Typography.Text>{' '}
+        <Link to={paths.login}>{t.goLogin}</Link>
       </div>
 
       <Typography.Paragraph type="secondary" style={{ fontSize: 12, marginTop: 16, marginBottom: 0 }}>
-        激活后学号与姓名不能自行修改，如需更正请联系管理员。
+        {t.nameLockNotice}
       </Typography.Paragraph>
     </AuthLayout>
   )

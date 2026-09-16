@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button, Image, Skeleton } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 import { useSignedAssetUrl } from '@/features/checkin/hooks/useSignedAssetUrl'
+import { zh } from '@/locales/zh-CN'
 
 /**
  * 展示一张受保护的证明材料。
@@ -51,9 +52,9 @@ export default function SignedImage({
   if (isError || (failedOnce && !url)) {
     return (
       <div className="signed-image signed-image--failed" style={{ aspectRatio }}>
-        <span>图片加载失败</span>
+        <span>{zh.checkin.detail.imageLoadFailed}</span>
         <Button size="small" icon={<ReloadOutlined />} onClick={refresh}>
-          重新加载
+          {zh.checkin.detail.reloadImage}
         </Button>
       </div>
     )
@@ -83,7 +84,7 @@ export default function SignedImage({
         style={{ aspectRatio, objectFit: fit }}
         onError={handleError}
         onClick={onClick}
-        preview={{ mask: '点击查看大图' }}
+        preview={{ mask: zh.checkin.detail.viewLarger }}
       />
     )
   }

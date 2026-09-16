@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildCheckinFormData } from '@/api/upload'
 import { detectImageType } from '@/lib/imageMagicBytes'
-import { validateFile } from './components/ImagePicker'
+import { validateFile } from './components/imagePicker.utils'
 
 /**
  * 提交表单的构造与本地校验。

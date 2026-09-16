@@ -14,11 +14,3 @@ export const paths = {
   leaderboard: '/leaderboard',
   me: '/me',
 } as const
-
-/** 底部导航的四个入口 */
-export const NAV_ITEMS = [
-  { key: 'home', label: '首页', to: paths.home },
-  { key: 'records', label: '记录', to: paths.records },
-  { key: 'leaderboard', label: '排行榜', to: paths.leaderboard },
-  { key: 'me', label: '我的', to: paths.me },
-] as const

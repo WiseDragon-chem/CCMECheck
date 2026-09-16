@@ -1,5 +1,6 @@
 import { Button, Card, Space, Tag, Typography } from 'antd'
 import { formatMilli } from '@/lib/milli'
+import { zh } from '@/locales/zh-CN'
 import { CARD_STATE_META, actionFor, type CardDisplayState } from '../cardStateMeta'
 import type { TodayCard } from '@/api/types'
 
@@ -17,7 +18,7 @@ function trackIcon(slug: string): string {
     vocabulary: '🔤',
     fitness: '🏃',
   }
-  return icons[slug] ?? '📌'
+  return icons[slug] ?? zh.checkin.trackIconFallback
 }
 
 export interface TrackCardProps {
@@ -73,19 +74,19 @@ export default function TrackCard({
         {/* 驳回原因必须原样展示给参赛者（§7.3、§16.6） */}
         {displayState === 'rejected_open' && card.rejection_reason && (
           <Typography.Text style={{ color: '#ff4d4f', fontSize: 13 }}>
-            驳回原因：{card.rejection_reason}
+            {zh.checkin.home.rejectionPrefix(card.rejection_reason ?? '')}
           </Typography.Text>
         )}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
           <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-            有效 {card.valid_days} 天 · 积分 {formatMilli(card.track_score)}
+            {zh.checkin.home.validDaysAndScore(card.valid_days, formatMilli(card.track_score))}
           </Typography.Text>
 
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
             {secondsToDeadline !== null && secondsToDeadline > 0
-              ? `距截止 ${deadlineText}`
-              : `今日截止 ${deadlineText}`}
+              ? zh.checkin.home.deadlineCountdownHint(deadlineText)
+              : zh.checkin.home.deadlineHint(deadlineText)}
           </Typography.Text>
         </div>
 
@@ -95,7 +96,7 @@ export default function TrackCard({
             block
             onClick={() => onAction(action, card)}
           >
-            {action === 'submit' ? '去打卡' : action === 'resubmit' ? '重新提交' : '查看详情'}
+            {action === 'submit' ? zh.checkin.cardAction.submit : action === 'resubmit' ? zh.checkin.cardAction.resubmit : zh.checkin.cardAction.detail}
           </Button>
         )}
       </Space>
