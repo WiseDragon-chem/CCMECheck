@@ -32,7 +32,9 @@ export default defineConfig({
      */
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        // 允许覆盖：端到端测试会把后端起在另一个端口、另一个库上，
+        // 从而完全不碰开发环境（见 e2e/global-setup.ts）
+        target: process.env.VITE_PROXY_TARGET ?? 'http://localhost:3000',
         changeOrigin: false,
       },
     },
