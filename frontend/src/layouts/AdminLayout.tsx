@@ -8,6 +8,7 @@ import {
   MenuUnfoldOutlined,
   SafetyOutlined,
   SwapOutlined,
+  TeamOutlined,
   UnorderedListOutlined,
 } from '@ant-design/icons'
 import { Button, Layout, Menu, Space, Spin, Tag, Tooltip, Typography } from 'antd'
@@ -44,9 +45,10 @@ export default function AdminLayout() {
     () => [
       { key: paths.admin.dashboard, icon: <DashboardOutlined />, label: zh.admin.nav.dashboard },
       { key: paths.admin.review, icon: <UnorderedListOutlined />, label: zh.admin.nav.review },
-      // 异常操作与审计只有超管能做（§5），但后端才是真正的边界
+      // 名单、异常操作与审计只有超管能做（§5），但后端才是真正的边界
       ...(isSuperAdmin
         ? [
+            { key: paths.admin.participants, icon: <TeamOutlined />, label: zh.admin.nav.participants },
             { key: paths.admin.ops, icon: <SafetyOutlined />, label: zh.admin.nav.ops },
             { key: paths.admin.audit, icon: <AuditOutlined />, label: zh.admin.nav.audit },
           ]

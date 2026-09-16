@@ -35,6 +35,7 @@ import { paths } from './paths'
 const AdminLayout = lazy(() => import('@/layouts/AdminLayout'))
 const AdminDashboardPage = lazy(() => import('@/features/admin/pages/DashboardPage'))
 const AdminReviewPage = lazy(() => import('@/features/admin/pages/ReviewPipelinePage'))
+const AdminParticipantsPage = lazy(() => import('@/features/admin/pages/ParticipantsPage'))
 const AdminOpsPage = lazy(() => import('@/features/admin/pages/OpsPage'))
 const AdminAuditPage = lazy(() => import('@/features/admin/pages/AuditLogPage'))
 
@@ -101,10 +102,19 @@ export const router = createBrowserRouter([
       // 深链直接定位到某一条：审核页从路由参数里取初始光标
       { path: 'review/:entryId', element: <AdminReviewPage /> },
       /*
-        异常处理与审计日志是超管专属（§5）。导航里已经按角色隐藏了入口，
-        但那条隐藏只是体验层 —— 不在这里再挡一道，审核员手敲 URL 就能打开
-        一个每点一次都报 403 的页面，而他会以为是自己操作错了。
+        名单、异常处理与审计日志都是超管专属（§5）。导航里已经按角色
+        隐藏了入口，但那条隐藏只是体验层 —— 不在这里再挡一道，
+        审核员手敲 URL 就能打开一个每点一次都报 403 的页面，
+        而他会以为是自己操作错了。
       */
+      {
+        path: 'participants',
+        element: (
+          <RequireRole min="super_admin">
+            <AdminParticipantsPage />
+          </RequireRole>
+        ),
+      },
       {
         path: 'ops',
         element: (

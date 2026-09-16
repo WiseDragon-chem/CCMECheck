@@ -19,6 +19,7 @@ export const paths = {
     dashboard: '/admin',
     review: '/admin/review',
     reviewEntry: (entryId: string) => `/admin/review/${entryId}`,
+    participants: '/admin/participants',
     ops: '/admin/ops',
     audit: '/admin/audit',
   },

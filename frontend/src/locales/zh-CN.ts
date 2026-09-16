@@ -263,6 +263,7 @@ export const zh = {
     nav: {
       dashboard: '概览',
       review: '审核',
+      participants: '名单',
       ops: '异常处理',
       audit: '审计日志',
     },
@@ -438,6 +439,130 @@ export const zh = {
       detailStaleRefresh: '刷新',
       loadDetailFailed: '没能加载记录详情',
       loadQueueFailed: '没能加载审核队列',
+    },
+
+    participants: {
+      title: '名单管理',
+      subtitle: '导入参赛名单、发放激活码、处理账号状态。',
+
+      add: '添加参赛者',
+      import: '导入名单',
+      exportRoster: '导出名册',
+      exportCodes: '导出激活状态',
+      downloadTemplate: '下载 CSV 模板',
+      templateHint: '模板列：学号、姓名、班级、手机尾号、备注。文件带 BOM，Excel 打开中文不会乱码。',
+
+      search: '按学号或姓名搜索',
+      allStatus: '全部状态',
+      allClasses: '全部班级',
+      classNamePlaceholder: '按班级筛选',
+
+      studentId: '学号',
+      name: '姓名',
+      className: '班级',
+      status: '参赛状态',
+      accountStatus: '账号状态',
+      activation: '激活',
+      phoneSuffix: '手机尾号',
+      remark: '备注',
+      joinedAt: '加入时间',
+      actions: '操作',
+
+      /** 参赛者在本活动内的状态（§6） */
+      statusLabel: {
+        active: '在册',
+        disabled: '已禁用',
+        anonymized: '已匿名化',
+      },
+      /** 账号级状态。与上面**不是**一回事，见 AdminParticipant 的说明 */
+      accountLabel: {
+        pending_activation: '待激活',
+        active: '正常',
+        disabled: '已禁用',
+      },
+      activated: '已激活',
+      notActivated: '未激活',
+      anonymizedHint: '姓名等信息已抹除',
+
+      regenerateCode: '重新生成激活码',
+      resetPassword: '重置密码',
+      disable: '禁用',
+      enable: '启用',
+      anonymize: '匿名化',
+
+      /** 重新生成会作废此前的码，必须说清 */
+      regenerateConfirm: '重新生成激活码？',
+      regenerateConfirmBody:
+        '这个账号此前所有未使用的激活码会立即作废。已激活的账号不受影响，但重新生成的码只有对方再次激活才会用上。',
+      regenerateDone: '已生成新激活码，旧码已作废',
+
+      resetConfirm: '重置密码？',
+      resetConfirmBody:
+        '会生成一个临时密码并撤销该账号的所有登录状态。尚未激活的账号会因此直接变成已激活。',
+      resetDone: '已生成临时密码',
+
+      disableConfirm: '禁用这个账号？',
+      disableConfirmBody: '该账号将无法登录，已登录的会话会被立即撤销。记录与积分不受影响。',
+      disableDone: '账号已禁用',
+      disableRevoked: (n: number) => `已一并撤销 ${n} 个登录会话`,
+      enableDone: '账号已启用',
+
+      anonymizeConsequence:
+        '匿名化会抹除姓名、班级与学号快照，且不可恢复 —— 这是「已有记录的参赛者不允许删除」的替代方案。',
+      anonymizeDeleteEvidence: '同时删除证明材料',
+      anonymizeDeleteEvidenceHint:
+        '截图里往往带着姓名或账号，留着它们等于匿名化没做完。只有在争议尚未了结时才关掉。',
+      anonymizeConfirm: '匿名化',
+      anonymizeDone: (deletedAssets: number) => `已匿名化，删除 ${deletedAssets} 份证明材料`,
+
+      /** 一次性明文的展示。措辞必须让人意识到关掉就没了 */
+      codeTitle: '激活码（只显示这一次）',
+      codeWarning:
+        '关闭后无法再查看 —— 系统只保存哈希值。现在就把它们交给本人；忘了的话只能重新生成（会使旧码作废）。',
+      codeFor: (name: string, studentId: string) => `${name}（${studentId}）`,
+      codeCopy: '复制',
+      codeCopied: '已复制',
+      codeCopyAll: '复制全部',
+      codeDownload: '下载为 CSV',
+      codeColumnStudentId: '学号',
+      codeColumnName: '姓名',
+      codeColumnCode: '激活码',
+      passwordTitle: '临时密码（只显示这一次）',
+      passwordWarning: '关闭后无法再查看。请通过可靠渠道交给本人，并提醒对方尽快修改。',
+      passwordLabel: '临时密码',
+      close: '关闭',
+
+      /** 导入流程 */
+      importTitle: '导入名单',
+      importStepSelect: '选择文件',
+      importDropHint: '选择或拖入 CSV 文件（最大 5 MB）',
+      importReadTemplate: '还没有模板？',
+      importTooLarge: '文件超过 5 MB，请拆分后再导入。',
+      importPreviewing: '正在校验…',
+      importStepPreview: '预览',
+      importStepResult: '结果',
+      importSummary: (total: number, valid: number, invalid: number) =>
+        `共 ${total} 行：${valid} 行可导入${invalid > 0 ? `，${invalid} 行有问题` : ''}`,
+      importExisting: (n: number) => `其中 ${n} 行学号已存在，提交后是更新而不是新建`,
+      importDuplicates: (n: number) => `其中 ${n} 行在文件内重复，只导入第一次出现的那条`,
+      importRowsTruncated: (limit: number) =>
+        `预览只列出前 ${limit} 行，上面的汇总数字是完整的。`,
+      importLine: (line: number) => `第 ${line} 行`,
+      importRowOk: '可导入',
+      importRowError: '有问题',
+      importRowNew: '新建',
+      importRowExisting: '更新',
+      importCommit: '确认导入',
+      importCommitHint: '校验没通过的行不会被写入，其余照常导入。',
+      importDone: (created: number, updated: number, skipped: number) =>
+        `新建 ${created} 个账号，更新 ${updated} 个，跳过 ${skipped} 行`,
+      importNoCodes: '本次没有新建账号，因此没有新的激活码。',
+      importClose: '完成',
+      importBack: '重新选择文件',
+      importFailed: '导入失败',
+
+      empty: '名单还是空的。用「导入名单」把参赛者加进来。',
+      emptyFiltered: '当前筛选条件下没有匹配的参赛者。',
     },
 
     ops: {
