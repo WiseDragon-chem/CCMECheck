@@ -285,3 +285,23 @@ body {
 .lb-row.is-compact {
   border-bottom: none;
 }
+
+/* ---- 签名图片 ---- */
+.signed-image {
+  width: 100%;
+  display: block;
+  background: #f0f0f0;
+}
+
+.signed-image--failed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 120px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  background: #fafafa;
+  border-radius: 8px;
+}
