@@ -61,6 +61,17 @@ const EnvSchema = z.object({
   SEED_ADMIN_STUDENT_ID: z.string().default('admin'),
   SEED_ADMIN_NAME: z.string().default('系统管理员'),
   SEED_ADMIN_PASSWORD: z.string().optional(),
+
+  /**
+   * 审核员账号。设计文档 §5 要求超管能管理管理员账号，
+   * 但那套接口尚不存在 —— 在那之前，审核员只能由种子脚本创建。
+   *
+   * 这不是可选项：没有审核员，系统上线后没人能审材料，
+   * §16 的整条审核链路都跑不起来。
+   */
+  SEED_REVIEWER_STUDENT_ID: z.string().default('reviewer'),
+  SEED_REVIEWER_NAME: z.string().default('审核员'),
+  SEED_REVIEWER_PASSWORD: z.string().optional(),
 })
 
 const parsed = EnvSchema.safeParse(process.env)
@@ -126,5 +137,14 @@ export const env = {
     studentId: raw.SEED_ADMIN_STUDENT_ID,
     name: raw.SEED_ADMIN_NAME,
     password: raw.SEED_ADMIN_PASSWORD && raw.SEED_ADMIN_PASSWORD.length > 0 ? raw.SEED_ADMIN_PASSWORD : undefined,
+  },
+
+  seedReviewer: {
+    studentId: raw.SEED_REVIEWER_STUDENT_ID,
+    name: raw.SEED_REVIEWER_NAME,
+    password:
+      raw.SEED_REVIEWER_PASSWORD && raw.SEED_REVIEWER_PASSWORD.length > 0
+        ? raw.SEED_REVIEWER_PASSWORD
+        : undefined,
   },
 } as const
