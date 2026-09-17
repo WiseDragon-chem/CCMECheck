@@ -57,8 +57,8 @@ body {
   justify-content: center;
 }
 
-/* ---- 底部导航 ---- */
-.bottom-nav__item {
+/* ---- 导航项（手机与桌面共用一套，由容器决定排布）---- */
+.nav-item {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -74,12 +74,12 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-.bottom-nav__item .bottom-nav__icon {
+.nav-item__icon {
   font-size: 20px;
   line-height: 1;
 }
 
-.bottom-nav__item.is-active {
+.nav-item.is-active {
   color: #1677ff;
   font-weight: 500;
 }
