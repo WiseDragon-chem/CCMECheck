@@ -339,6 +339,14 @@ export default function ReviewPipelinePage() {
   // 背景刷新把版本推高了：界面要提示，但不自动改冻结值（那正是冲突的来源）
   const detailStale = Boolean(session && detail && isDetailStale(session, detail.version))
 
+  /**
+   * 队列真的是空的 —— 而不是被筛选筛空的。
+   *
+   * 两者要分开：前者是「今天没有活」，后者是「活还在，只是当前条件看不到」，
+   * 而左栏对后者的提示是带「还有 N 条」的。中栏与右栏都据此选文案。
+   */
+  const queueIsEmpty = visible.length === 0 && (queue.progress?.pending_total ?? 0) === 0
+
   return (
     <div className="review-pipeline">
       <div className="review-pipeline__body">
@@ -359,9 +367,10 @@ export default function ReviewPipelinePage() {
 
         {!cursorId ? (
           <div className="review-pipeline__col review-pipeline__col--materials review-pipeline__empty">
+            {/* 看照片的地方说清「为什么没有照片可看」 */}
             <Empty
               image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={zh.admin.review.noSelection}
+              description={queueIsEmpty ? zh.admin.review.emptyQueue : zh.admin.review.noSelection}
             />
           </div>
         ) : detailQuery.isError ? (
@@ -391,9 +400,24 @@ export default function ReviewPipelinePage() {
               updateSession((current) => acceptRefreshedVersion(current, detail.version))
             }
           />
-        ) : (
+        ) : detailQuery.isLoading ? (
+          // 有选中、详情在路上 —— 这才是真的在加载
           <div className="review-pipeline__col review-pipeline__col--context">
             <Skeleton active paragraph={{ rows: 8 }} />
+          </div>
+        ) : (
+          /*
+            没有详情且不在加载：队列空、或详情取失败（中栏已经报了错）。
+            早先这里的条件是「没有详情就转圈」，于是队列一空，右栏就永远
+            转下去 —— 而它永远等不到人来结束这个加载态。
+
+            用 isLoading 而不是 isPending：查询被 enabled 关掉时 isPending
+            仍为 true（TanStack v5 的语义），拿它做条件会在没有光标时也转圈。
+          */
+          <div className="review-pipeline__col review-pipeline__col--context review-pipeline__empty">
+            <Typography.Text type="secondary">
+              {queueIsEmpty ? zh.admin.review.emptyQueue : zh.admin.review.noSelection}
+            </Typography.Text>
           </div>
         )}
       </div>

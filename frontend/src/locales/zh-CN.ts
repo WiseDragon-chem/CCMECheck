@@ -417,6 +417,9 @@ export const zh = {
       next: '下一份',
       position: (current: number, total: number) => `第 ${current} / ${total} 条`,
       noSelection: '从左侧队列中选择一条记录开始审核',
+      /** 中栏与右栏在队列为空时的提示。说「为空」而不是「已清空」——
+          后者暗示是审阅者自己干完的，而筛选也可能筛空 */
+      emptyQueue: '待审核队列为空',
       approveSuccess: '已通过',
       rejectSuccess: '已驳回',
       rejectTitle: '驳回',
