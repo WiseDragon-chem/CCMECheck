@@ -13,7 +13,6 @@ import {
   Checkbox,
   Input,
   Popconfirm,
-  Result,
   Select,
   Space,
   Table,
@@ -24,6 +23,7 @@ import {
 import { presentError } from '@/api/presentError'
 import { qk } from '@/api/queryKeys'
 import type { AdminParticipant } from '@/api/types'
+import LoadError from '@/components/LoadError'
 import { formatCst } from '@/lib/datetime'
 import { zh } from '@/locales/zh-CN'
 import {
@@ -172,10 +172,9 @@ export default function ParticipantsPage() {
 
   if (query.isError) {
     return (
-      <Result
-        status="warning"
+      <LoadError
+        error={query.error}
         title={zh.admin.common.loadFailed}
-        subTitle={zh.common.loadFailed}
         extra={<Button onClick={() => void query.refetch()}>{zh.common.retry}</Button>}
       />
     )

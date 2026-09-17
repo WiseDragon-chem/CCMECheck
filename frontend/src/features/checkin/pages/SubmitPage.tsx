@@ -7,6 +7,7 @@ import { fetchToday } from '@/api/endpoints/checkins'
 import { qk } from '@/api/queryKeys'
 import { presentError } from '@/api/presentError'
 import { submitCheckin } from '@/api/upload'
+import LoadError from '@/components/LoadError'
 import { serverNow, syncServerClock, useTicker } from '@/hooks/useServerClock'
 import { newClientToken } from '@/lib/clientToken'
 import { formatActivityDate, formatCstTime, formatRemaining } from '@/lib/datetime'
@@ -102,11 +103,20 @@ export default function SubmitPage() {
   if (campaignQuery.isError || todayQuery.isError || !campaignQuery.data || !todayQuery.data) {
     return (
       <div className="page page--readable">
-        <Result
-          status="warning"
+        <LoadError
+          error={todayQuery.error ?? campaignQuery.error}
           title={zh.checkin.submit.loadFailed}
-          subTitle={zh.common.loadFailed}
-          extra={<a onClick={() => void todayQuery.refetch()}>{zh.common.retry}</a>}
+          extra={
+            <a
+              onClick={() => {
+                // 有效证明要求来自活动配置，卡片状态来自今日接口，缺一不可
+                void todayQuery.refetch()
+                void campaignQuery.refetch()
+              }}
+            >
+              {zh.common.retry}
+            </a>
+          }
         />
       </div>
     )

@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { Alert, Card, Empty, Result, Skeleton, Space, Typography } from 'antd'
+import { Alert, Card, Empty, Skeleton, Space, Typography } from 'antd'
 import { fetchCurrentCampaign } from '@/api/endpoints/campaign'
 import { fetchToday } from '@/api/endpoints/checkins'
 import { qk } from '@/api/queryKeys'
 import type { TodayCard } from '@/api/types'
+import LoadError from '@/components/LoadError'
 import { serverNow, syncServerClock, useTicker } from '@/hooks/useServerClock'
 import { formatActivityDate, formatRemaining } from '@/lib/datetime'
 import { zh } from '@/locales/zh-CN'
@@ -93,11 +94,20 @@ export default function HomePage() {
   if (todayQuery.isError || campaignQuery.isError || !todayQuery.data || !campaignQuery.data) {
     return (
       <div className="page">
-        <Result
-          status="warning"
+        <LoadError
+          error={todayQuery.error ?? campaignQuery.error}
           title={zh.checkin.home.loadFailed}
-          subTitle={zh.common.loadFailed}
-          extra={<a onClick={() => void todayQuery.refetch()}>{zh.common.retry}</a>}
+          extra={
+            <a
+              onClick={() => {
+                // 两个请求喂的是同一屏，任何一个失败都要一起重取
+                void todayQuery.refetch()
+                void campaignQuery.refetch()
+              }}
+            >
+              {zh.common.retry}
+            </a>
+          }
         />
       </div>
     )

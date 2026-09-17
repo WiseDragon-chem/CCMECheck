@@ -7,11 +7,12 @@ import {
   LeftOutlined,
   RightOutlined,
 } from '@ant-design/icons'
-import { App as AntdApp, Button, Empty, Result, Skeleton, Space, Typography } from 'antd'
+import { App as AntdApp, Button, Empty, Skeleton, Space, Typography } from 'antd'
 import { isApiError } from '@/api/client'
 import { presentError } from '@/api/presentError'
 import { invalidationMap, qk } from '@/api/queryKeys'
 import type { RejectReasonCode } from '@/api/types'
+import LoadError from '@/components/LoadError'
 import { zh } from '@/locales/zh-CN'
 import { paths } from '@/routes/paths'
 import { approveReview, fetchRejectReasons, fetchReviewDetail, rejectReview } from '../api/reviews'
@@ -323,10 +324,9 @@ export default function ReviewPipelinePage() {
 
   if (queue.isError) {
     return (
-      <Result
-        status="warning"
+      <LoadError
+        error={queue.error}
         title={zh.admin.review.loadQueueFailed}
-        subTitle={zh.common.loadFailed}
         extra={<Button onClick={queue.refetch}>{zh.common.retry}</Button>}
       />
     )
@@ -375,10 +375,9 @@ export default function ReviewPipelinePage() {
           </div>
         ) : detailQuery.isError ? (
           <div className="review-pipeline__col review-pipeline__col--materials review-pipeline__empty">
-            <Result
-              status="warning"
+            <LoadError
+              error={detailQuery.error}
               title={zh.admin.review.loadDetailFailed}
-              subTitle={zh.common.loadFailed}
               extra={<Button onClick={() => void detailQuery.refetch()}>{zh.common.retry}</Button>}
             />
           </div>

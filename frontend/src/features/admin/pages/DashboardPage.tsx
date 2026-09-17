@@ -8,7 +8,6 @@ import {
   Col,
   Empty,
   Progress,
-  Result,
   Row,
   Skeleton,
   Space,
@@ -20,6 +19,7 @@ import {
 import { presentError } from '@/api/presentError'
 import { invalidationMap, qk } from '@/api/queryKeys'
 import type { DashboardStats, DashboardWarning, JobRun, JobStatus, ScheduledJob, TrackStat } from '@/api/types'
+import LoadError from '@/components/LoadError'
 import { formatCst, formatRemaining } from '@/lib/datetime'
 import { zh } from '@/locales/zh-CN'
 import { useAuthStore } from '@/stores/auth.store'
@@ -98,10 +98,9 @@ export default function DashboardPage() {
 
   if (statsQuery.isError) {
     return (
-      <Result
-        status="warning"
+      <LoadError
+        error={statsQuery.error}
         title={zh.admin.common.loadFailed}
-        subTitle={zh.common.loadFailed}
         extra={<Button onClick={() => void statsQuery.refetch()}>{zh.common.retry}</Button>}
       />
     )

@@ -1,8 +1,9 @@
 import { useNavigate, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { Alert, Button, Card, Collapse, Descriptions, Image, Result, Skeleton, Space, Tag, Typography } from 'antd'
+import { Alert, Button, Card, Collapse, Descriptions, Image, Skeleton, Space, Tag, Typography } from 'antd'
 import { fetchCheckinDetail } from '@/api/endpoints/checkins'
 import { qk } from '@/api/queryKeys'
+import LoadError from '@/components/LoadError'
 import SignedImage from '@/components/SignedImage'
 import { formatActivityDateLong, formatCst } from '@/lib/datetime'
 import { zh } from '@/locales/zh-CN'
@@ -36,11 +37,14 @@ export default function RecordDetailPage() {
   if (detailQuery.isError || !detailQuery.data) {
     return (
       <div className="page page--readable">
-        <Result
-          status="warning"
+        <LoadError
+          error={detailQuery.error}
           title={zh.checkin.detail.loadFailed}
-          subTitle={zh.checkin.detail.loadFailedDetail}
-          extra={<Button type="primary" onClick={() => navigate(paths.records)}>{zh.common.backToRecords}</Button>}
+          extra={
+            <Button type="primary" onClick={() => navigate(paths.records)}>
+              {zh.common.backToRecords}
+            </Button>
+          }
         />
       </div>
     )

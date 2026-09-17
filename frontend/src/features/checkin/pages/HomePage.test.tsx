@@ -261,6 +261,33 @@ describe('主页面', () => {
     renderWithProviders(<HomePage />, { route: '/home' })
 
     expect(await screen.findByText('没能加载今日打卡')).toBeInTheDocument()
+    // 服务端已经说了原因，就不该再用「检查网络」把它盖掉
+    expect(await screen.findByText(/服务器出错了/)).toBeInTheDocument()
+    expect(screen.queryByText('请检查网络后重试。')).not.toBeInTheDocument()
     await waitFor(() => expect(screen.getByText('重新加载')).toBeInTheDocument())
+  })
+
+  /**
+   * 回归：活动未发布/已归档时，两个接口都会返回 409 CAMPAIGN_NOT_ACTIVE，
+   * 界面曾经统一显示「没能加载今日打卡 · 请检查网络后重试。」——
+   * 用户按提示检查网络、反复重试都不可能成功，真正的原因（没有进行中的活动）
+   * 反而没告诉任何人。
+   */
+  it('没有进行中的活动时说清楚，而不是让用户去检查网络', async () => {
+    const noCampaign = () =>
+      HttpResponse.json(
+        { code: 'CAMPAIGN_NOT_ACTIVE', message: '当前没有进行中的活动', request_id: 'req_9', details: {} },
+        { status: 409 },
+      )
+    server.use(
+      http.get(`${API}/campaigns/current`, noCampaign),
+      http.get(`${API}/checkins/today`, noCampaign),
+    )
+
+    renderWithProviders(<HomePage />, { route: '/home' })
+
+    expect(await screen.findByText('当前没有进行中的活动')).toBeInTheDocument()
+    expect(screen.getByText(/发布新活动后重新加载本页即可/)).toBeInTheDocument()
+    expect(screen.queryByText('请检查网络后重试。')).not.toBeInTheDocument()
   })
 })

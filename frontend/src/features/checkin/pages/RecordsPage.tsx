@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { Button, Card, Empty, Result, Segmented, Select, Skeleton, Space, Tag, Typography } from 'antd'
+import { Button, Card, Empty, Segmented, Select, Skeleton, Space, Tag, Typography } from 'antd'
 import { RightOutlined } from '@ant-design/icons'
 import { fetchCurrentCampaign } from '@/api/endpoints/campaign'
 import { fetchCheckins } from '@/api/endpoints/checkins'
@@ -11,6 +11,7 @@ import { formatActivityDate, formatCstFriendly } from '@/lib/datetime'
 import { zh } from '@/locales/zh-CN'
 import { paths } from '@/routes/paths'
 import { CHECKIN_STATUS_META, type EntryStatusKey } from '@/components/entryStatusMeta'
+import LoadError from '@/components/LoadError'
 
 /**
  * 打卡记录（design.md §7.5）。
@@ -69,10 +70,9 @@ export default function RecordsPage() {
   if (listQuery.isError || !listQuery.data) {
     return (
       <div className="page">
-        <Result
-          status="warning"
+        <LoadError
+          error={listQuery.error}
           title={zh.checkin.records.loadFailed}
-          subTitle={zh.common.loadFailed}
           extra={<a onClick={() => void listQuery.refetch()}>{zh.common.retry}</a>}
         />
       </div>

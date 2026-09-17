@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { Alert, Button, Card, Empty, Result, Skeleton, Tabs, Tag, Typography } from 'antd'
+import { Alert, Button, Card, Empty, Skeleton, Tabs, Tag, Typography } from 'antd'
 import { fetchCurrentCampaign } from '@/api/endpoints/campaign'
 import { fetchLeaderboard } from '@/api/endpoints/leaderboard'
 import { qk } from '@/api/queryKeys'
 import type { LeaderboardRow } from '@/api/types'
+import LoadError from '@/components/LoadError'
 import { formatCst } from '@/lib/datetime'
 import { formatScore } from '@/lib/milli'
 import { zh } from '@/locales/zh-CN'
@@ -55,11 +56,20 @@ export default function LeaderboardPage() {
   if (campaignQuery.isError || leaderboardQuery.isError || !leaderboardQuery.data) {
     return (
       <div className="page">
-        <Result
-          status="warning"
+        <LoadError
+          error={leaderboardQuery.error ?? campaignQuery.error}
           title={zh.leaderboard.loadFailed}
-          subTitle={zh.common.loadFailed}
-          extra={<a onClick={() => void leaderboardQuery.refetch()}>{zh.common.retry}</a>}
+          extra={
+            <a
+              onClick={() => {
+                // 赛道标签页与「活动不在进行中」都来自活动配置，重试要连它一起取
+                void leaderboardQuery.refetch()
+                void campaignQuery.refetch()
+              }}
+            >
+              {zh.common.retry}
+            </a>
+          }
         />
       </div>
     )

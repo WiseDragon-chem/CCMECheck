@@ -25,6 +25,8 @@ export interface ReviewQueueState {
   total: number
   isLoading: boolean
   isError: boolean
+  /** 供失败界面展示真实原因（无活动 409 与网络故障要说不同的话） */
+  error: unknown
   isFetching: boolean
   refetch: () => void
   hasMore: boolean
@@ -63,6 +65,7 @@ export function useReviewQueue(filters: ReviewFilters): ReviewQueueState {
     total: pages?.[pages.length - 1]?.total ?? 0,
     isLoading: query.isPending,
     isError: query.isError,
+    error: query.error,
     isFetching: query.isFetching,
     refetch: () => void query.refetch(),
     hasMore: query.hasNextPage,

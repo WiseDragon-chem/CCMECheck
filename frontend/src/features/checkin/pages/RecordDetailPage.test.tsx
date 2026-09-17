@@ -177,6 +177,8 @@ describe('记录详情', () => {
     renderDetail()
 
     expect(await screen.findByText('没能加载记录详情')).toBeInTheDocument()
+    // 404 的原因来自服务端，不该含糊成「可能网络异常」
+    expect(screen.getByText('内容不存在或已被删除')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '返回记录列表' })).toBeInTheDocument()
   })
 })

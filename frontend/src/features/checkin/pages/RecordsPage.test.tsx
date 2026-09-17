@@ -221,4 +221,21 @@ describe('打卡记录列表', () => {
 
     expect(await screen.findByText('没能加载打卡记录')).toBeInTheDocument()
   })
+
+  it('列表接口因没有活动而拒绝时，不说成网络故障', async () => {
+    mockCampaign()
+    server.use(
+      http.get(`${API}/checkins`, () =>
+        HttpResponse.json(
+          { code: 'CAMPAIGN_NOT_ACTIVE', message: '当前没有进行中的活动', request_id: 'req_1', details: {} },
+          { status: 409 },
+        ),
+      ),
+    )
+
+    renderWithProviders(<RecordsPage />, { route: '/records' })
+
+    expect(await screen.findByText('当前没有进行中的活动')).toBeInTheDocument()
+    expect(screen.queryByText('请检查网络后重试。')).not.toBeInTheDocument()
+  })
 })

@@ -49,7 +49,11 @@ export const zh = {
     backToRecords: '返回记录列表',
     submit: '提交',
     retrySubmit: '重试提交',
+    /** 仅用于真的没连上服务端的场景；服务端有响应时用它的 message */
     loadFailed: '请检查网络后重试。',
+    /** 409 CAMPAIGN_NOT_ACTIVE：没有活动可加载，不是网络故障 */
+    noCampaign: '当前没有进行中的活动',
+    noCampaignDetail: '活动尚未开放、已结束或已归档；发布新活动后重新加载本页即可。',
     trackingId: (id: string) => `追踪号 ${id}`,
   },
 
@@ -235,7 +239,6 @@ export const zh = {
       reopenTitle: '管理员已临时重新开放',
       reopenDetail: (time: string) => `请在此时间前完成重新提交：${time}`,
       loadFailed: '没能加载记录详情',
-      loadFailedDetail: '记录可能已被删除，或网络异常。',
       imageLoadFailed: '图片加载失败',
       reloadImage: '重新加载',
       viewLarger: '点击查看大图',
