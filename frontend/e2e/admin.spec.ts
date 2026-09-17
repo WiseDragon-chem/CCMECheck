@@ -118,6 +118,54 @@ test.describe('管理后台', () => {
     await expect(page.getByRole('dialog')).toBeHidden()
   })
 
+  test('左侧导航的选中态跟着页面走', async ({ page }) => {
+    await loginAs(page, ADMIN)
+    await page.waitForURL('**/admin')
+
+    // 曾经这里恒为「概览」：/admin 是所有后台路径的前缀，
+    // 用 find 取第一个匹配就永远命中它，点别的入口页面换了、高亮没换
+    await expect(page.locator('.ant-menu-item-selected')).toContainText('概览')
+
+    await page.locator('.ant-menu-item', { hasText: '审核' }).click()
+    await page.waitForURL('**/admin/review')
+    await expect(page.locator('.ant-menu-item-selected')).toContainText('审核')
+    await expect(page.locator('.ant-menu-item-selected')).toHaveCount(1)
+
+    await page.locator('.ant-menu-item', { hasText: '名单' }).click()
+    await page.waitForURL('**/admin/participants')
+    await expect(page.locator('.ant-menu-item-selected')).toContainText('名单')
+  })
+
+  test('队列被筛空时三个面板都不停在加载态', async ({ page }) => {
+    await openReview(page)
+
+    // 用一个查不到结果的班级把队列筛空。此时没有光标，
+    // 而右栏早先的条件是「没有详情就转圈」—— 它永远等不到人来结束这个加载
+    await page.goto('/admin/review?class=不存在的班级')
+
+    await expect(page.locator('.review-pipeline__empty').first()).toBeVisible()
+    await expect(page.locator('.review-pipeline .ant-skeleton')).toHaveCount(0)
+    // 左栏说的是「当前筛选下没有」而不是「队列清空了」
+    await expect(page.locator('.review-pipeline')).toContainText('试试清除筛选')
+  })
+
+  test('队列真的审空后，看照片的地方说「待审核队列为空」', async ({ page }) => {
+    await openReview(page)
+
+    // 逐条通过直到队列清空。条数取决于当次播种（十几条），上限只是兜底，
+    // 免得一个断言写错就把用例挂成死循环
+    for (let guard = 0; guard < 60; guard += 1) {
+      if ((await page.locator('.queue-item').count()) === 0) break
+      await page.keyboard.press('a')
+      await expect(page.locator('.ant-message').last()).toContainText('已通过')
+    }
+
+    await expect(page.locator('.queue-item')).toHaveCount(0)
+    // 中栏（看照片的地方）与右栏都说这件事，而不是停在加载态
+    await expect(page.locator('.review-pipeline__col--materials')).toContainText('待审核队列为空')
+    await expect(page.locator('.review-pipeline .ant-skeleton')).toHaveCount(0)
+  })
+
   test('概览页把首页要的数字一次给全', async ({ page }) => {
     await loginAs(page, REVIEWER)
     await page.waitForURL('**/admin')
