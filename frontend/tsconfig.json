@@ -25,8 +25,14 @@
     "noEmit": true,
 
     "types": ["vite/client", "node"],
-    "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] }
+    /**
+     * 不配 baseUrl：TS 5.9 已把它标记为弃用（编辑器会标红），
+     * 而它此前唯一的用处就是给 paths 一个解析基准 —— 从 TS 4.1 起
+     * 映射可以省略 baseUrl，按 tsconfig 所在目录解析。
+     *
+     * 代价是路径要写成 ./src/*，多两个字符，换来这一项不再是弃用状态。
+     */
+    "paths": { "@/*": ["./src/*"] }
   },
   "include": ["src", "e2e", "tools", "vite.config.ts", "playwright.config.ts"],
   "exclude": ["node_modules", "dist", "playwright-report", "test-results"]
