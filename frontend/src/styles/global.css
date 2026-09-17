@@ -307,14 +307,6 @@ body {
 }
 
 /* ---- 管理后台布局（桌面优先）---- */
-.admin-sider__brand {
-  height: 56px;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
 .admin-header {
   display: flex;
   align-items: center;

@@ -15,7 +15,7 @@ import { Button, Layout, Menu, Space, Spin, Tag, Tooltip, Typography } from 'ant
 import { fetchCurrentCampaign } from '@/api/endpoints/campaign'
 import { qk } from '@/api/queryKeys'
 import { zh } from '@/locales/zh-CN'
-import { paths } from '@/routes/paths'
+import { matchNavKey, paths } from '@/routes/paths'
 import { useAuthStore } from '@/stores/auth.store'
 
 /**
@@ -57,17 +57,19 @@ export default function AdminLayout() {
     [isSuperAdmin],
   )
 
-  // 审核页有 /admin/review/:entryId 这样的子路径，选中态按键的前缀匹配
-  const selectedKey = items.find((item) => location.pathname.startsWith(item.key))?.key
+  // 选中态按键的前缀匹配，但必须取最长匹配 —— 见 matchNavKey 的说明：
+  // `/admin` 是所有后台路径的前缀，取第一个会让「概览」永远亮着
+  const selectedKey = matchNavKey(
+    location.pathname,
+    items.map((item) => item.key),
+  )
 
   const campaign = campaignQuery.data?.campaign
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Layout.Sider theme="light" collapsible collapsed={collapsed} trigger={null} width={220}>
-        <div className="admin-sider__brand">
-          <Typography.Text strong>{collapsed ? '打卡' : zh.app.name}</Typography.Text>
-        </div>
+        {/* 侧栏顶部不留标题：活动名已经在页头，这里再来一遍只是占掉一行导航 */}
         <Menu
           mode="inline"
           selectedKeys={selectedKey ? [selectedKey] : []}
