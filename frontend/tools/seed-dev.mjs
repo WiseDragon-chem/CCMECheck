@@ -234,11 +234,16 @@ async function createCampaign() {
       leaderboard_visible: true,
       leaderboard_time: '06:00',
       name_display_mode: 'real',
+      // 三个赛道等权，与 src/config/campaign.ts 里的生产配置一致。
+      //
+      // 早先这里刻意设成 1000/800/1200「让总榜的加权看得出来」，但代价是
+      // 演示数据里到处是 8.2、7.7 这种分数 —— 它其实完全正确（毫点换算的结果），
+      // 却看起来像浮点故障，每次都要解释一遍。加权路径本身由
+      // tests/unit/scoring.test.ts 覆盖，不必靠演示数据兜着。
       tracks: [
         { track_id: 'reading', daily_points: 1000, overall_weight: 1000 },
-        // 权重刻意各不相同，让总榜的加权看得出来
-        { track_id: 'vocabulary', daily_points: 1000, overall_weight: 800 },
-        { track_id: 'fitness', daily_points: 1000, overall_weight: 1200 },
+        { track_id: 'vocabulary', daily_points: 1000, overall_weight: 1000 },
+        { track_id: 'fitness', daily_points: 1000, overall_weight: 1000 },
       ],
     },
   })
