@@ -56,7 +56,7 @@ npm run prisma:generate
 # 建库并应用迁移
 npm run prisma:migrate
 
-# 写入初始数据：超级管理员 + 三个赛道（不预置活动）
+# 写入初始数据：超级管理员 + 审核员 + 三个赛道（不预置活动）
 npm run seed
 
 # 启动开发服务（HTTP + 定时任务同进程）
@@ -73,6 +73,8 @@ npm run dev
 - `.env` 从 `.env.example` 复制。`JWT_SECRET` 与 `FILE_SIGNING_SECRET` 至少 32 字符，
   启动时由 Zod 校验，不满足直接失败退出。
 - 数据库文件放在普通本地磁盘上。**不要放在 OneDrive 等同步目录**，WAL 在同步文件系统上会失效。
+- 活动不在种子里。本地开发由前端的 `npm run seed:dev` 通过接口创建；部署时用
+  `npm run campaign:init`（需要先填 `src/config/campaign.ts` 的日期，留空会拒绝执行）。
 
 ---
 
@@ -85,7 +87,8 @@ npm run dev
 | `npm run typecheck` | 全量类型检查 |
 | `npm run prisma:migrate` | 开发期迁移 |
 | `npm run prisma:deploy` | 生产环境应用迁移 |
-| `npm run seed` | 写入初始数据（幂等） |
+| `npm run seed` | 写入初始数据：管理员、审核员、三个赛道（幂等） |
+| `npm run campaign:init` | 把 `src/config/campaign.ts` 里的活动与计分规则同步到库（幂等，会打印改了哪些字段） |
 | `npm test` / `npm run test:watch` | Vitest |
 
 ---

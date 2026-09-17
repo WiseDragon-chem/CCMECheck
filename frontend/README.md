@@ -107,7 +107,8 @@ src/
 ├── features/     按业务域划分，页面放在各自的 feature 内
 │   ├── auth/
 │   ├── checkin/
-│   └── leaderboard/
+│   ├── leaderboard/
+│   └── admin/    管理后台五页（概览/审核/名单/异常处理/审计）
 ├── hooks/
 ├── layouts/
 ├── lib/          日期、毫点、幂等键等纯函数
