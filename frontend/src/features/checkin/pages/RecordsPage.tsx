@@ -99,6 +99,7 @@ export default function RecordsPage() {
               setLimit(PAGE_SIZE)
             }}
             options={trackOptions}
+            style={{fontSize: '0.9rem'}}
           />
         )}
         <Select
