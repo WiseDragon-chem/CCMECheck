@@ -20,6 +20,16 @@ const FRONTEND_ROOT = path.resolve(HERE, '..')
 const SERVER_ROOT = path.resolve(FRONTEND_ROOT, '..', 'server')
 
 export const E2E_DB_FILE = path.join(SERVER_ROOT, 'prisma', 'e2e.db')
+/**
+ * 端到端测试自己的存储根。
+ *
+ * 必须与开发环境分开：后端默认写 `server/storage/`，而 e2e **每次运行都会
+ * 把数据库删掉重建** —— 于是那一次上传的图片文件全部失去引用，永久留在
+ * 开发目录里。攒下来是几百 MB 的孤儿文件（真发生过：3727 个文件、769 MB）。
+ *
+ * server/tests/test-env.ts 早就这么做了（storage-test/），这里只是补齐。
+ */
+export const E2E_STORAGE_ROOT = path.join(SERVER_ROOT, 'storage-e2e')
 export const E2E_API_PORT = 3100
 export const E2E_WEB_PORT = 5174
 export const E2E_BASE_URL = `http://localhost:${E2E_WEB_PORT}`
@@ -31,7 +41,7 @@ export const E2E_PARTICIPANT = { studentId: '2026001', password: 'DevPassw0rd!' 
 const children: ChildProcess[] = []
 
 export default async function globalSetup(): Promise<void> {
-  resetDatabase()
+  resetEnvironment()
   startBackend()
   startFrontend()
   await Promise.all([waitForBackend(), waitForFrontend()])
@@ -47,6 +57,17 @@ function runNode(entry: string, args: string[], cwd: string): void {
     env: { ...process.env, DATABASE_URL: E2E_DATABASE_URL },
     stdio: 'inherit',
   })
+}
+
+/**
+ * 清空数据库与存储。
+ *
+ * 两者必须一起清：只清库不清存储，上一次运行上传的图片就成了孤儿
+ * （数据库里没有任何记录指向它们），而它们占的空间并不小。
+ */
+function resetEnvironment(): void {
+  fs.rmSync(E2E_STORAGE_ROOT, { recursive: true, force: true })
+  resetDatabase()
 }
 
 function resetDatabase(): void {
@@ -77,6 +98,12 @@ function startBackend(): void {
       env: {
         ...process.env,
         DATABASE_URL: 'file:./prisma/e2e.db',
+        /**
+         * 图片写到自己的目录里，不要碰开发环境的上传目录 ——
+         * 理由见 E2E_STORAGE_ROOT 的说明。路径用绝对路径：
+         * 后端的 cwd 是 server/，相对路径虽然也能算对，但绝对路径不依赖这个前提。
+         */
+        STORAGE_ROOT: E2E_STORAGE_ROOT,
         PORT: String(E2E_API_PORT),
         // 定时任务会和测试抢写锁，且测试不依赖它
         SCHEDULER_ENABLED: 'false',

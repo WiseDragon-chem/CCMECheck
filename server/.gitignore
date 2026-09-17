@@ -11,6 +11,7 @@ coverage/
 # 就是因为它在开发机上完全没有症状。
 /storage/
 /storage-test/
+/storage-e2e/
 /backups/
 
 *.db
