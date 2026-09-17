@@ -93,7 +93,7 @@ export default function SubmitPage() {
 
   if (campaignQuery.isPending || todayQuery.isPending) {
     return (
-      <div className="page">
+      <div className="page page--readable">
         <Skeleton active paragraph={{ rows: 6 }} />
       </div>
     )
@@ -101,7 +101,7 @@ export default function SubmitPage() {
 
   if (campaignQuery.isError || todayQuery.isError || !campaignQuery.data || !todayQuery.data) {
     return (
-      <div className="page">
+      <div className="page page--readable">
         <Result
           status="warning"
           title={zh.checkin.submit.loadFailed}
@@ -118,7 +118,7 @@ export default function SubmitPage() {
 
   if (!trackConfig) {
     return (
-      <div className="page">
+      <div className="page page--readable">
         <Result
           status="404"
           title={zh.checkin.submit.trackNotFound}
@@ -135,7 +135,7 @@ export default function SubmitPage() {
   // 不如提前把原因说清楚
   if (displayState === 'approved' || displayState === 'invalid') {
     return (
-      <div className="page">
+      <div className="page page--readable">
         <Result
           status="info"
           title={displayState === 'approved' ? zh.checkin.submit.alreadyApprovedTitle : zh.checkin.submit.invalidTitle}
@@ -152,7 +152,7 @@ export default function SubmitPage() {
 
   if (displayState === 'submit_closed' || displayState === 'missed') {
     return (
-      <div className="page">
+      <div className="page page--readable">
         <Result
           status="warning"
           title={displayState === 'submit_closed' ? zh.checkin.submit.closedTitle : zh.checkin.submit.missedTitle}
@@ -182,7 +182,7 @@ export default function SubmitPage() {
   const tooFew = images.length < rules.min_images
 
   return (
-    <div className="page">
+    <div className="page page--readable">
       <Space direction="vertical" size={2} style={{ width: '100%', marginBottom: 12 }}>
         <Typography.Title level={4} style={{ margin: 0 }}>
           {trackConfig.name}

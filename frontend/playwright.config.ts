@@ -37,8 +37,9 @@ export default defineConfig({
       name: 'mobile-chrome',
       // 参赛者端是手机优先的，端到端也用手机尺寸跑
       use: { ...devices['Pixel 7'] },
-      // 管理后台是三栏的桌面界面，在手机尺寸下测不出真实行为（见 admin.spec.ts）
-      testIgnore: '**/admin.spec.ts',
+      // 管理后台是三栏的桌面界面，在手机尺寸下测不出真实行为（见 admin.spec.ts）；
+      // layout.spec.ts 自己切视口，两个视口都要验，只在桌面项目里跑一次
+      testIgnore: ['**/admin.spec.ts', '**/layout.spec.ts'],
     },
     {
       /**
@@ -50,7 +51,7 @@ export default defineConfig({
        */
       name: 'desktop-chrome',
       use: { ...devices['Desktop Chrome'] },
-      testMatch: '**/admin.spec.ts',
+      testMatch: ['**/admin.spec.ts', '**/layout.spec.ts'],
     },
   ],
 })

@@ -87,59 +87,70 @@ export default function LeaderboardPage() {
         {zh.leaderboard.cadence(campaign.leaderboard_time)}
       </Typography.Text>
 
-      <Tabs
-        activeKey={activeTab}
-        onChange={(key) => {
-          setLimit(PAGE_SIZE)
-          setSearchParams(key === OVERALL ? {} : { tab: key }, { replace: true })
-        }}
-        items={tabs.map((tab) => ({ key: tab.key, label: tab.label }))}
-      />
+      {/*
+        手机上 .lb-layout / .lb-main / .lb-side 都没有任何规则，全是普通 div，
+        页面结构与之前逐像素相同：标签页、列表、贴底的「我的名次」浮条。
+        桌面下才变成两栏 —— 榜单是沿着一条轴往下扫名次，把它拆成两栏会摧毁
+        这个语义，所以列表仍然单列，只是变窄并把宽度让给右侧的名次卡片。
+      */}
+      <div className="lb-layout">
+        <div className="lb-main">
+          <Tabs
+            activeKey={activeTab}
+            onChange={(key) => {
+              setLimit(PAGE_SIZE)
+              setSearchParams(key === OVERALL ? {} : { tab: key }, { replace: true })
+            }}
+            items={tabs.map((tab) => ({ key: tab.key, label: tab.label }))}
+          />
 
-      <SnapshotHeader
-        snapshot={data.snapshot}
-        countedThrough={data.counted_through}
-      />
+          <SnapshotHeader snapshot={data.snapshot} countedThrough={data.counted_through} />
 
-      {data.rows.length === 0 ? (
-        <Empty
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description={
-            data.snapshot === null
-              ? zh.leaderboard.notGenerated
-              : zh.leaderboard.empty
-          }
-        />
-      ) : (
-        <>
-          <Card size="small" styles={{ body: { padding: 0 } }}>
-            {data.rows.map((row) => (
-              <LeaderboardRowItem key={row.participant_id} row={row} />
-            ))}
-          </Card>
+          {data.rows.length === 0 ? (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={
+                data.snapshot === null ? zh.leaderboard.notGenerated : zh.leaderboard.empty
+              }
+            />
+          ) : (
+            <>
+              <Card size="small" styles={{ body: { padding: 0 } }}>
+                {data.rows.map((row) => (
+                  <LeaderboardRowItem key={row.participant_id} row={row} />
+                ))}
+              </Card>
 
-          {data.total > data.rows.length && (
-            <Button
-              block
-              style={{ marginTop: 12 }}
-              onClick={() => setLimit((value) => value + PAGE_SIZE)}
-              loading={leaderboardQuery.isFetching}
-            >
-              {zh.leaderboard.loadMore(data.rows.length, data.total)}
-            </Button>
+              {data.total > data.rows.length && (
+                <Button
+                  block
+                  style={{ marginTop: 12 }}
+                  onClick={() => setLimit((value) => value + PAGE_SIZE)}
+                  loading={leaderboardQuery.isFetching}
+                >
+                  {zh.leaderboard.loadMore(data.rows.length, data.total)}
+                </Button>
+              )}
+            </>
           )}
+        </div>
 
-          {/*
-            自己不在当前加载范围内时，底部固定显示我的名次，
-            否则用户在几百人的榜单里翻不到自己。
-          */}
-          {data.me && !data.rows.some((row) => row.is_me) && (
+        {/*
+          自己不在当前加载范围内时把名次单独给出来，否则用户在几百人的榜单里
+          翻不到自己。手机上它是贴在底部导航之上的浮条；桌面上下拉回文档流，
+          做成右栏的一张卡片。渲染条件两者相同。
+        */}
+        {data.me && !data.rows.some((row) => row.is_me) && (
+          <aside className="lb-side">
+            <Typography.Text className="lb-side__title" strong>
+              {zh.leaderboard.myRankTitle}
+            </Typography.Text>
             <div className="my-rank-bar">
               <LeaderboardRowItem row={data.me.row} compact />
             </div>
-          )}
-        </>
-      )}
+          </aside>
+        )}
+      </div>
     </div>
   )
 }

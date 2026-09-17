@@ -66,7 +66,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="page">
+    <div className="page page--readable">
       <Typography.Title level={4} style={{ marginTop: 0 }}>
         {t.title}
       </Typography.Title>

@@ -9,8 +9,9 @@ import { paths } from '@/routes/paths'
  * 与管理后台布局完全分开 —— 后台是桌面端的表格与三栏，
  * 挤进 375px 或把参赛者流程塞进 1280px 的表格里，两边都会难用。
  *
- * 内容宽度手机上铺满、550px 以上居中；桌面上的加宽与重排见
- * global.css 里的桌面适配块。
+ * 断点是 992px：以下走手机形态（内容铺满、底部导航），以上走桌面形态
+ * （内容居中在一列 1040px 的壳里、顶部横条导航、各页按需分栏）。
+ * 具体规则全部在 global.css 的「参赛者端 · 桌面适配」块里。
  */
 
 /** 图标与文案并用 —— design.md §7.3 对无障碍的要求同样适用于导航 */
@@ -42,8 +43,24 @@ function NavItems() {
 }
 
 export default function ParticipantLayout() {
+  /*
+    两个 <nav> 同时存在于 DOM，靠 CSS 的 display 二选一：手机是底部四宫格，
+    桌面是顶部横条。不可见的那个是 display:none，读屏与 Tab 都不会碰到它。
+
+    「导航文案在 DOM 里有两份」这件事要知道：getByRole 走无障碍树，安全；
+    getByText 不过滤可见性，将来若有人对「记录」「排行榜」这类文案写
+    getByText，strict mode 会因两份匹配而报错 —— 那与布局无关，
+    到时候用 getByRole('link') 或 .first() 解决。
+  */
   return (
     <div className="participant-shell participant-shell--with-nav">
+      <nav className="top-nav" aria-label={zh.nav.label}>
+        {/* 内层承接内容列的对齐：顶栏铺满视口，链接与内容列右缘对齐 */}
+        <div className="top-nav__inner">
+          <NavItems />
+        </div>
+      </nav>
+
       <Outlet />
 
       <nav className="bottom-nav" aria-label={zh.nav.label}>

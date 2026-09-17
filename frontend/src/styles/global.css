@@ -1,8 +1,15 @@
 :root {
-  /* 参赛者端内容的最大宽度：再宽在手机上会浪费，在桌面上也不至于拉成一条 */
+  /* 参赛者端内容的宽度上限（手机形态）。桌面形态由文件末尾的
+     「参赛者端 · 桌面适配」块覆盖为 1040px，见那里的说明 */
   --participant-max-width: 560px;
   /* 底部导航高度，供页面留出 padding-bottom */
   --bottom-nav-height: 56px;
+
+  /* 以下三个只在桌面块（见文件末尾的「参赛者端 · 桌面适配」）里被消费，
+     手机上不参与任何计算 */
+  --top-nav-height: 56px;           /* 顶部导航高度，与底部导航同高 */
+  --participant-wide-width: 1040px; /* 浏览类页面（首页/排行榜/记录）的壳宽 */
+  --participant-read-width: 720px;  /* 阅读与表单类页面（提交/详情/我的）的列宽 */
 }
 
 * {
@@ -55,6 +62,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* 顶部导航在手机上不存在。display:none 同时把它从无障碍树里摘掉 ——
+   读屏不会听到两个「主导航」地标，Tab 也走不到隐藏的那一份 */
+.top-nav {
+  display: none;
 }
 
 /* ---- 导航项（手机与桌面共用一套，由容器决定排布）---- */
@@ -268,6 +281,12 @@ body {
   color: #1677ff;
 }
 
+/* 侧栏标题：桌面上「我的名次」是一张卡片，需要标题；
+   手机上它是贴底的一条浮条，标题没有位置，也不该多出一行字 */
+.lb-side__title {
+  display: none;
+}
+
 /* 自己不在列表里时底部固定的那一行 */
 .my-rank-bar {
   position: fixed;
@@ -304,6 +323,189 @@ body {
   color: rgba(0, 0, 0, 0.45);
   background: #fafafa;
   border-radius: 8px;
+}
+
+/* ===========================================================================
+   参赛者端 · 桌面适配
+
+   全文唯一的断点：992px（对齐 antd 的 lg —— 管理后台的 Row/Col 用的是同一套，
+   将来若真要用 JS 断点，不必再解释「我们的 992 和 antd 的 lg 差多少」）。
+   991 及以下保持手机形态：那覆盖 iPad 竖屏与小窗口，它们触屏优先、竖屏窄，
+   底部导航本来就更自然。
+
+   纪律：本块只做「新增覆盖」，不改动上面任何一条手机规则的取值。
+   所有桌面效果都必须写在这里 —— 在块外新增任何 width / max-width / padding
+   之前先问一句「这会不会动到 412px」，会，就是写错地方了。
+   e2e/layout.spec.ts 会在 991 与 992 两个宽度上把这条边界钉住。
+   =========================================================================== */
+@media (min-width: 992px) {
+  /* --- 壳：放宽到 1040，并为固定顶栏让出高度 --- */
+  .participant-shell {
+    max-width: var(--participant-wide-width);
+    /* 顶栏是 fixed，不占流。少了这一行，页面第一个元素会被压在栏下面。
+       高度靠 `* { box-sizing: border-box }` 与 min-height:100vh 相抵，
+       否则页面会恒定多出一条滚动条 */
+    padding-top: var(--top-nav-height);
+  }
+
+  /* 桌面没有底部导航，撤回手机为它预留的高度 */
+  .participant-shell--with-nav {
+    padding-bottom: 0;
+  }
+
+  /* --- 导航二选一（两个 nav 都在 DOM 里，见 ParticipantLayout）--- */
+  .bottom-nav {
+    display: none;
+  }
+
+  .top-nav {
+    position: fixed;
+    /* fixed 的包含块是视口，于是它天然逃出壳的 1040 上限、铺满整个宽度 ——
+       不必为此把 nav 提到 .participant-shell 外面 */
+    inset: 0 0 auto 0;
+    height: var(--top-nav-height);
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    /* 与底部导航同层。二者永不同时可见 */
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* 顶栏铺满视口，但里面的链接与内容列对齐 */
+  .top-nav__inner {
+    width: 100%;
+    max-width: var(--participant-wide-width);
+    padding: 0 24px; /* 与 .page 的桌面内边距一致 */
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+
+  .top-nav .nav-item {
+    flex: 0 0 auto; /* 取消手机的 flex:1 —— 横条上不该等分整行 */
+    flex-direction: row;
+    gap: 6px;
+    height: 100%;
+    min-height: 0;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+
+  .top-nav .nav-item__icon {
+    font-size: 16px;
+  }
+
+  /* 手机上靠颜色与字重就够了；56px 高的横条上再加一条下划线更好认 */
+  .top-nav .nav-item.is-active {
+    box-shadow: inset 0 -2px 0 #1677ff;
+  }
+
+  /* --- 正文内边距：16px 在 1000px 宽的列上太挤 --- */
+  .page {
+    padding: 24px;
+  }
+
+  /* 阅读与表单类页面收敛到可读的行宽（720 − 48 内边距 = 672，
+     中文正文约 40 字一行，正好在舒适区） */
+  .page--readable {
+    max-width: var(--participant-read-width);
+    margin-inline: auto;
+  }
+
+  /* --- 首页：赛道卡并排 --- */
+  .track-grid {
+    display: grid;
+    /* auto-fit 而不是写死 3 列：赛道是后台可停用、可增加的配置项 */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px;
+  }
+
+  /* --- 记录列表：两栏。卡片内部是两端对齐，铺满一行会中间空一大片 --- */
+  .record-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 8px;
+  }
+
+  /* --- 排行榜：主列 + 「我的名次」侧栏 --- */
+  .lb-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .lb-side {
+    /* 榜单很长，侧栏跟着滚才一直看得见 */
+    position: sticky;
+    top: calc(var(--top-nav-height) + 16px);
+  }
+
+  .lb-side__title {
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  /* 浮条在桌面上不再是浮条，回到文档流里做一张侧栏卡片。
+     手机侧的规则（fixed + bottom: calc(--bottom-nav-height) …）一字未改 */
+  .my-rank-bar {
+    position: static;
+    max-width: none;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+    border-top: 1px solid #1677ff;
+    box-shadow: none;
+  }
+
+  /* --- 证明材料网格：列数跟着容器走 --- */
+  .image-grid {
+    /* 手机是 repeat(3, 1fr)，容器变宽后格子会等比放大成巨型方块。
+       150 在 672px 的阅读列里落在 4 列、每格约 156px，与手机上手机
+       的 163px 同量级。
+
+       必须写在媒体查询内：最小值 140 在 412px 下只能排 2 列，
+       写成全局会让手机从 3 列掉到 2 列 */
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  /* --- 排行榜行：把「班级 · 有效天数」提到同一排 --- */
+  .lb-row {
+    display: grid;
+    /* 名次 / 姓名（弹性）/ 班级·天数 / 分数。
+       分数列固定宽：用 auto 的话每行各算各的，数字位数不同会让右缘参差，
+       一眼就看得出「这不是表格」 */
+    grid-template-columns: 56px minmax(0, 1fr) auto 120px;
+    column-gap: 24px;
+    align-items: center;
+    padding: 12px 20px;
+  }
+
+  /* 去掉中间那层 flex 包裹，让姓名与 meta 直接落到网格上 ——
+     宽出来的空间被小字填掉，而不是留成一片空气 */
+  .lb-row__who {
+    display: contents;
+  }
+
+  /* display:contents 之后 __who 的 min-width:0 不再作用于 __name。
+     不补这一行，超长姓名会撑破整行，省略号也不会出现。只写在桌面块里 */
+  .lb-row__name {
+    min-width: 0;
+  }
+
+  .lb-row__rank {
+    text-align: left;
+  }
+
+  .lb-row__meta {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .lb-row__score {
+    text-align: right;
+  }
 }
 
 /* ---- 管理后台布局（桌面优先）---- */

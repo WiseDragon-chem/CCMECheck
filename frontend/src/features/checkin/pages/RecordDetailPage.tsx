@@ -27,7 +27,7 @@ export default function RecordDetailPage() {
 
   if (detailQuery.isPending) {
     return (
-      <div className="page">
+      <div className="page page--readable">
         <Skeleton active paragraph={{ rows: 6 }} />
       </div>
     )
@@ -35,7 +35,7 @@ export default function RecordDetailPage() {
 
   if (detailQuery.isError || !detailQuery.data) {
     return (
-      <div className="page">
+      <div className="page page--readable">
         <Result
           status="warning"
           title={zh.checkin.detail.loadFailed}
@@ -51,7 +51,7 @@ export default function RecordDetailPage() {
   const assets = detail.current_revision?.assets ?? []
 
   return (
-    <div className="page">
+    <div className="page page--readable">
       <Space direction="vertical" size={2} style={{ width: '100%', marginBottom: 12 }}>
         <Space size={8}>
           <Typography.Title level={4} style={{ margin: 0 }}>

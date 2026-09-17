@@ -254,6 +254,8 @@ export const zh = {
     empty: '这个榜单暂时没有数据。',
     notGenerated: '排行榜尚未生成，请等待管理员完成第一次统计。',
     me: '我',
+    /** 桌面下「我的名次」是右栏的一张卡片，需要标题；手机上它是贴底浮条，标题被 CSS 隐藏 */
+    myRankTitle: '我的名次',
     meMeta: (className: string, days: number) => `${className} · 有效 ${days} 天`,
     loadMore: (shown: number, total: number) => `加载更多（已显示 ${shown} / ${total}）`,
     loadFailed: '没能加载排行榜',

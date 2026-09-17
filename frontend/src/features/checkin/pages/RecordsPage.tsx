@@ -139,9 +139,16 @@ export default function RecordsPage() {
         />
       ) : (
         <>
-          {items.map((item) => (
-            <RecordRow key={item.entry_id} item={item} onOpen={() => navigate(paths.recordDetail(item.entry_id))} />
-          ))}
+          {/*
+            手机上 .record-grid 没有任何规则，就是个普通 div —— 卡片照旧纵向堆叠。
+            桌面下它变成两栏：卡片内部是两端对齐，铺满 1040px 会中间空一大片。
+            这个包装层不能引入额外的 .ant-card，否则会打乱按卡片数量做的断言。
+          */}
+          <div className="record-grid">
+            {items.map((item) => (
+              <RecordRow key={item.entry_id} item={item} onOpen={() => navigate(paths.recordDetail(item.entry_id))} />
+            ))}
+          </div>
 
           {total > items.length && (
             <Button block style={{ marginTop: 4 }} onClick={() => setLimit((value) => value + PAGE_SIZE)}>

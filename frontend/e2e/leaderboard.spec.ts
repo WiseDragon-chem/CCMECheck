@@ -44,9 +44,13 @@ test.describe('排行榜', () => {
     await page.goto('/leaderboard')
     await page.waitForSelector('.lb-row')
 
-    // 高亮不能只靠颜色 —— 必须还有一个文字标记
-    await expect(page.getByText('我').first()).toBeVisible()
-    await expect(page.locator('.lb-row.is-me')).toHaveCount(1)
+    // 高亮不能只靠颜色 —— 必须还有一个文字标记。
+    // 断言限定在本人那一行里，不用 getByText('我').first()：导航项「我的」
+    // 也含这两个字，而顶部导航（桌面上才可见）在 DOM 里排在内容之前，
+    // first() 会挑到那个隐藏的导航文案
+    const myRow = page.locator('.lb-row.is-me')
+    await expect(myRow).toHaveCount(1)
+    await expect(myRow.getByText('我')).toBeVisible()
   })
 
   test('名次按积分降序，且并列时序号重复而不是重新编号', async ({ page }) => {

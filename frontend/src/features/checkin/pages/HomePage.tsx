@@ -179,16 +179,19 @@ export default function HomePage() {
         />
       )}
 
-      {today.cards.map((card) => (
-        <TrackCard
-          key={card.slug}
-          card={card}
-          displayState={resolveCardDisplayState(card, campaign.status)}
-          secondsToDeadline={secondsToDeadline}
-          deadlineText={campaign.daily_deadline}
-          onAction={handleAction}
-        />
-      ))}
+      {/* 手机上 .track-grid 没有任何规则，就是个普通 div，卡片照旧纵向堆叠 */}
+      <div className="track-grid">
+        {today.cards.map((card) => (
+          <TrackCard
+            key={card.slug}
+            card={card}
+            displayState={resolveCardDisplayState(card, campaign.status)}
+            secondsToDeadline={secondsToDeadline}
+            deadlineText={campaign.daily_deadline}
+            onAction={handleAction}
+          />
+        ))}
+      </div>
 
       {/* 排行榜是每日快照，这条说明能挡掉「我刚通过为什么榜上没变」这一类疑问 */}
       {campaign.leaderboard_visible && (
