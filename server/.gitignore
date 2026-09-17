@@ -1,8 +1,18 @@
 node_modules/
 dist/
-storage/
-storage-test/
-backups/
+coverage/
+
+# 运行时的数据目录，必须用前导斜杠锚定在 server/ 根下。
+#
+# 不锚定时这几条会匹配**任意深度**的同名目录 —— 于是 `storage/` 除了忽略
+# 上传目录，还会把源码目录 `src/storage/` 一并忽略掉，而后者从来没有进过
+# 仓库：本机上文件都在、编译也正常，别人 clone 之后却因为找不到
+# src/storage/index.js 而报「找不到这个包」。这个 bug 藏了很久才被发现，
+# 就是因为它在开发机上完全没有症状。
+/storage/
+/storage-test/
+/backups/
+
 *.db
 *.db-journal
 *.db-wal
@@ -10,4 +20,3 @@ backups/
 .env
 !env.example
 test-*.db*
-coverage/
