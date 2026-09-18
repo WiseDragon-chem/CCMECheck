@@ -1,14 +1,20 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { OVERALL_TRACK_SENTINEL } from '../../src/config/constants.js'
 import { AppError } from '../../src/core/errors.js'
 import { getPrismaClient } from '../../src/db/client.js'
 import { generateSnapshot, resolveCronCutoffDate } from '../../src/services/snapshot.service.js'
 import { authed, login } from '../helpers/app.js'
 import { bootstrapCampaign, createEntry, createParticipant, createUser, TEST_PASSWORD } from '../helpers/factory.js'
+import { cst, freezeTimeAt, unfreezeTime } from '../helpers/time.js'
 
 /**
  * design.md §16.9 06:00 定时任务重复执行不会生成重复快照。
  * design.md §9.2 幂等性由 (campaign_id, cutoff_date) 唯一约束 + 先删后插保证。
+ *
+ * 时钟固定在活动期内（2026-10-04 10:00，已过当天的排行榜时间 06:00）：
+ * 「未指定截止日」的用例要经 resolveExpectedCutoffDate 推算出 2026-10-03，
+ * 不冻结的话它会随着真实日期漂移 —— 活动结束后 deadline 被封顶到结束日，
+ * 那些用例会突然开始新建第二份快照。
  */
 describe('排行榜快照幂等性', () => {
   const db = getPrismaClient()
@@ -19,6 +25,9 @@ describe('排行榜快照幂等性', () => {
   let participantIds: string[]
 
   beforeEach(async () => {
+    // 必须先冻结时钟：下面 login 签发的令牌要求 5 分钟内的新鲜认证（requireFreshAuth）
+    freezeTimeAt(cst('2026-10-04', '10:00:00'))
+
     const { campaign, tracks } = await bootstrapCampaign({
       startDate: '2026-10-01',
       endDate: '2026-10-07',
@@ -50,6 +59,10 @@ describe('排行榜快照幂等性', () => {
         }
       }
     }
+  })
+
+  afterEach(() => {
+    unfreezeTime()
   })
 
   async function seedAdmin(): Promise<string> {
@@ -149,7 +162,7 @@ describe('排行榜快照幂等性', () => {
     expect(await db.leaderboardSnapshot.count({ where: { campaignId, cutoffDate: CUTOFF } })).toBe(1)
   })
 
-  it('管理员手动触发的 leaderboard_rebuild 任务重算的是当前活动的最新一份快照（§14）', async () => {
+  it('管理员手动触发的 leaderboard_rebuild 任务重算到应有的最新截止日，不倒退（§14）', async () => {
     const initial = await generateSnapshot({ campaignId, cutoffDate: CUTOFF })
 
     // §14 把「重算排行榜」列为任务，且只接受管理员触发
@@ -159,10 +172,12 @@ describe('排行榜快照幂等性', () => {
     expect(response.body.status).toBe('success')
     expect(response.body.processed).toBeGreaterThan(0)
 
-    // 未指定截止日时落在已有快照上，而不是另建一份
+    // 未指定截止日时算到 10-03（冻结时刻 10-04 已过当天的 06:00），
+    // 与已有的那份同日，因此落在同一行上而不是另建一份
     const snapshots = await db.leaderboardSnapshot.findMany({ where: { campaignId } })
     expect(snapshots).toHaveLength(1)
     expect(snapshots[0]!.id).toBe(initial.snapshotId)
+    expect(snapshots[0]!.cutoffDate).toBe(CUTOFF)
 
     const run = await db.jobRun.findFirstOrThrow({ where: { jobName: 'leaderboard_rebuild' } })
     expect(run.trigger).toBe('manual')

@@ -500,8 +500,8 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description 权限不足 */
-                403: {
+                /** @description 与当前状态冲突 */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -2819,7 +2819,7 @@ export interface paths {
         put?: never;
         /**
          * 重算排行榜
-         * @description 同一活动、同一统计截止日期只会存在一份快照，重复执行是幂等的。
+         * @description 同一活动、同一统计截止日期只会存在一份快照，重复执行是幂等的。不传 cutoff_date 时算到此刻应有的最新统计截止日（已有更新的快照时不倒退），而不是最近一份快照的截止日。
          */
         post: {
             parameters: {
@@ -3559,6 +3559,8 @@ export interface components {
             overall_weight: number;
         };
         CheckinListResponse: {
+            /** @description 审核员与超管可能不是参赛者，此时 items 为空数组而不是报 403 */
+            is_participant: boolean;
             items: components["schemas"]["CheckinListItem"][];
             total: number;
             page: number;

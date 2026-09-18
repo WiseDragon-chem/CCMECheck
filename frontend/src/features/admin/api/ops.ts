@@ -81,7 +81,8 @@ export function createScoreAdjustment(body: AdjustmentBody): Promise<AdjustmentR
 /**
  * 重算排行榜（§14 的管理员触发项）。
  *
- * 不传 `cutoff_date` 时服务端重算最近一份快照；一份都没有则算到前一日。
+ * 不传 `cutoff_date` 时服务端算到「此刻应有的最新一天」（已有更新的快照时不倒退）；
+ * 刻意不是「最近一份快照」—— 快照落后时那样点多少次都不会往前推进。
  * 榜单已冻结时返回 SNAPSHOT_FINALIZED —— 这个错误必须原样展示，
  * 它对应一个明确的操作（先解冻），吞掉它只会让管理员反复点重算。
  */

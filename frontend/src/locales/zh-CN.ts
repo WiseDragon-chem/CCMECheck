@@ -125,6 +125,15 @@ export const zh = {
   },
 
   checkin: {
+    /**
+     * §5「可同时作为参赛者」：审核员与超管可能压根不在名单里。
+     *
+     * 首页与记录页共用这一个空状态 —— 它不是错误，也不该被说成权限不足，
+     * 否则用户只知道自己「不能看」，不知道原因，也不知道该怎么办。
+     */
+    notParticipant: '当前账号不是本次活动的参赛者。',
+    notParticipantHint: '如需参赛，请联系管理员把你加入参赛名单。',
+
     /** §7.3 的九种卡片状态：文字必须两两不同（有单测守着） */
     cardState: {
       before_open: '今日打卡尚未开放',
@@ -163,8 +172,6 @@ export const zh = {
       campaignStatusDetail: '已有记录的审核结果仍可查看。',
       leaderboardCadence: (time: string) =>
         `排行榜每日 ${time} 更新，今日通过的记录将在下次更新后计入。`,
-      notParticipant: '当前账号不是本次活动的参赛者。',
-      notParticipantHint: '如需参赛，请联系管理员把你加入参赛名单。',
       loadFailed: '没能加载今日打卡',
     },
     submit: {
@@ -627,16 +634,18 @@ export const zh = {
       leaderboard: '排行榜维护',
       leaderboardHint: '排行榜是每日快照。改动计分规则或积分后，已发布的榜单不会自动更新。',
       rebuild: '重算排行榜',
-      rebuildHint: '按当前规则重新计算某一天的快照。同一天已有快照时覆盖它，不会产生第二份。',
+      rebuildHint:
+        '按当前规则重新计算某一天的快照。同一天已有快照时覆盖它，不会产生第二份；不填统计截止日时算到此刻应有的最新一天，不会倒退到更早的日期。',
       freeze: '冻结最终榜单',
       freezeHint: '冻结后该快照成为最终结果，重算会被拒绝，导出以它为准。',
       unfreeze: '解冻榜单',
       unfreezeHint: '允许该日期的快照被重新计算或整点任务覆盖。',
       cutoffDate: '统计截止日',
-      cutoffDateHint: '留空表示最近一份快照；还没有任何快照时算到前一日。',
+      cutoffDateHint: '留空由服务端决定：重算算到此刻应有的最新一天，冻结取最新一份快照。',
       cutoffDateRequired: '解冻必须指定统计截止日，解冻哪一份不能靠猜',
 
-      consequenceRebuild: '会用当前规则覆盖该截止日的快照。若榜单已冻结，重算会被拒绝。',
+      consequenceRebuild:
+        '会用当前规则覆盖该截止日的快照；不填日期时算到此刻应有的最新一天。若榜单已冻结，重算会被拒绝。',
       consequenceFreeze: '冻结之后，这一份就是最终结果。此后重算会被拒绝，需要先解冻。',
       consequenceUnfreeze: '解冻后这份榜单可以再次被重算，也可能被整点的快照任务覆盖。',
 

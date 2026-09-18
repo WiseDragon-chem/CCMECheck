@@ -138,10 +138,10 @@ export default function HomePage() {
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description={
             <span>
-              {zh.checkin.home.notParticipant}
+              {zh.checkin.notParticipant}
               <br />
               <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                {zh.checkin.home.notParticipantHint}
+                {zh.checkin.notParticipantHint}
               </Typography.Text>
             </span>
           }

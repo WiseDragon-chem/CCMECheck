@@ -179,6 +179,9 @@ export const CheckinListItemSchema = z
 
 export const CheckinListResponseSchema = z
   .object({
+    is_participant: z.boolean().openapi({
+      description: '审核员与超管可能不是参赛者，此时 items 为空数组而不是报 403',
+    }),
     items: z.array(CheckinListItemSchema),
     total: z.number().int(),
     page: z.number().int(),

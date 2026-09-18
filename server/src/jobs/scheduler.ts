@@ -70,15 +70,42 @@ const SCHEDULED_JOBS: ScheduledJob[] = [
 
 const runningTasks: ScheduledTask[] = []
 
+/**
+ * 启动时补跑一次排行榜快照。
+ *
+ * 进程没在排行榜时间运行过（开发机夜里关机、线上崩溃或半夜重启）时，那一轮快照会
+ * 永久缺失，而排行榜只读最新一份快照。快照任务本身只在「落后于应有进度」时才写库，
+ * 所以正常情况下这里只是一次查询；补跑记录会进 job_runs，可在后台任务历史里看到。
+ *
+ * 与补跑等价的逻辑也挂在每小时的整点上（SCHEDULED_JOBS），这里只是让它立刻发生，
+ * 不必等到下一个整点。
+ */
+export async function runStartupCatchUp(): Promise<void> {
+  const outcome = await runJob(leaderboardSnapshotJob, { trigger: 'cron' })
+
+  // 被锁挡住说明上一次执行还占着：锁有 TTL（超过即被抢占），下一个整点会再试，
+  // 但"启动就应该补上"的预期落空了，值得留一条日志而不是静默跳过
+  if (outcome.status === 'skipped_locked') {
+    logger.warn('启动补跑排行榜快照被任务锁挡住，将在下一个整点重试')
+  }
+}
+
 export function startScheduler(options: { enabled?: boolean } = {}): void {
   if (options.enabled === false) {
     logger.info('定时任务调度器已禁用')
     return
   }
 
-  void recoverStaleJobRuns().catch((error: unknown) => {
-    logger.error({ err: error }, '回收残留任务记录失败')
-  })
+  // 补跑串在回收之后：recoverStaleJobRuns 会把所有 running 记录批量标成 failed，
+  // 并行发起会让补跑自己刚创建的那条 running 记录被它扫掉
+  void recoverStaleJobRuns()
+    .catch((error: unknown) => {
+      logger.error({ err: error }, '回收残留任务记录失败')
+    })
+    .then(() => runStartupCatchUp())
+    .catch((error: unknown) => {
+      logger.error({ err: error }, '启动补跑排行榜快照失败')
+    })
 
   for (const job of SCHEDULED_JOBS) {
     if (!cron.validate(job.expression)) {

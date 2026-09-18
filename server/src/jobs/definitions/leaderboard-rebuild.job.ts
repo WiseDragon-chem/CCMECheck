@@ -1,5 +1,5 @@
 import { getPrismaClient } from '../../db/client.js'
-import { generateSnapshot, resolveCronCutoffDate } from '../../services/snapshot.service.js'
+import { generateSnapshot, resolveRebuildCutoffDate } from '../../services/snapshot.service.js'
 import { requireCurrentCampaign } from '../../modules/campaigns/service.js'
 import type { JobDefinition } from '../runner.js'
 
@@ -10,8 +10,8 @@ import type { JobDefinition } from '../runner.js'
  * 取决于管理员刚改动了哪条计分规则。因此它只登记在任务表里、只接受手动触发，
  * 不出现在调度计划里（GET /admin/jobs/scheduled 不会列出它）。
  *
- * 统计截止日的选择与 POST /admin/leaderboards/rebuild 保持一致：优先重算最近一份快照，
- * 一份都还没有时按快照任务的口径算到前一日；活动尚未开始时无事可做。
+ * 统计截止日与 POST /admin/leaderboards/rebuild 走同一个解析器（resolveRebuildCutoffDate），
+ * 语义不会再漂移：算到「本该有的最新截止日」，已有更新的快照时不倒退；活动尚未开始时无事可做。
  * 幂等由 generateSnapshot 内部的 (campaign_id, cutoff_date) 唯一约束 + 先删后插保证，
  * 因此重复触发不会产生第二份结果，也不会与整点快照任务互相覆盖出脏数据。
  */
@@ -22,13 +22,7 @@ export const leaderboardRebuildJob: JobDefinition = {
     const prisma = getPrismaClient()
     const campaign = await requireCurrentCampaign(prisma)
 
-    const latest = await prisma.leaderboardSnapshot.findFirst({
-      where: { campaignId: campaign.id },
-      orderBy: { cutoffDate: 'desc' },
-      select: { cutoffDate: true },
-    })
-
-    const cutoffDate = latest?.cutoffDate ?? resolveCronCutoffDate(campaign)
+    const cutoffDate = await resolveRebuildCutoffDate({ campaign, db: prisma })
     if (!cutoffDate) return 0
 
     // 榜单已冻结时 generateSnapshot 会抛 SNAPSHOT_FINALIZED，这里刻意不吞掉：

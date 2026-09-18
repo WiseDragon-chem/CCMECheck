@@ -7,7 +7,12 @@ import { getPrismaClient } from '../../db/client.js'
 import { authenticate, requirePrincipal } from '../../middleware/authenticate.js'
 import { requireFreshAuth, requireRole } from '../../middleware/authorize.js'
 import { auditContextFrom, recordAudit } from '../../services/audit.service.js'
-import { generateSnapshot, freezeSnapshot, unfreezeSnapshot } from '../../services/snapshot.service.js'
+import {
+  freezeSnapshot,
+  generateSnapshot,
+  resolveRebuildCutoffDate,
+  unfreezeSnapshot,
+} from '../../services/snapshot.service.js'
 import { requireCurrentCampaign } from '../campaigns/service.js'
 import { latestLeaderboardQuerySchema, myRankQuerySchema } from './schema.js'
 import { getLatestLeaderboard, getMyRank } from './service.js'
@@ -69,19 +74,16 @@ export function createAdminLeaderboardsRouter(): Router {
       const campaign = await requireCurrentCampaign(prisma)
       const principal = requirePrincipal(req)
 
-      // 未指定统计截止日时，重算最近一份快照；一份都没有则重算到昨天
-      const cutoffDate =
-        body.cutoff_date ??
-        (
-          await prisma.leaderboardSnapshot.findFirst({
-            where: { campaignId: campaign.id },
-            orderBy: { cutoffDate: 'desc' },
-            select: { cutoffDate: true },
-          })
-        )?.cutoffDate
+      // 未指定统计截止日时算到「本该有的最新截止日」。
+      // 刻意不用「最近一份快照的截止日」：快照落后时那样只会把同一份旧榜单重算一遍，
+      // 点多少次都不会往前推进，管理员却以为已经刷新了
+      const cutoffDate = body.cutoff_date ?? (await resolveRebuildCutoffDate({ campaign }))
 
       if (!cutoffDate) {
-        throw new AppError('VALIDATION_FAILED', '尚无可重算的快照，请指定统计截止日期')
+        throw new AppError(
+          'VALIDATION_FAILED',
+          '活动尚未开始，没有可重算的统计截止日，请指定日期',
+        )
       }
 
       const result = await generateSnapshot({

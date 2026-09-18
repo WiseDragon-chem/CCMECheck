@@ -305,12 +305,29 @@ export async function listCheckins(
   principal: AuthPrincipal,
   query: ListCheckinsQuery,
   now: Date = new Date(),
-): Promise<{ items: CheckinListItem[]; total: number; page: number; page_size: number }> {
+): Promise<{
+  items: CheckinListItem[]
+  total: number
+  page: number
+  page_size: number
+  is_participant: boolean
+}> {
   const prisma = getPrismaClient()
   const campaign = await requireCurrentCampaign(prisma)
   const participant = await resolveParticipant(campaign.id, principal.userId, prisma)
+
   if (!participant || participant.status !== 'active') {
-    throw new AppError('FORBIDDEN', '当前账号不是该活动的参赛者')
+    // 与 /checkins/today 同样的口径（design.md §5「可同时作为参赛者」）：
+    // 审核员与超管可能本身不是参赛者，这是**正常的空状态而不是权限错误**。
+    // 这里报 403 的话，前端只有一个笼统的 FORBIDDEN 文案可用，页面会把
+    // 「你不是参赛者」显示成「没有权限执行该操作」—— 用户据此完全不知道该怎么办。
+    return {
+      items: [],
+      total: 0,
+      page: query.page,
+      page_size: query.page_size,
+      is_participant: false,
+    }
   }
 
   const where = {
@@ -368,7 +385,7 @@ export async function listCheckins(
     }
   })
 
-  return { items, total, page: query.page, page_size: query.page_size }
+  return { items, total, page: query.page, page_size: query.page_size, is_participant: true }
 }
 
 export interface CheckinDetail {

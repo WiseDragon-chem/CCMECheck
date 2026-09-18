@@ -271,7 +271,8 @@ export function buildOpenApiDocument() {
     request: { query: listCheckinsQuerySchema },
     responses: {
       200: jsonResponse('记录列表（按活动日倒序）', CheckinListResponseSchema),
-      ...errorResponses(401, 403),
+      // 非参赛者不再是 403：返回空列表由 is_participant 表达（与 /checkins/today 一致）
+      ...errorResponses(401, 409),
     },
   })
 
@@ -722,7 +723,9 @@ export function buildOpenApiDocument() {
     path: '/api/v1/admin/leaderboards/rebuild',
     tags: ['排行榜'],
     summary: '重算排行榜',
-    description: '同一活动、同一统计截止日期只会存在一份快照，重复执行是幂等的。',
+    description:
+      '同一活动、同一统计截止日期只会存在一份快照，重复执行是幂等的。' +
+      '不传 cutoff_date 时算到此刻应有的最新统计截止日（已有更新的快照时不倒退），而不是最近一份快照的截止日。',
     request: jsonBody(z.object({ cutoff_date: z.string().optional(), reason: z.string() })),
     responses: {
       200: jsonResponse('重算结果', LeaderboardRebuildResultSchema),

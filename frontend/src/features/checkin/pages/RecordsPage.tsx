@@ -79,8 +79,34 @@ export default function RecordsPage() {
     )
   }
 
-  const { items, total } = listQuery.data
+  const { items, total, is_participant: isParticipant } = listQuery.data
   const hasFilter = Boolean(track || status)
+
+  /*
+    §5「可同时作为参赛者」：审核员与超管可能压根不在名单里，记录自然是空的。
+    这是一个空状态而不是错误 —— 与首页同一个提示，别让它退回到「没有权限执行该操作」。
+  */
+  if (!isParticipant) {
+    return (
+      <div className="page">
+        <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 12 }}>
+          {zh.checkin.records.title}
+        </Typography.Title>
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={
+            <span>
+              {zh.checkin.notParticipant}
+              <br />
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                {zh.checkin.notParticipantHint}
+              </Typography.Text>
+            </span>
+          }
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="page">

@@ -87,11 +87,12 @@ function mockCampaign() {
   )
 }
 
-function mockList(items: CheckinListItem[], total = items.length) {
+function mockList(items: CheckinListItem[], total = items.length, isParticipant = true) {
   server.use(
     http.get(`${API}/checkins`, ({ request }) => {
       lastQuery = new URL(request.url).searchParams
       return HttpResponse.json({
+        is_participant: isParticipant,
         items,
         total,
         page: 1,
@@ -122,6 +123,19 @@ describe('打卡记录列表', () => {
     expect(row.textContent).toContain('已通过')
     expect(row.textContent).toContain('9月15日')
     expect(row.textContent).toContain('3 张')
+  })
+
+  it('不是参赛者时给出参赛提示，而不是权限错误（§5）', async () => {
+    mockCampaign()
+    mockList([], 0, false)
+
+    renderWithProviders(<RecordsPage />, { route: '/records' })
+
+    expect(await screen.findByText(/当前账号不是本次活动的参赛者/)).toBeInTheDocument()
+    expect(screen.getByText(/请联系管理员把你加入参赛名单/)).toBeInTheDocument()
+    // 不是「没能加载记录」那种错误态
+    expect(screen.queryByText('没有权限执行该操作')).not.toBeInTheDocument()
+    expect(recordRows()).toHaveLength(0)
   })
 
   it('驳回的记录展示驳回原因（§16.6）', async () => {
