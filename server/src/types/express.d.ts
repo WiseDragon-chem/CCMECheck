@@ -10,8 +10,6 @@ declare global {
       log: Logger
       /** 通过访问令牌解析出的调用方；未认证接口上为 undefined */
       principal?: AuthPrincipal
-      /** 校验后的原始文件缓冲，供图片流水线使用 */
-      uploadBuffers?: Map<string, Buffer>
     }
   }
 }

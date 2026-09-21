@@ -10,11 +10,6 @@ import { runInTransaction } from '../db/tx.js'
  * 锁带过期时间而不是靠显式释放 —— 进程崩溃时不会留下永久死锁。
  */
 
-export interface LockHandle {
-  name: string
-  holder: string
-}
-
 export async function acquireJobLock(params: {
   name: string
   holder: string

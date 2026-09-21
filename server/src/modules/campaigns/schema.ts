@@ -88,7 +88,3 @@ export const updateCampaignTrackBodySchema = z
 export const campaignTrackParamsSchema = z.object({
   trackId: idSchema,
 })
-
-export type CreateCampaignBody = z.infer<typeof createCampaignBodySchema>
-export type UpdateCampaignBody = z.infer<typeof updateCampaignBodySchema>
-export type UpdateCampaignTrackBody = z.infer<typeof updateCampaignTrackBodySchema>

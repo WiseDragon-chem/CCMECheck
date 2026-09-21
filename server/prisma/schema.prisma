@@ -113,9 +113,6 @@ model Campaign {
   /// draft | published | active | settling | finished | archived
   status String @default("draft")
 
-  activateFrom  DateTime? @map("activate_from")
-  activateUntil DateTime? @map("activate_until")
-
   // ---- 排行榜 ----
   leaderboardVisible Boolean @default(false) @map("leaderboard_visible")
   /// 每日快照生成时间，HH:mm（北京时间）

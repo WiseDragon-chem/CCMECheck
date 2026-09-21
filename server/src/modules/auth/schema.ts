@@ -30,7 +30,3 @@ export const changePasswordBodySchema = z.object({
   current_password: z.string().min(1, '请填写当前密码').max(PASSWORD_MAX_LENGTH),
   new_password: passwordSchema,
 })
-
-export type ActivateBody = z.infer<typeof activateBodySchema>
-export type LoginBody = z.infer<typeof loginBodySchema>
-export type ChangePasswordBody = z.infer<typeof changePasswordBodySchema>

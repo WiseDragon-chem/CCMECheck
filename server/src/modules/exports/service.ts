@@ -2,7 +2,7 @@ import { OVERALL_TRACK_SENTINEL, SCORING_ENTRY_STATUSES } from '../../config/con
 import { formatCstDateTime } from '../../core/time.js'
 import { toCsv } from '../../core/text.js'
 import { getPrismaClient, type Db } from '../../db/client.js'
-import { buildScoredRows, loadScoringInputs, POINT_SCALE } from '../../services/scoring.service.js'
+import { buildScoredRows, loadScoringInputs } from '../../services/scoring.service.js'
 import { toScore } from '../leaderboards/service.js'
 
 /**
@@ -153,5 +153,3 @@ export async function exportLeaderboardCsv(
     rowCount: rows.length,
   }
 }
-
-export { POINT_SCALE }

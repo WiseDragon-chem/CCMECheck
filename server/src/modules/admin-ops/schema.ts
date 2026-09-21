@@ -63,9 +63,3 @@ export const createScoreAdjustmentBodySchema = z.object({
   points_delta: z.coerce.number().int().min(-1_000_000).max(1_000_000),
   reason: reasonSchema,
 })
-
-export type ReopenEntryBody = z.infer<typeof reopenEntryBodySchema>
-export type RevokeEntryBody = z.infer<typeof revokeEntryBodySchema>
-export type VoidEntryBody = z.infer<typeof voidEntryBodySchema>
-export type CreateManualEntryBody = z.infer<typeof createManualEntryBodySchema>
-export type CreateScoreAdjustmentBody = z.infer<typeof createScoreAdjustmentBodySchema>

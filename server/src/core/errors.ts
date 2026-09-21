@@ -34,15 +34,8 @@ export function isAppError(error: unknown): error is AppError {
 // 常用构造器
 // ---------------------------------------------------------------------------
 
-export const badRequest = (message: string, details?: Record<string, unknown>) =>
-  new AppError('BAD_REQUEST', message, { details })
-
 export const validationFailed = (message: string, details?: Record<string, unknown>) =>
   new AppError('VALIDATION_FAILED', message, { details })
-
-export const unauthenticated = (message = '请先登录') => new AppError('UNAUTHENTICATED', message)
-
-export const forbidden = (message = '没有权限执行该操作') => new AppError('FORBIDDEN', message)
 
 export const notFound = (message = '资源不存在') => new AppError('NOT_FOUND', message)
 

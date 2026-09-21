@@ -64,9 +64,3 @@ export const anonymizeParticipantBodySchema = z.object({
    */
   delete_evidence: z.boolean().default(true),
 })
-
-export type ParticipantParams = z.infer<typeof participantParamsSchema>
-export type ImportCommitBody = z.infer<typeof importCommitBodySchema>
-export type ListParticipantsQuery = z.infer<typeof listParticipantsQuerySchema>
-export type CreateParticipantBody = z.infer<typeof createParticipantBodySchema>
-export type UpdateParticipantStatusBody = z.infer<typeof updateParticipantStatusBodySchema>

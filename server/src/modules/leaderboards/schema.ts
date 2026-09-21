@@ -12,6 +12,3 @@ export const myRankQuerySchema = z.object({
   /** 前后各取多少名（design.md §7.6「当前用户所在行」附近名次） */
   neighbors: z.coerce.number().int().min(0).max(20).default(2),
 })
-
-export type LatestLeaderboardQuery = z.infer<typeof latestLeaderboardQuerySchema>
-export type MyRankQuery = z.infer<typeof myRankQuerySchema>

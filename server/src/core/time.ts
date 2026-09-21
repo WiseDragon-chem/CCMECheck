@@ -104,15 +104,6 @@ export function compareDateOnly(a: DateOnly, b: DateOnly): number {
   return a < b ? -1 : a > b ? 1 : 0
 }
 
-export function isWithinRange(date: DateOnly, start: DateOnly, end: DateOnly): boolean {
-  return compareDateOnly(date, start) >= 0 && compareDateOnly(date, end) <= 0
-}
-
-/** 0 = 周日 … 6 = 周六 */
-export function dayOfWeek(date: DateOnly): number {
-  return makeUtcDate(parseDateOnly(date)).getUTCDay()
-}
-
 /**
  * 北京时间某日某时刻对应的 UTC 瞬时。
  * deadlineInstant('2026-10-01', '23:59') 即 2026-10-01T23:59+08:00 = 2026-10-01T15:59Z。

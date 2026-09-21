@@ -48,8 +48,6 @@ export type CampaignMinAggregateOutputType = {
   dailyOpenTime: string | null
   dailyDeadline: string | null
   status: string | null
-  activateFrom: Date | null
-  activateUntil: Date | null
   leaderboardVisible: boolean | null
   leaderboardTime: string | null
   nameDisplayMode: string | null
@@ -72,8 +70,6 @@ export type CampaignMaxAggregateOutputType = {
   dailyOpenTime: string | null
   dailyDeadline: string | null
   status: string | null
-  activateFrom: Date | null
-  activateUntil: Date | null
   leaderboardVisible: boolean | null
   leaderboardTime: string | null
   nameDisplayMode: string | null
@@ -96,8 +92,6 @@ export type CampaignCountAggregateOutputType = {
   dailyOpenTime: number
   dailyDeadline: number
   status: number
-  activateFrom: number
-  activateUntil: number
   leaderboardVisible: number
   leaderboardTime: number
   nameDisplayMode: number
@@ -134,8 +128,6 @@ export type CampaignMinAggregateInputType = {
   dailyOpenTime?: true
   dailyDeadline?: true
   status?: true
-  activateFrom?: true
-  activateUntil?: true
   leaderboardVisible?: true
   leaderboardTime?: true
   nameDisplayMode?: true
@@ -158,8 +150,6 @@ export type CampaignMaxAggregateInputType = {
   dailyOpenTime?: true
   dailyDeadline?: true
   status?: true
-  activateFrom?: true
-  activateUntil?: true
   leaderboardVisible?: true
   leaderboardTime?: true
   nameDisplayMode?: true
@@ -182,8 +172,6 @@ export type CampaignCountAggregateInputType = {
   dailyOpenTime?: true
   dailyDeadline?: true
   status?: true
-  activateFrom?: true
-  activateUntil?: true
   leaderboardVisible?: true
   leaderboardTime?: true
   nameDisplayMode?: true
@@ -293,8 +281,6 @@ export type CampaignGroupByOutputType = {
   dailyOpenTime: string
   dailyDeadline: string
   status: string
-  activateFrom: Date | null
-  activateUntil: Date | null
   leaderboardVisible: boolean
   leaderboardTime: string
   nameDisplayMode: string
@@ -340,8 +326,6 @@ export type CampaignWhereInput = {
   dailyOpenTime?: Prisma.StringFilter<"Campaign"> | string
   dailyDeadline?: Prisma.StringFilter<"Campaign"> | string
   status?: Prisma.StringFilter<"Campaign"> | string
-  activateFrom?: Prisma.DateTimeNullableFilter<"Campaign"> | Date | string | null
-  activateUntil?: Prisma.DateTimeNullableFilter<"Campaign"> | Date | string | null
   leaderboardVisible?: Prisma.BoolFilter<"Campaign"> | boolean
   leaderboardTime?: Prisma.StringFilter<"Campaign"> | string
   nameDisplayMode?: Prisma.StringFilter<"Campaign"> | string
@@ -370,8 +354,6 @@ export type CampaignOrderByWithRelationInput = {
   dailyOpenTime?: Prisma.SortOrder
   dailyDeadline?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  activateFrom?: Prisma.SortOrderInput | Prisma.SortOrder
-  activateUntil?: Prisma.SortOrderInput | Prisma.SortOrder
   leaderboardVisible?: Prisma.SortOrder
   leaderboardTime?: Prisma.SortOrder
   nameDisplayMode?: Prisma.SortOrder
@@ -403,8 +385,6 @@ export type CampaignWhereUniqueInput = Prisma.AtLeast<{
   dailyOpenTime?: Prisma.StringFilter<"Campaign"> | string
   dailyDeadline?: Prisma.StringFilter<"Campaign"> | string
   status?: Prisma.StringFilter<"Campaign"> | string
-  activateFrom?: Prisma.DateTimeNullableFilter<"Campaign"> | Date | string | null
-  activateUntil?: Prisma.DateTimeNullableFilter<"Campaign"> | Date | string | null
   leaderboardVisible?: Prisma.BoolFilter<"Campaign"> | boolean
   leaderboardTime?: Prisma.StringFilter<"Campaign"> | string
   nameDisplayMode?: Prisma.StringFilter<"Campaign"> | string
@@ -433,8 +413,6 @@ export type CampaignOrderByWithAggregationInput = {
   dailyOpenTime?: Prisma.SortOrder
   dailyDeadline?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  activateFrom?: Prisma.SortOrderInput | Prisma.SortOrder
-  activateUntil?: Prisma.SortOrderInput | Prisma.SortOrder
   leaderboardVisible?: Prisma.SortOrder
   leaderboardTime?: Prisma.SortOrder
   nameDisplayMode?: Prisma.SortOrder
@@ -465,8 +443,6 @@ export type CampaignScalarWhereWithAggregatesInput = {
   dailyOpenTime?: Prisma.StringWithAggregatesFilter<"Campaign"> | string
   dailyDeadline?: Prisma.StringWithAggregatesFilter<"Campaign"> | string
   status?: Prisma.StringWithAggregatesFilter<"Campaign"> | string
-  activateFrom?: Prisma.DateTimeNullableWithAggregatesFilter<"Campaign"> | Date | string | null
-  activateUntil?: Prisma.DateTimeNullableWithAggregatesFilter<"Campaign"> | Date | string | null
   leaderboardVisible?: Prisma.BoolWithAggregatesFilter<"Campaign"> | boolean
   leaderboardTime?: Prisma.StringWithAggregatesFilter<"Campaign"> | string
   nameDisplayMode?: Prisma.StringWithAggregatesFilter<"Campaign"> | string
@@ -489,8 +465,6 @@ export type CampaignCreateInput = {
   dailyOpenTime?: string
   dailyDeadline?: string
   status?: string
-  activateFrom?: Date | string | null
-  activateUntil?: Date | string | null
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
@@ -519,8 +493,6 @@ export type CampaignUncheckedCreateInput = {
   dailyOpenTime?: string
   dailyDeadline?: string
   status?: string
-  activateFrom?: Date | string | null
-  activateUntil?: Date | string | null
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
@@ -549,8 +521,6 @@ export type CampaignUpdateInput = {
   dailyOpenTime?: Prisma.StringFieldUpdateOperationsInput | string
   dailyDeadline?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  activateFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activateUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
@@ -579,8 +549,6 @@ export type CampaignUncheckedUpdateInput = {
   dailyOpenTime?: Prisma.StringFieldUpdateOperationsInput | string
   dailyDeadline?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  activateFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activateUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
@@ -609,8 +577,6 @@ export type CampaignCreateManyInput = {
   dailyOpenTime?: string
   dailyDeadline?: string
   status?: string
-  activateFrom?: Date | string | null
-  activateUntil?: Date | string | null
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
@@ -633,8 +599,6 @@ export type CampaignUpdateManyMutationInput = {
   dailyOpenTime?: Prisma.StringFieldUpdateOperationsInput | string
   dailyDeadline?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  activateFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activateUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
@@ -657,8 +621,6 @@ export type CampaignUncheckedUpdateManyInput = {
   dailyOpenTime?: Prisma.StringFieldUpdateOperationsInput | string
   dailyDeadline?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  activateFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activateUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
@@ -681,8 +643,6 @@ export type CampaignCountOrderByAggregateInput = {
   dailyOpenTime?: Prisma.SortOrder
   dailyDeadline?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  activateFrom?: Prisma.SortOrder
-  activateUntil?: Prisma.SortOrder
   leaderboardVisible?: Prisma.SortOrder
   leaderboardTime?: Prisma.SortOrder
   nameDisplayMode?: Prisma.SortOrder
@@ -711,8 +671,6 @@ export type CampaignMaxOrderByAggregateInput = {
   dailyOpenTime?: Prisma.SortOrder
   dailyDeadline?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  activateFrom?: Prisma.SortOrder
-  activateUntil?: Prisma.SortOrder
   leaderboardVisible?: Prisma.SortOrder
   leaderboardTime?: Prisma.SortOrder
   nameDisplayMode?: Prisma.SortOrder
@@ -735,8 +693,6 @@ export type CampaignMinOrderByAggregateInput = {
   dailyOpenTime?: Prisma.SortOrder
   dailyDeadline?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  activateFrom?: Prisma.SortOrder
-  activateUntil?: Prisma.SortOrder
   leaderboardVisible?: Prisma.SortOrder
   leaderboardTime?: Prisma.SortOrder
   nameDisplayMode?: Prisma.SortOrder
@@ -866,8 +822,6 @@ export type CampaignCreateWithoutCampaignTracksInput = {
   dailyOpenTime?: string
   dailyDeadline?: string
   status?: string
-  activateFrom?: Date | string | null
-  activateUntil?: Date | string | null
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
@@ -895,8 +849,6 @@ export type CampaignUncheckedCreateWithoutCampaignTracksInput = {
   dailyOpenTime?: string
   dailyDeadline?: string
   status?: string
-  activateFrom?: Date | string | null
-  activateUntil?: Date | string | null
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
@@ -940,8 +892,6 @@ export type CampaignUpdateWithoutCampaignTracksInput = {
   dailyOpenTime?: Prisma.StringFieldUpdateOperationsInput | string
   dailyDeadline?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  activateFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activateUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
@@ -969,8 +919,6 @@ export type CampaignUncheckedUpdateWithoutCampaignTracksInput = {
   dailyOpenTime?: Prisma.StringFieldUpdateOperationsInput | string
   dailyDeadline?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  activateFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activateUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
@@ -998,8 +946,6 @@ export type CampaignCreateWithoutParticipantsInput = {
   dailyOpenTime?: string
   dailyDeadline?: string
   status?: string
-  activateFrom?: Date | string | null
-  activateUntil?: Date | string | null
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
@@ -1027,8 +973,6 @@ export type CampaignUncheckedCreateWithoutParticipantsInput = {
   dailyOpenTime?: string
   dailyDeadline?: string
   status?: string
-  activateFrom?: Date | string | null
-  activateUntil?: Date | string | null
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
@@ -1072,8 +1016,6 @@ export type CampaignUpdateWithoutParticipantsInput = {
   dailyOpenTime?: Prisma.StringFieldUpdateOperationsInput | string
   dailyDeadline?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  activateFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activateUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1101,8 +1043,6 @@ export type CampaignUncheckedUpdateWithoutParticipantsInput = {
   dailyOpenTime?: Prisma.StringFieldUpdateOperationsInput | string
   dailyDeadline?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  activateFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activateUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1130,8 +1070,6 @@ export type CampaignCreateWithoutCheckinEntriesInput = {
   dailyOpenTime?: string
   dailyDeadline?: string
   status?: string
-  activateFrom?: Date | string | null
-  activateUntil?: Date | string | null
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
@@ -1159,8 +1097,6 @@ export type CampaignUncheckedCreateWithoutCheckinEntriesInput = {
   dailyOpenTime?: string
   dailyDeadline?: string
   status?: string
-  activateFrom?: Date | string | null
-  activateUntil?: Date | string | null
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
@@ -1204,8 +1140,6 @@ export type CampaignUpdateWithoutCheckinEntriesInput = {
   dailyOpenTime?: Prisma.StringFieldUpdateOperationsInput | string
   dailyDeadline?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  activateFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activateUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1233,8 +1167,6 @@ export type CampaignUncheckedUpdateWithoutCheckinEntriesInput = {
   dailyOpenTime?: Prisma.StringFieldUpdateOperationsInput | string
   dailyDeadline?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  activateFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activateUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1262,8 +1194,6 @@ export type CampaignCreateWithoutScoreAdjustmentsInput = {
   dailyOpenTime?: string
   dailyDeadline?: string
   status?: string
-  activateFrom?: Date | string | null
-  activateUntil?: Date | string | null
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
@@ -1291,8 +1221,6 @@ export type CampaignUncheckedCreateWithoutScoreAdjustmentsInput = {
   dailyOpenTime?: string
   dailyDeadline?: string
   status?: string
-  activateFrom?: Date | string | null
-  activateUntil?: Date | string | null
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
@@ -1336,8 +1264,6 @@ export type CampaignUpdateWithoutScoreAdjustmentsInput = {
   dailyOpenTime?: Prisma.StringFieldUpdateOperationsInput | string
   dailyDeadline?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  activateFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activateUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1365,8 +1291,6 @@ export type CampaignUncheckedUpdateWithoutScoreAdjustmentsInput = {
   dailyOpenTime?: Prisma.StringFieldUpdateOperationsInput | string
   dailyDeadline?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  activateFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activateUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1394,8 +1318,6 @@ export type CampaignCreateWithoutLeaderboardSnapshotsInput = {
   dailyOpenTime?: string
   dailyDeadline?: string
   status?: string
-  activateFrom?: Date | string | null
-  activateUntil?: Date | string | null
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
@@ -1423,8 +1345,6 @@ export type CampaignUncheckedCreateWithoutLeaderboardSnapshotsInput = {
   dailyOpenTime?: string
   dailyDeadline?: string
   status?: string
-  activateFrom?: Date | string | null
-  activateUntil?: Date | string | null
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
@@ -1468,8 +1388,6 @@ export type CampaignUpdateWithoutLeaderboardSnapshotsInput = {
   dailyOpenTime?: Prisma.StringFieldUpdateOperationsInput | string
   dailyDeadline?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  activateFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activateUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1497,8 +1415,6 @@ export type CampaignUncheckedUpdateWithoutLeaderboardSnapshotsInput = {
   dailyOpenTime?: Prisma.StringFieldUpdateOperationsInput | string
   dailyDeadline?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  activateFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activateUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1526,8 +1442,6 @@ export type CampaignCreateWithoutImportBatchesInput = {
   dailyOpenTime?: string
   dailyDeadline?: string
   status?: string
-  activateFrom?: Date | string | null
-  activateUntil?: Date | string | null
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
@@ -1555,8 +1469,6 @@ export type CampaignUncheckedCreateWithoutImportBatchesInput = {
   dailyOpenTime?: string
   dailyDeadline?: string
   status?: string
-  activateFrom?: Date | string | null
-  activateUntil?: Date | string | null
   leaderboardVisible?: boolean
   leaderboardTime?: string
   nameDisplayMode?: string
@@ -1600,8 +1512,6 @@ export type CampaignUpdateWithoutImportBatchesInput = {
   dailyOpenTime?: Prisma.StringFieldUpdateOperationsInput | string
   dailyDeadline?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  activateFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activateUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1629,8 +1539,6 @@ export type CampaignUncheckedUpdateWithoutImportBatchesInput = {
   dailyOpenTime?: Prisma.StringFieldUpdateOperationsInput | string
   dailyDeadline?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  activateFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activateUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaderboardVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   leaderboardTime?: Prisma.StringFieldUpdateOperationsInput | string
   nameDisplayMode?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1734,8 +1642,6 @@ export type CampaignSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   dailyOpenTime?: boolean
   dailyDeadline?: boolean
   status?: boolean
-  activateFrom?: boolean
-  activateUntil?: boolean
   leaderboardVisible?: boolean
   leaderboardTime?: boolean
   nameDisplayMode?: boolean
@@ -1765,8 +1671,6 @@ export type CampaignSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   dailyOpenTime?: boolean
   dailyDeadline?: boolean
   status?: boolean
-  activateFrom?: boolean
-  activateUntil?: boolean
   leaderboardVisible?: boolean
   leaderboardTime?: boolean
   nameDisplayMode?: boolean
@@ -1789,8 +1693,6 @@ export type CampaignSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   dailyOpenTime?: boolean
   dailyDeadline?: boolean
   status?: boolean
-  activateFrom?: boolean
-  activateUntil?: boolean
   leaderboardVisible?: boolean
   leaderboardTime?: boolean
   nameDisplayMode?: boolean
@@ -1813,8 +1715,6 @@ export type CampaignSelectScalar = {
   dailyOpenTime?: boolean
   dailyDeadline?: boolean
   status?: boolean
-  activateFrom?: boolean
-  activateUntil?: boolean
   leaderboardVisible?: boolean
   leaderboardTime?: boolean
   nameDisplayMode?: boolean
@@ -1827,7 +1727,7 @@ export type CampaignSelectScalar = {
   updatedAt?: boolean
 }
 
-export type CampaignOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "timezone" | "startDate" | "endDate" | "dailyOpenTime" | "dailyDeadline" | "status" | "activateFrom" | "activateUntil" | "leaderboardVisible" | "leaderboardTime" | "nameDisplayMode" | "tieBreakRule" | "minImages" | "maxImages" | "maxImageBytes" | "allowedMimeTypes" | "createdAt" | "updatedAt", ExtArgs["result"]["campaign"]>
+export type CampaignOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "timezone" | "startDate" | "endDate" | "dailyOpenTime" | "dailyDeadline" | "status" | "leaderboardVisible" | "leaderboardTime" | "nameDisplayMode" | "tieBreakRule" | "minImages" | "maxImages" | "maxImageBytes" | "allowedMimeTypes" | "createdAt" | "updatedAt", ExtArgs["result"]["campaign"]>
 export type CampaignInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   campaignTracks?: boolean | Prisma.Campaign$campaignTracksArgs<ExtArgs>
   participants?: boolean | Prisma.Campaign$participantsArgs<ExtArgs>
@@ -1872,8 +1772,6 @@ export type $CampaignPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
      * draft | published | active | settling | finished | archived
      */
     status: string
-    activateFrom: Date | null
-    activateUntil: Date | null
     leaderboardVisible: boolean
     /**
      * 每日快照生成时间，HH:mm（北京时间）
@@ -2339,8 +2237,6 @@ export interface CampaignFieldRefs {
   readonly dailyOpenTime: Prisma.FieldRef<"Campaign", 'String'>
   readonly dailyDeadline: Prisma.FieldRef<"Campaign", 'String'>
   readonly status: Prisma.FieldRef<"Campaign", 'String'>
-  readonly activateFrom: Prisma.FieldRef<"Campaign", 'DateTime'>
-  readonly activateUntil: Prisma.FieldRef<"Campaign", 'DateTime'>
   readonly leaderboardVisible: Prisma.FieldRef<"Campaign", 'Boolean'>
   readonly leaderboardTime: Prisma.FieldRef<"Campaign", 'String'>
   readonly nameDisplayMode: Prisma.FieldRef<"Campaign", 'String'>

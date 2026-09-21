@@ -199,9 +199,6 @@ export type JobName = (typeof JOB_NAMES)[number]
 export const PARTICIPANT_STATUSES = ['active', 'disabled', 'anonymized'] as const
 export type ParticipantStatus = (typeof PARTICIPANT_STATUSES)[number]
 
-export const IMPORT_BATCH_STATUSES = ['previewed', 'committed', 'failed', 'expired'] as const
-export type ImportBatchStatus = (typeof IMPORT_BATCH_STATUSES)[number]
-
 export const CSV_TEMPLATE_HEADERS = ['student_id', 'name', 'class_name', 'phone_suffix', 'remark'] as const
 
 // ---------------------------------------------------------------------------

@@ -77,10 +77,6 @@ export async function getDashboardStats(db: Db = getPrismaClient(), now: Date = 
   const campaign = await requireCurrentCampaign(db)
   const today = cstToday(now)
 
-  // 今日的 CST 日区间，用于按提交时间统计
-  const todayStart = cstInstantOf(today, '00:00')
-  const todayEnd = cstInstantOf(addDays(today, 1), '00:00')
-
   const [
     participantsTotal,
     participantsActivated,

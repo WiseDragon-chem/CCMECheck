@@ -13,11 +13,6 @@ export const timeOfDaySchema = z
 
 export const idSchema = z.string().trim().min(1).max(64)
 
-/** 从查询串传入的布尔值 */
-export const booleanQuerySchema = z
-  .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
-  .transform((value) => value === true || value === 'true' || value === '1')
-
 export const paginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   page_size: z.coerce.number().int().min(1).max(200).default(50),

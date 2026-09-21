@@ -136,8 +136,6 @@ export const CampaignScalarFieldEnum = {
   dailyOpenTime: 'dailyOpenTime',
   dailyDeadline: 'dailyDeadline',
   status: 'status',
-  activateFrom: 'activateFrom',
-  activateUntil: 'activateUntil',
   leaderboardVisible: 'leaderboardVisible',
   leaderboardTime: 'leaderboardTime',
   nameDisplayMode: 'nameDisplayMode',

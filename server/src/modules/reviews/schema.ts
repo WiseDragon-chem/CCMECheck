@@ -52,7 +52,3 @@ export const rejectReviewBodySchema = z
     message: '选择「其他」时必须填写具体驳回原因',
     path: ['reason'],
   })
-
-export type ReviewQueueQuery = z.infer<typeof reviewQueueQuerySchema>
-export type ApproveReviewBody = z.infer<typeof approveReviewBodySchema>
-export type RejectReviewBody = z.infer<typeof rejectReviewBodySchema>
