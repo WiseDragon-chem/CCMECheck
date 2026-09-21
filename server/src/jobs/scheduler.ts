@@ -116,7 +116,13 @@ export function startScheduler(options: { enabled?: boolean } = {}): void {
     const task = cron.schedule(
       job.expression,
       () => {
-        void runJob(job.definition, { trigger: 'cron' })
+        // runJob 的 try/catch 只包住任务体：取锁、写 job_runs、finally 里释放锁
+        // 都在它之外（jobs/runner.ts），任何一处抛错都会让这个 Promise 拒绝。
+        // 没有 catch 的话就是未捕获的 rejection —— 默认行为是结束进程，
+        // 而 HTTP 服务就在同一个进程里，一次写锁争用足以让全站不可用。
+        void runJob(job.definition, { trigger: 'cron' }).catch((error: unknown) => {
+          logger.error({ err: error, job: job.definition.name }, '定时任务抛出未捕获的异常')
+        })
       },
       { timezone: DEFAULT_TIMEZONE, name: job.definition.name },
     )
