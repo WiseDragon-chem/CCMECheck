@@ -7,6 +7,7 @@ import { fetchToday } from '@/api/endpoints/checkins'
 import { qk } from '@/api/queryKeys'
 import type { TodayCard } from '@/api/types'
 import LoadError from '@/components/LoadError'
+import GuideTour from '@/features/guide/GuideTour'
 import { serverNow, syncServerClock, useTicker } from '@/hooks/useServerClock'
 import { formatActivityDate, formatRemaining } from '@/lib/datetime'
 import { zh } from '@/locales/zh-CN'
@@ -82,6 +83,20 @@ export default function HomePage() {
     void todayQuery.refetch()
   }, [secondsToDeadline, todayQuery])
 
+  /*
+    操作指导的开启条件。
+
+    必须在下面几个提前 return **之前**算好 —— 引导只能等到真正的内容
+    渲染出来才开：加载中开出来会高亮到骨架屏上，加载失败或「不是参赛者」
+    开出来则是对着一屏错误讲话。
+  */
+  const guideReady =
+    !todayQuery.isPending &&
+    !campaignQuery.isPending &&
+    !todayQuery.isError &&
+    !campaignQuery.isError &&
+    todayQuery.data?.is_participant === true
+
   if (todayQuery.isPending || campaignQuery.isPending) {
     return (
       <div className="page">
@@ -155,7 +170,7 @@ export default function HomePage() {
 
   return (
     <div className="page">
-      <Space direction="vertical" size={4} style={{ width: '100%', marginBottom: 16 }}>
+      <Space direction="vertical" size={4} style={{ width: '100%', marginBottom: 16 }} data-tour="home-header">
         <Typography.Title level={4} style={{ margin: 0 }}>
           {campaign.name}
         </Typography.Title>
@@ -190,7 +205,7 @@ export default function HomePage() {
       )}
 
       {/* 手机上 .track-grid 没有任何规则，就是个普通 div，卡片照旧纵向堆叠 */}
-      <div className="track-grid">
+      <div className="track-grid" data-tour="home-cards">
         {today.cards.map((card) => (
           <TrackCard
             key={card.slug}
@@ -212,6 +227,32 @@ export default function HomePage() {
         </Card>
       )}
 
+      {/*
+        排在所有 data-tour 目标之后（见 GuideTour 的说明）。
+        「状态怎么看」那步锚在卡片状态标签上 —— 标签的具体文案随当天状态
+        而变，但标签本身任何时候都在，所以锚点是稳的。
+      */}
+      <GuideTour
+        id="home"
+        ready={guideReady}
+        steps={[
+          {
+            target: 'home-header',
+            title: zh.tour.home.headerTitle,
+            body: zh.tour.home.headerBody(campaign.daily_deadline),
+          },
+          {
+            target: 'home-cards',
+            title: zh.tour.home.cardsTitle,
+            body: zh.tour.home.cardsBody,
+          },
+          {
+            target: 'card-status',
+            title: zh.tour.home.statusTitle,
+            body: zh.tour.home.statusBody,
+          },
+        ]}
+      />
     </div>
   )
 }

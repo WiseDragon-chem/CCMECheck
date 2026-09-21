@@ -1,5 +1,4 @@
-import { expect, test } from '@playwright/test'
-import { FRESH_PARTICIPANT, FRESH_PARTICIPANTS, login, testImage } from './helpers.js'
+import { FRESH_PARTICIPANT, FRESH_PARTICIPANTS, expect, login, test, testImage } from './helpers.js'
 
 /**
  * 参赛者打卡的完整链路（design.md §7.3、§7.4）。

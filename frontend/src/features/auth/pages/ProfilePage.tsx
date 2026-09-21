@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { App as AntdApp, Button, Card, Descriptions, Divider, Form, Input, Typography } from 'antd'
+import { App as AntdApp, Button, Card, Descriptions, Divider, Form, Input, Space, Typography } from 'antd'
 import { ControlOutlined } from '@ant-design/icons'
 import { changePassword } from '@/api/endpoints/auth'
 import { presentError } from '@/api/presentError'
 import { setAccessToken } from '@/api/tokenStore'
+import { requestReplay } from '@/features/guide/guideIds'
 import { zh } from '@/locales/zh-CN'
 import { paths } from '@/routes/paths'
 import { useAuthStore } from '@/stores/auth.store'
@@ -92,6 +93,34 @@ export default function ProfilePage() {
           {zh.admin.enterAdmin}
         </Button>
       )}
+
+      {/*
+        操作指导每个浏览器只演示一遍，误关了或想复习就只能从这里进。
+        点击先记下重播请求、再跳到目标页面，由那个页面的 GuideTour 播放 ——
+        目标是另一个组件，所以中间经手的是 guideIds 里的模块变量。
+      */}
+      <Card title={t.guide} size="small" style={{ marginBottom: 16 }}>
+        <Space direction="vertical" size={8} style={{ width: '100%' }}>
+          <Button
+            block
+            onClick={() => {
+              requestReplay('home')
+              navigate(paths.home)
+            }}
+          >
+            {t.guideCheckin}
+          </Button>
+          <Button
+            block
+            onClick={() => {
+              requestReplay('leaderboard')
+              navigate(paths.leaderboard)
+            }}
+          >
+            {t.guideLeaderboard}
+          </Button>
+        </Space>
+      </Card>
 
       <Card title={t.changePassword} size="small">
         <Form<FormValues> form={form} layout="vertical" onFinish={onChangePassword} requiredMark={false}>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { Alert, Button, Form, Input, Typography } from 'antd'
 import { presentError } from '@/api/presentError'
+import GuideTour from '@/features/guide/GuideTour'
 import AuthLayout from '@/layouts/AuthLayout'
 import { zh } from '@/locales/zh-CN'
 import { landingFor } from '@/routes/roles'
@@ -66,7 +67,7 @@ export default function LoginPage() {
         </Button>
       </Form>
 
-      <div style={{ marginTop: 16, textAlign: 'center' }}>
+      <div style={{ marginTop: 16, textAlign: 'center' }} data-tour="login-activate">
         <Typography.Text type="secondary">{t.login.notActivatedYet}</Typography.Text>{' '}
         <Link to={paths.activate}>{t.login.goActivate}</Link>
       </div>
@@ -74,6 +75,23 @@ export default function LoginPage() {
       <Typography.Paragraph type="secondary" style={{ fontSize: 12, marginTop: 16, marginBottom: 0 }}>
         {t.login.forgotPassword}
       </Typography.Paragraph>
+
+      {/*
+        ready 恒为 true：守卫在已登录时直接渲染 <Navigate> 而不挂载本页，
+        booting 时返回 null 也不挂载，所以这里不会和跳转抢时间。
+      */}
+      <GuideTour
+        id="login"
+        ready
+        steps={[
+          {
+            target: 'login-activate',
+            title: zh.tour.login.title,
+            step: zh.tour.login.step,
+            body: zh.tour.login.body,
+          },
+        ]}
+      />
     </AuthLayout>
   )
 }

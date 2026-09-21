@@ -1,8 +1,10 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { screen } from '@testing-library/react'
 import { HttpResponse, http } from 'msw'
 import { setupServer } from 'msw/node'
 import type { LeaderboardRow } from '@/api/types'
+import { markAllSeenForTest } from '@/features/guide/guideIds'
+import { zh } from '@/locales/zh-CN'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import LeaderboardPage from './LeaderboardPage'
 
@@ -28,6 +30,11 @@ const server = setupServer()
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterAll(() => server.close())
 afterEach(() => server.resetHandlers())
+
+/* 关掉操作指导，让这些用例只盯榜单本身；引导的行为由 src/features/guide 守着 */
+beforeEach(() => {
+  markAllSeenForTest()
+})
 
 function mockCampaign() {
   server.use(
@@ -253,6 +260,20 @@ describe('排行榜', () => {
     expect(await screen.findByText(/每日 06:00 更新/)).toBeInTheDocument()
   })
 
+  /*
+    算分说明是常驻的，不依赖操作指导 —— 引导关掉之后它还得在。
+    mockCampaign 里只有读书一条启用赛道（fitness 是停用的），
+    所以条数应当是 1，这也顺带钉住了「停用的赛道不计数」。
+  */
+  it('常驻展示算分方法，条数按启用的赛道算', async () => {
+    mockCampaign()
+    mockLeaderboard({})
+
+    renderWithProviders(<LeaderboardPage />, { route: '/leaderboard' })
+
+    expect(await screen.findByText(zh.leaderboard.scoringRule(1))).toBeInTheDocument()
+  })
+
   it('展示统计截止日与快照生成时间', async () => {
     mockCampaign()
     mockLeaderboard({})
@@ -277,5 +298,42 @@ describe('排行榜', () => {
     renderWithProviders(<LeaderboardPage />, { route: '/leaderboard' })
 
     expect(await screen.findByText('最终榜单')).toBeInTheDocument()
+  })
+})
+
+/**
+ * 操作指导在排行榜上的接线。
+ *
+ * 引导本身的行为由 src/features/guide 的用例守着，这里只验页面这一侧：
+ * 内容就绪后会开、锚点确实挂上了。外层 beforeEach 统一标记了「看过」，
+ * 这一段反过来要看真引导。
+ */
+describe('排行榜的操作指导', () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+  })
+
+  it('首次进入时给出更新与算分的说明，并把锚点交给引导', async () => {
+    mockCampaign()
+    mockLeaderboard({})
+
+    const { container } = renderWithProviders(<LeaderboardPage />, { route: '/leaderboard' })
+
+    expect(await screen.findByText(zh.tour.leaderboard.title)).toBeInTheDocument()
+
+    // 锚点缺席时 rc-tour 只是静默地退化成居中气泡，不会报错 ——
+    // 所以「锚点在不在」必须由用例来钉
+    expect(container.querySelector('[data-tour="lb-explain"]')).toBeTruthy()
+  })
+
+  it('看过之后不再出现，但算分说明仍然常驻', async () => {
+    mockCampaign()
+    mockLeaderboard({})
+    markAllSeenForTest()
+
+    renderWithProviders(<LeaderboardPage />, { route: '/leaderboard' })
+
+    expect(await screen.findByText(zh.leaderboard.scoringRule(1))).toBeInTheDocument()
+    expect(screen.queryByText(zh.tour.leaderboard.title)).not.toBeInTheDocument()
   })
 })

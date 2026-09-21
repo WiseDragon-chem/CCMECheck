@@ -1,5 +1,5 @@
-import { expect, test, type Page, type ViewportSize } from '@playwright/test'
-import { SUBMITTED_PARTICIPANT, login } from './helpers.js'
+import type { Page, ViewportSize } from '@playwright/test'
+import { SUBMITTED_PARTICIPANT, expect, login, test } from './helpers.js'
 
 /**
  * 参赛者端的桌面布局适配（design.md §10.1）。

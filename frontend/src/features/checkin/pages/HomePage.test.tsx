@@ -3,6 +3,8 @@ import { screen, waitFor } from '@testing-library/react'
 import { HttpResponse, http } from 'msw'
 import { setupServer } from 'msw/node'
 import type { TodayCard, TodayOverview } from '@/api/types'
+import { markAllSeenForTest } from '@/features/guide/guideIds'
+import { zh } from '@/locales/zh-CN'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import HomePage from './HomePage'
 
@@ -75,6 +77,13 @@ afterAll(() => server.close())
 afterEach(() => server.resetHandlers())
 
 beforeEach(() => {
+  /*
+    关掉操作指导。引导文案里有「今日尚未打卡」这类与卡片状态一字不差的
+    字样，留着会让下面按文案查找的断言有撞上两个元素的风险。
+    引导本身的行为由 src/features/guide 的用例守着。
+  */
+  markAllSeenForTest()
+
   campaignStatus.value = 'active'
 
   server.use(
@@ -289,5 +298,64 @@ describe('主页面', () => {
     expect(await screen.findByText('当前没有进行中的活动')).toBeInTheDocument()
     expect(screen.getByText(/发布新活动后重新加载本页即可/)).toBeInTheDocument()
     expect(screen.queryByText('请检查网络后重试。')).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * 操作指导在主页面上的接线。
+ *
+ * 引导本身的行为由 src/features/guide 的用例守着，这里只验两件只有把
+ * 页面和引导连起来才看得出来的事：内容就绪后引导真的会开，以及引导要
+ * 高亮的锚点在真实数据下确实挂上了。
+ *
+ * 外层 beforeEach 统一标记了「看过」，这一段反过来要看真引导。
+ */
+describe('主页面的操作指导', () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+  })
+
+  it('首次进入时给出打卡指引，并把锚点交给引导', async () => {
+    mockToday([makeCard({ slug: 'reading', name: '读书' })])
+
+    const { container } = renderWithProviders(<HomePage />, { route: '/home' })
+
+    // 引导真的开了
+    expect(await screen.findByText(zh.tour.home.headerTitle)).toBeInTheDocument()
+
+    /*
+      引导靠 data-tour 找目标，找不到时 rc-tour 会静默地退化成居中气泡 ——
+      不报错，只是不再高亮。所以「锚点在不在」必须由用例来钉，
+      否则哪天有人把 TrackCard 里那个属性当无用属性删掉，没人会发现。
+    */
+    expect(container.querySelector('[data-tour="home-header"]')).toBeTruthy()
+    expect(container.querySelector('[data-tour="home-cards"]')).toBeTruthy()
+    expect(container.querySelector('[data-tour="card-status"]')).toBeTruthy()
+  })
+
+  it('看过之后不再出现', async () => {
+    mockToday([makeCard({})])
+    markAllSeenForTest()
+
+    renderWithProviders(<HomePage />, { route: '/home' })
+    expect(await screen.findByText('读书')).toBeInTheDocument()
+
+    expect(screen.queryByText(zh.tour.home.headerTitle)).not.toBeInTheDocument()
+  })
+
+  it('加载失败时不弹引导 —— 不对着一屏错误讲话', async () => {
+    server.use(
+      http.get(`${API}/checkins/today`, () =>
+        HttpResponse.json(
+          { code: 'INTERNAL_ERROR', message: '服务器出错了，请稍后重试', request_id: 'req_x', details: {} },
+          { status: 500 },
+        ),
+      ),
+    )
+
+    renderWithProviders(<HomePage />, { route: '/home' })
+    expect(await screen.findByText(/服务器出错了/)).toBeInTheDocument()
+
+    expect(screen.queryByText(zh.tour.home.headerTitle)).not.toBeInTheDocument()
   })
 })

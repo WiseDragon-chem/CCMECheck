@@ -1,5 +1,58 @@
-import type { Page } from '@playwright/test'
+import { test as base, type Page } from '@playwright/test'
 import { makePng } from '../tools/png.mjs'
+
+/**
+ * 与操作指导（src/features/guide）里的 VERSION 保持一致。
+ * 那边 bump 版本号让引导重新演示时，这里也要跟着改，否则所有用例
+ * 会在引导弹窗上撞车。
+ */
+const TOUR_VERSION = 1
+const TOUR_IDS = ['login', 'activate', 'home', 'leaderboard'] as const
+
+/**
+ * 各用例统一从这里 import `test` / `expect`，**不要**直接 import '@playwright/test'。
+ *
+ * 这个 fixture 在每个页面加载前把所有操作指导标记成「看过了」。
+ * 每个 Playwright 用例都是全新的 browser context、localStorage 为空，
+ * 不预置的话引导会在几乎每个用例开头弹出来挡住点击 —— 而且是那种
+ * 「点击被遮罩吃掉」的失败，报错信息指向按钮找不到，与真实原因相去甚远。
+ *
+ * 想验引导本身的用例（e2e/tour.spec.ts）直接从 '@playwright/test' import
+ * base test，绕开这个 fixture。
+ */
+/**
+ * 预置「看过」标记。默认全部，也可以只预置一部分 ——
+ * 想验某一个页面的引导时就把它从名单里去掉，其余照旧静音。
+ */
+export async function seedToursSeen(page: Page, ids: readonly string[] = TOUR_IDS): Promise<void> {
+  await page.addInitScript(
+    ([version, list]) => {
+      try {
+        for (const id of list) {
+          window.localStorage.setItem(`ccme:tour:v${version}:${id}`, '1')
+        }
+      } catch {
+        // about:blank 等环境下 localStorage 会抛 SecurityError，忽略
+      }
+    },
+    [TOUR_VERSION, ids] as const,
+  )
+}
+
+export const test = base.extend({
+  /*
+    第二个参数是 Playwright 的「交还控制权」回调，官方文档里叫 use。
+    这里叫 proceed 是因为 eslint 的 react-hooks 规则会把任何 use 开头的
+    名字当成 React hook 而报错（React 的命名约定与 Playwright 的 fixture
+    API 撞了）。参数按位置传，改名不影响行为 —— 别改回 use 或 useXxx。
+  */
+  page: async ({ page }, proceed) => {
+    await seedToursSeen(page)
+    await proceed(page)
+  },
+})
+
+export { expect } from '@playwright/test'
 
 export const PARTICIPANT_PASSWORD = 'DevPassw0rd!'
 

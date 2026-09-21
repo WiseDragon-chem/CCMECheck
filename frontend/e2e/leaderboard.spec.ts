@@ -1,5 +1,4 @@
-import { expect, test } from '@playwright/test'
-import { SUBMITTED_PARTICIPANT, login } from './helpers.js'
+import { SUBMITTED_PARTICIPANT, expect, login, test } from './helpers.js'
 
 /**
  * 排行榜（design.md §7.6）。

@@ -66,6 +66,9 @@ export default function TrackCard({
             color={meta.color}
             icon={meta.icon}
             style={{ marginInlineEnd: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+            /* 主页面操作指导「状态怎么看」那步的锚点，见 HomePage 的 GuideTour。
+               别当无用属性删掉。只看第一张卡片，多张也只是取第一个命中 */
+            data-tour="card-status"
           >
             {meta.label}
           </Tag>

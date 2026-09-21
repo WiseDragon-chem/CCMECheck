@@ -7,6 +7,8 @@ import { fetchLeaderboard } from '@/api/endpoints/leaderboard'
 import { qk } from '@/api/queryKeys'
 import type { LeaderboardRow } from '@/api/types'
 import LoadError from '@/components/LoadError'
+import GuideTour from '@/features/guide/GuideTour'
+import { explainScoring } from '@/features/guide/scoringHint'
 import { formatCst } from '@/lib/datetime'
 import { formatScore } from '@/lib/milli'
 import { zh } from '@/locales/zh-CN'
@@ -44,6 +46,14 @@ export default function LeaderboardPage() {
     // 快照一天才更新一次，不必频繁重取
     staleTime: 5 * 60_000,
   })
+
+  // 必须在下面两个提前 return 之前算好，理由见 useGuide 的说明
+  const guideReady =
+    !campaignQuery.isPending &&
+    !leaderboardQuery.isPending &&
+    !campaignQuery.isError &&
+    !leaderboardQuery.isError &&
+    !!leaderboardQuery.data
 
   if (campaignQuery.isPending || leaderboardQuery.isPending) {
     return (
@@ -92,10 +102,21 @@ export default function LeaderboardPage() {
       {/*
         排行榜只在配置的时间更新一次，刚被审核通过的记录当天不会体现。
         这是本产品最高频的疑问，一行说明就能挡掉。
+
+        第二行是算分方法。它常驻在这里而不只出现在操作指导里 ——
+        引导关掉之后就再也看不到了，而「分是怎么算的」是要反复回看的内容。
+        文案由活动配置推出（见 explainScoring），不是写死的。
+
+        整块是操作指导「排行榜」那步的锚点，data-tour 别当无用属性删掉。
       */}
-      <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 12 }}>
-        {zh.leaderboard.cadence(campaign.leaderboard_time)}
-      </Typography.Text>
+      <div style={{ marginBottom: 12 }} data-tour="lb-explain">
+        <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
+          {zh.leaderboard.cadence(campaign.leaderboard_time)}
+        </Typography.Text>
+        <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
+          {explainScoring(campaignQuery.data.tracks)}
+        </Typography.Text>
+      </div>
 
       {/*
         手机上 .lb-layout / .lb-main / .lb-side 都没有任何规则，全是普通 div，
@@ -161,6 +182,18 @@ export default function LeaderboardPage() {
           </aside>
         )}
       </div>
+
+      <GuideTour
+        id="leaderboard"
+        ready={guideReady}
+        steps={[
+          {
+            target: 'lb-explain',
+            title: zh.tour.leaderboard.title,
+            body: zh.tour.leaderboard.body(campaign.leaderboard_time),
+          },
+        ]}
+      />
     </div>
   )
 }

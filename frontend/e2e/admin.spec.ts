@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
+import { expect, test } from './helpers.js'
 
 /**
  * 管理后台：流水线审核（design.md §8.2）。

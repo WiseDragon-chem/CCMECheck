@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { Alert, Button, Form, Input, Typography } from 'antd'
 import { presentError } from '@/api/presentError'
+import GuideTour from '@/features/guide/GuideTour'
 import AuthLayout from '@/layouts/AuthLayout'
 import { zh } from '@/locales/zh-CN'
 import { paths } from '@/routes/paths'
@@ -52,13 +53,16 @@ export default function ActivatePage() {
           <Input placeholder={t.studentIdPlaceholder} inputMode="numeric" autoComplete="username" />
         </Form.Item>
 
-        <Form.Item
-          name="activation_code"
-          label={t.activationCode}
-          rules={[{ required: true, message: t.activationCodeRequired }]}
-        >
-          <Input placeholder={t.activationCodePlaceholder} autoComplete="one-time-code" />
-        </Form.Item>
+        {/* 包一层只为给引导当锚点 —— antd 的 Form.Item 不保证透传 data-* */}
+        <div data-tour="activate-code">
+          <Form.Item
+            name="activation_code"
+            label={t.activationCode}
+            rules={[{ required: true, message: t.activationCodeRequired }]}
+          >
+            <Input placeholder={t.activationCodePlaceholder} autoComplete="one-time-code" />
+          </Form.Item>
+        </div>
 
         <Form.Item
           name="password"
@@ -104,6 +108,26 @@ export default function ActivatePage() {
       <Typography.Paragraph type="secondary" style={{ fontSize: 12, marginTop: 16, marginBottom: 0 }}>
         {t.nameLockNotice}
       </Typography.Paragraph>
+
+      {/*
+        登录页那步是「第 1 步，共 2 步」，这里是第 2 步。
+
+        两步各自记「看过」，不靠内存变量把「引导进行中」传过来 ——
+        那样中途刷新就断了，还得额外找个时机清理。分开记反而更稳：
+        直接打开 /activate 的人（比如管理员把链接发进群里）也照样看得到。
+      */}
+      <GuideTour
+        id="activate"
+        ready
+        steps={[
+          {
+            target: 'activate-code',
+            title: zh.tour.activate.title,
+            step: zh.tour.activate.step,
+            body: zh.tour.activate.body,
+          },
+        ]}
+      />
     </AuthLayout>
   )
 }

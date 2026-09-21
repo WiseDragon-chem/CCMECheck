@@ -120,6 +120,10 @@ export const zh = {
       logoutConfirmTitle: '确认退出登录？',
       logoutOk: '退出',
       logoutCancel: '取消',
+      /** 操作指导的重看入口。引导本身每个浏览器只演示一遍，想复习只能从这里进 */
+      guide: '操作指导',
+      guideCheckin: '打卡流程说明',
+      guideLeaderboard: '排行榜说明',
     },
   },
 
@@ -266,6 +270,19 @@ export const zh = {
     /** 桌面下「我的名次」是右栏的一张卡片，需要标题；手机上它是贴底浮条，标题被 CSS 隐藏 */
     myRankTitle: '我的名次',
     meMeta: (className: string, days: number) => `${className} · 有效 ${days} 天`,
+    /*
+      算分说明。常驻在榜单上方，不只在引导气泡里出现 ——
+      引导关掉之后就再也看不到了，而「分是怎么算的」是要反复回看的内容。
+
+      由 explainScoring()（src/features/guide/scoringHint.ts）按活动配置挑选：
+      服务端赛道的 daily_points / daily_cap / campaign_cap / overall_weight
+      决定走哪一条，见 server/src/config/campaign.ts 的 DEFAULT_TRACK_RULE。
+      改那里的评分默认值，这里必须跟着改。
+    */
+    scoringRule: (trackCount: number) =>
+      `每通过一次打卡得 1 分，各赛道等权；一天 ${trackCount} 条赛道全部通过，总榜加 ${trackCount} 分。`,
+    /** 权重或上限被改过时的兜底：不编造具体数字，只说清结构 */
+    scoringFallback: '总榜分数由各赛道分数按权重折算得出。',
     loadMore: (shown: number, total: number) => `加载更多（已显示 ${shown} / ${total}）`,
     loadFailed: '没能加载排行榜',
   },
@@ -703,6 +720,52 @@ export const zh = {
         'job.trigger': '手动触发任务',
         'evidence.purge': '按保留期清理材料',
       },
+    },
+  },
+
+  /**
+   * 操作指导（`src/features/guide/`）。
+   *
+   * 每个浏览器只演示一遍，之后只能从「我的 → 操作指导」重看。
+   * 因此这里**只讲三件没人说就不会知道、且踩了有代价的事**：
+   * 新用户要先激活、打卡的流转与截止、排行榜怎么算分。
+   * 界面上已经写着的（按钮叫什么、卡片在哪）一律不重复讲。
+   *
+   * 手机是主场景，每条正文都要能在 375px 上一屏读完。
+   */
+  tour: {
+    /** 单步引导的收尾按钮；多步引导沿用 antd 自带的「下一步 / 上一步」 */
+    done: '知道了',
+
+    login: {
+      title: '新用户请先激活',
+      step: '第 1 步，共 2 步',
+      body: '第一次使用请先点「去激活」，用管理员发给你的学号和激活码完成激活，之后就能用学号和密码登录了。',
+    },
+
+    activate: {
+      title: '填写管理员发的激活码',
+      step: '第 2 步，共 2 步',
+      body: '激活码由管理员发放，一次性使用。填好学号、激活码，再设置一个密码就完成激活了。',
+    },
+
+    home: {
+      headerTitle: '每天到点截止，过时不能补交',
+      /** 截止时刻取自活动配置，与卡片上的「今日截止」同源 */
+      headerBody: (deadline: string) =>
+        `每天 ${deadline} 截止。过了截止时间，当天就不能再提交了，会记为「今日未完成」，也无法补交。`,
+      cardsTitle: '打卡方法',
+      cardsBody: '每个赛道每天打卡一次。点「去打卡」上传证明材料并提交，之后等待审核。',
+      statusTitle: '状态怎么看，被驳回怎么办',
+      statusBody:
+        '卡片右上角是当天的状态：今日尚未打卡 → 已提交，等待审核 → 今日打卡有效 或 已驳回。被驳回后当天点「重新提交」即可，审核只以最新一次为准。',
+    },
+
+    leaderboard: {
+      title: '每天更新一次，各赛道等权',
+      /** 更新时刻取自活动配置，与页面上那行说明同源 */
+      body: (time: string) =>
+        `排行榜每天 ${time} 更新，统计到前一天 —— 今天刚通过的记录，要等下一次更新才会上榜。各赛道等权：每通过一次打卡得 1 分，总榜是各赛道分数之和。`,
     },
   },
 

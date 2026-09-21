@@ -12,6 +12,14 @@ import { afterEach } from 'vitest'
  */
 afterEach(() => {
   cleanup()
+
+  /*
+    jsdom 的 localStorage 在同一文件的用例之间是**共享**的，不清的话
+    上一个用例写下的「操作指导看过了」（src/features/guide）会让下一个
+    用例里引导不再出现 —— 表现为「单独跑能过、一起跑就挂」。
+    与 client.test.ts 里各自 clear 的做法同源，这里统一做一次。
+  */
+  window.localStorage.clear()
 })
 
 /**
@@ -46,3 +54,13 @@ if (!window.ResizeObserver) {
 if (!window.scrollTo) {
   window.scrollTo = (() => {}) as unknown as typeof window.scrollTo
 }
+
+/*
+  这里原本想滤掉 jsdom 的 "Not implemented: getComputedStyle() ... with
+  pseudo-elements"（antd 的浮层组件每次渲染都会踩到，操作指导的 Tour
+  渲染时每次吐两行）。实测**拦不住**：那几行走的不是 console.error，
+  改写 console.error 一行都减少不了，所以不留这段看似有用实则空转的代码。
+
+  好在量很小 —— 只有真正把引导渲染出来的用例才会产生，一个用例两行。
+  真实浏览器里该调用是正常的，属 jsdom 的能力缺口，不是代码问题。
+*/
