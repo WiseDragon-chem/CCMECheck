@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { buildCheckinFormData } from '@/api/upload'
+import { MAX_INPUT_BYTES, type CompressDeps } from '@/lib/imageCompress'
 import { detectImageType } from '@/lib/imageMagicBytes'
-import { validateFile } from './components/imagePicker.utils'
+import { checkSize, prepareImage, validateFile } from './components/imagePicker.utils'
 
 /**
  * 提交表单的构造与本地校验。
@@ -24,6 +25,36 @@ const RULES = {
   max_images: 3,
   max_image_bytes: 10 * 1024 * 1024,
   allowed_mime_types: ['image/jpeg', 'image/png', 'image/webp'],
+}
+
+/**
+ * 只带 name / size / slice 的假 File。
+ *
+ * 魔数那一步能正常走完（slice 返回真的 JPEG 头），又不必真的分配几 MB。
+ */
+function fakeFile(name: string, size: number, head = JPEG_HEAD): File {
+  const headFile = new File([new Uint8Array(head)], name, { type: 'image/jpeg' })
+  return { name, size, slice: () => headFile.slice(0, 16) } as unknown as File
+}
+
+/**
+ * 注入假的解码/编码。
+ *
+ * jsdom 里没有 canvas，压缩的真实路径由 lib/imageCompress.test.ts 与 e2e 覆盖；
+ * 这里只关心 prepareImage 的编排：什么时候压、压完拿什么去校验。
+ */
+function fakeCompress(sizeAfter: number | null) {
+  let decodeCalls = 0
+  const deps: CompressDeps = {
+    async decode() {
+      decodeCalls += 1
+      return { width: 100, height: 100, source: {} as CanvasImageSource, close: () => {} }
+    },
+    async encode() {
+      return sizeAfter === null ? null : new Blob([new Uint8Array(sizeAfter)], { type: 'image/jpeg' })
+    },
+  }
+  return { deps, decodeCalls: () => decodeCalls }
 }
 
 describe('提交表单构造', () => {
@@ -134,19 +165,99 @@ describe('选图前的本地校验', () => {
     if (!result.ok) expect(result.reason).toContain('不是有效的图片')
   })
 
-  it('拒绝超出单张大小限制的图片', async () => {
-    const big = file('big.jpg', JPEG_HEAD)
-    // 直接构造一个超过限制的 File，避免真的分配 11MB
-    const oversized = { name: 'big.jpg', size: RULES.max_image_bytes + 1, slice: () => big.slice(0, 16) } as unknown as File
-    const result = await validateFile(oversized, RULES)
-    expect(result.ok).toBe(false)
-    if (!result.ok) expect(result.reason).toContain('超过')
-  })
-
   it('拒绝活动配置之外的格式', async () => {
     const pngOnly = { ...RULES, allowed_mime_types: ['image/png'] }
     const result = await validateFile(file('a.jpg', JPEG_HEAD), pngOnly)
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.reason).toContain('不接受')
+  })
+
+  it('不看大小 —— 大图要留给压缩去救，不能在这里拦掉', async () => {
+    // validateFile 只管内容与格式。一张 5MB 的手机照片本该能压下来，
+    // 用原文件大小拦它等于把整个压缩功能关掉。大小在 checkSize 里查
+    await expect(validateFile(fakeFile('big.jpg', 5 * 1024 * 1024), RULES)).resolves.toEqual({ ok: true })
+  })
+})
+
+describe('压缩后的大小校验', () => {
+  it('接受限额以内的产物', () => {
+    expect(checkSize(file('a.jpg', JPEG_HEAD), RULES)).toEqual({ ok: true })
+  })
+
+  it('拒绝超出单张限额的产物', () => {
+    // 直接构造一个超过限制的 File，避免真的分配 11MB
+    const oversized = { name: 'big.jpg', size: RULES.max_image_bytes + 1 } as File
+    const result = checkSize(oversized, RULES)
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.reason).toContain('压缩后仍有')
+      expect(result.reason).toContain('超过')
+    }
+  })
+})
+
+describe('选图后的完整处理（校验 → 按需压缩 → 校验大小）', () => {
+  const LIVE_RULES = { ...RULES, max_image_bytes: 640 * 1024 }
+
+  it('原文件超限、压缩后达标 —— 放行，且收下的是压缩产物', async () => {
+    const { deps, decodeCalls } = fakeCompress(300 * 1024)
+
+    const result = await prepareImage(fakeFile('photo.jpg', 5 * 1024 * 1024), LIVE_RULES, deps)
+
+    expect(decodeCalls()).toBe(1)
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.file.size).toBe(300 * 1024)
+      // type 会被带成 multipart 的 Content-Type，服务端 fileFilter 拿它粗筛
+      expect(result.file.type).toBe('image/jpeg')
+    }
+  })
+
+  it('原文件本来就达标时压根不解码 —— 小图零额外损失', async () => {
+    const { deps, decodeCalls } = fakeCompress(100)
+
+    const result = await prepareImage(file('small.jpg', JPEG_HEAD), LIVE_RULES, deps)
+
+    expect(decodeCalls()).toBe(0)
+    expect(result.ok).toBe(true)
+  })
+
+  it('压缩后仍超限时给出「压缩后仍有 X」的准确文案', async () => {
+    // 满屏噪点这类图确实可能压不到 600KB 以内
+    const { deps } = fakeCompress(LIVE_RULES.max_image_bytes + 1)
+
+    const result = await prepareImage(fakeFile('noise.jpg', 5 * 1024 * 1024), LIVE_RULES, deps)
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.reason).toContain('压缩后仍有')
+  })
+
+  it('大到不敢解码的直接拒绝，且不去碰解码器', async () => {
+    const { deps, decodeCalls } = fakeCompress(100)
+
+    const result = await prepareImage(fakeFile('huge.jpg', MAX_INPUT_BYTES + 1), LIVE_RULES, deps)
+
+    expect(decodeCalls()).toBe(0)
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.reason).toContain('超出可处理的范围')
+  })
+
+  it('浏览器解不开时给出「无法处理」，而不是让它传完再被服务端拒', async () => {
+    const { deps } = fakeCompress(null)
+
+    const result = await prepareImage(fakeFile('broken.jpg', 5 * 1024 * 1024), LIVE_RULES, deps)
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.reason).toContain('无法处理')
+  })
+
+  it('活动把上限配得比 600KB 还小时，压缩目标跟着它走', async () => {
+    // 否则压到 600KB 仍会被服务端拒 —— 两端的判据必须一致
+    const strict = { ...RULES, max_image_bytes: 200 * 1024 }
+    const { deps } = fakeCompress(150 * 1024)
+
+    const result = await prepareImage(fakeFile('photo.jpg', 5 * 1024 * 1024), strict, deps)
+
+    expect(result.ok).toBe(true)
   })
 })

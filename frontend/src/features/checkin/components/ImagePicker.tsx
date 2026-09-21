@@ -10,8 +10,8 @@ import { zh } from '@/locales/zh-CN'
 import {
   createSelectedImage,
   describeRules,
+  prepareImage,
   releaseSelectedImages,
-  validateFile,
   type SelectedImage,
   type UploadRules,
 } from './imagePicker.utils'
@@ -36,6 +36,8 @@ export interface ImagePickerProps {
 export default function ImagePicker({ value, onChange, rules, disabled }: ImagePickerProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
+  /** 正在校验/压缩选中的图片。压缩是串行的，见 handleFiles */
+  const [processing, setProcessing] = useState(false)
 
   /**
    * 卸载时释放全部 object URL。
@@ -58,9 +60,17 @@ export default function ImagePicker({ value, onChange, rules, disabled }: ImageP
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
+  /**
+   * 选图 → 校验 → 压缩 → 收下。
+   *
+   * 压缩是串行的、每张几百毫秒到一两秒，所以整段用一个 processing 包起来：
+   * 没有反馈的话用户会以为没点上而反复点，而重复进入会让两次 onChange
+   * 基于同一份过期的 value 计算，后一次把前一次的结果覆盖掉。
+   */
   const handleFiles = useCallback(
     async (files: FileList | null) => {
       if (!files || files.length === 0) return
+      if (processing) return
       setError(null)
 
       const incoming = Array.from(files)
@@ -76,16 +86,22 @@ export default function ImagePicker({ value, onChange, rules, disabled }: ImageP
       const accepted: SelectedImage[] = []
       const problems: string[] = []
 
-      for (const file of incoming.slice(0, room)) {
-        const result = await validateFile(file, rules)
-        if (result.ok) accepted.push(createSelectedImage(file))
-        else problems.push(result.reason)
+      setProcessing(true)
+      try {
+        for (const file of incoming.slice(0, room)) {
+          const result = await prepareImage(file, rules)
+          // 收下的是压缩产物：预览即所见即所得，上传的也正是它
+          if (result.ok) accepted.push(createSelectedImage(result.file))
+          else problems.push(result.reason)
+        }
+      } finally {
+        setProcessing(false)
       }
 
       if (problems.length > 0) setError(problems.join('；'))
       if (accepted.length > 0) onChange([...value, ...accepted])
     },
-    [onChange, rules, value],
+    [onChange, processing, rules, value],
   )
 
   const remove = (id: string) => {
@@ -133,6 +149,7 @@ export default function ImagePicker({ value, onChange, rules, disabled }: ImageP
                 type="button"
                 className="image-picker__add"
                 onClick={() => inputRef.current?.click()}
+                disabled={processing}
                 aria-label={zh.checkin.submit.addImage}
               >
                 <PlusOutlined style={{ fontSize: 20 }} />
@@ -157,8 +174,8 @@ export default function ImagePicker({ value, onChange, rules, disabled }: ImageP
       />
 
       <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
-        {describeRules(rules)}
-        {value.length > 1 && zh.checkin.submit.dragToReorder}
+        {processing ? zh.checkin.submit.preparing : describeRules(rules)}
+        {!processing && value.length > 1 && zh.checkin.submit.dragToReorder}
       </Typography.Text>
 
       {error && (

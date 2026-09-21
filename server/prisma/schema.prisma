@@ -130,7 +130,9 @@ model Campaign {
   // ---- 证明材料限制 ----
   minImages        Int    @default(1) @map("min_images")
   maxImages        Int    @default(3) @map("max_images")
-  maxImageBytes    Int    @default(10485760) @map("max_image_bytes")
+  /// 与 src/config/constants.ts 的 DEFAULT_MAX_IMAGE_BYTES 保持一致。
+  /// 实际写入值永远是显式的（campaign:init 与管理端接口），这一列默认值只是兜底
+  maxImageBytes    Int    @default(655360) @map("max_image_bytes")
   /// JSON 字符串数组，例如 ["image/jpeg","image/png","image/webp"]
   allowedMimeTypes String @default("[\"image/jpeg\",\"image/png\",\"image/webp\"]") @map("allowed_mime_types")
 

@@ -52,6 +52,19 @@ export const csvFormulaCast = {
 } as const
 
 /**
+ * 字节数的展示形式，与前端 imagePicker.utils.ts 的 formatSize 同口径。
+ *
+ * 小于 1MB 时按 KB 显示：单张限额是 640KB，一路 toFixed(1) 之后会变成
+ * 「0.6 MB」—— 前端提示写的是「不超过 640 KB」，两边单位对不上，而这条
+ * 消息恰恰是旧缓存前端绕过压缩时用户唯一能看到的东西。
+ */
+export function formatBytes(bytes: number): string {
+  return bytes >= 1024 * 1024
+    ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
+    : `${Math.ceil(bytes / 1024)} KB`
+}
+
+/**
  * 生成 CSV 文本。
  * 带 UTF-8 BOM —— 否则 Windows 版 Excel 打开会把中文显示成乱码。
  */

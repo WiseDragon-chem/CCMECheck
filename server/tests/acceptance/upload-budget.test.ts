@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { DEFAULT_MAX_IMAGE_BYTES, DEFAULT_MAX_IMAGES } from '../../src/config/constants.js'
 import { UPLOAD_MULTIPART_OVERHEAD_BYTES, uploadBudgetBytes } from '../../src/middleware/upload.js'
 import { authed, login } from '../helpers/app.js'
 import { bootstrapCampaign, createParticipant, createUser, makeImage, TEST_PASSWORD } from '../helpers/factory.js'
@@ -8,7 +9,7 @@ import { getPrismaClient } from '../../src/db/client.js'
 /**
  * 上传的内存预算闸（middleware/upload.ts）。
  *
- * multer 用 memoryStorage 且全局硬上限是 9 × 50MiB —— 活动级限额（默认 3 × 10MiB）
+ * multer 用 memoryStorage 且全局硬上限是 9 × 50MiB —— 活动级限额（默认 3 × 640KB）
  * 若只在解码之后校验，恶意/失误的请求可以先让进程缓冲 450MiB。
  * 这里守住的是：超预算的请求在**读取请求体之前**就被拒。
  */
@@ -86,15 +87,28 @@ describe('上传预算闸', () => {
   it('没有活动时回落到默认限额，不抢业务层的判断', async () => {
     await db.campaign.deleteMany()
 
-    // 4MiB 小于默认预算（3 × 10MiB + 余量），因此闸门必须放行，
-    // 由 submitCheckin 给出「当前没有进行中的活动」——错误语义不能从业务层搬到中间件
+    /*
+      请求体取回退预算的一半 —— 刻意由常量算出来，而不是写死一个数字：
+      这个用例要守的是「落在回退预算内的请求，闸门必须放行」，与默认限额
+      具体是多少无关。写死数字的话，默认值一改它就会以「闸门拦住了」的
+      形式失败，而失败原因看起来像是闸门坏了。
+    */
+    const withinFallback = Math.floor(
+      uploadBudgetBytes({
+        maxImages: DEFAULT_MAX_IMAGES,
+        maxImageBytes: DEFAULT_MAX_IMAGE_BYTES,
+      }) / 2,
+    )
+
+    // 闸门放行之后，由 submitCheckin 给出「当前没有进行中的活动」——
+    // 错误语义不能从业务层搬到中间件
     const response = await authed(token)
       .post('/api/v1/checkins')
       .field('track', 'reading')
       .field('activity_date', ACTIVITY_DATE)
-      .attach('images', Buffer.alloc(4 * 1024 * 1024, 1), 'huge.jpg')
+      .attach('images', Buffer.alloc(withinFallback, 1), 'huge.jpg')
 
-    expect(response.status).toBe(409)
+    expect(response.status, JSON.stringify(response.body)).toBe(409)
     expect(response.body.code).toBe('CAMPAIGN_NOT_ACTIVE')
   })
 

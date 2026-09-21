@@ -1,12 +1,13 @@
 import type { Request, RequestHandler } from 'express'
 import multer from 'multer'
 import { AppError } from '../core/errors.js'
+import { formatBytes } from '../core/text.js'
 
 /**
  * 上传接收。
  *
  * 用 memoryStorage：图片需要先经过 sharp 解码校验与 EXIF 剥离才能落盘，
- * 而活动级限额（默认 3 张 × 10MiB）放内存里完全可以接受，还省掉了临时文件清理。
+ * 而活动级限额（默认 3 张 × 640KB）放内存里完全可以接受，还省掉了临时文件清理。
  *
  * 限额分三层，各司其职：
  *   1. uploadBudgetGuard —— 读请求体**之前**按活动配置预检 Content-Length，
@@ -33,10 +34,6 @@ export interface UploadBudget {
 /** 该活动允许的请求体上限：图片总量 + 表单余量 */
 export function uploadBudgetBytes(budget: UploadBudget): number {
   return budget.maxImages * budget.maxImageBytes + UPLOAD_MULTIPART_OVERHEAD_BYTES
-}
-
-function formatMegabytes(bytes: number): string {
-  return (bytes / 1024 / 1024).toFixed(1)
 }
 
 /**
@@ -107,7 +104,7 @@ export function createUploadBudgetGuard(loadBudget: () => Promise<UploadBudget>)
       if (declaredBytes > limitBytes) {
         throw new AppError(
           'UPLOAD_INVALID',
-          `上传体积超出当前活动的限制（最多 ${budget.maxImages} 张、单张不超过 ${formatMegabytes(budget.maxImageBytes)} MB）`,
+          `上传体积超出当前活动的限制（最多 ${budget.maxImages} 张、单张不超过 ${formatBytes(budget.maxImageBytes)}）`,
           { details: { limit_bytes: limitBytes, content_length: declaredBytes } },
         )
       }

@@ -106,7 +106,17 @@ export const CAMPAIGN_CONFIG: CampaignConfig = {
   tieBreakRule: 'score_desc_valid_days_desc_reached_at_asc',
   minImages: 1,
   maxImages: 3,
-  maxImageBytes: 10 * 1024 * 1024,
+  /*
+    640KB。前端会在上传前把超标的图压到 600KB 以内，这里留 40KB 余量 ——
+    压出来的字节数贴着 600KB 时，任何舍入差异都不该让用户传不上去。
+
+    后端只做校验、不做压缩：真正的压缩在浏览器里完成，
+    这样用户在上传之前就拿到了结果，不必等几十秒再被拒。
+
+    这比 design.md §7.4 最初写的 10MB 严得多，是刻意的 ——
+    活动日期与计分规则同样写死在代码里，理由见本文件顶部。
+  */
+  maxImageBytes: 640 * 1024,
   allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
   status: 'published',
 

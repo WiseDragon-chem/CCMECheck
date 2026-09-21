@@ -73,6 +73,60 @@ test.describe('参赛者打卡', () => {
     await expect(page.locator('.image-thumb')).toHaveCount(0)
   })
 
+  test('超过 600KB 的照片在浏览器里压过之后再上传（§7.4）', async ({ page }) => {
+    /*
+      用 FRESH_PARTICIPANTS[2]：这个用例会产生待审核记录，
+      与前两条用例共号会让它们的「重新提交」点到别的赛道上。
+    */
+    await login(page, FRESH_PARTICIPANTS[2])
+
+    const submitButton = page.getByRole('button', { name: '去打卡' }).first()
+    await expect(submitButton).toBeVisible()
+    await submitButton.click()
+    await page.waitForURL('**/checkin/**')
+
+    /*
+      原图必须真的超标，否则这条用例什么都没验到：
+      服务端会在 640KB 处拒绝，所以「提交成功」本身就证明了字节是在
+      浏览器里压下来的 —— 没有压缩功能时它会直接 400。
+      实测 makePng 的渐变图：1600×1200 是 692KB，2000×1500 是 877KB。
+    */
+    const large = testImage(2000, 1500, 3)
+    expect(large.buffer.length, '这条用例需要一张明显超过 600KB 的原图').toBeGreaterThan(600 * 1024)
+
+    await page.setInputFiles('input[type="file"]', large)
+    await expect(page.locator('.image-thumb')).toHaveCount(1)
+
+    // 压出来的必须仍是一张能解码的图片，而不是 canvas 吐出的坏字节
+    const thumb = page.locator('.image-thumb img').first()
+    await expect(thumb).toBeVisible()
+    expect(await thumb.evaluate((element: HTMLImageElement) => element.naturalWidth)).toBeGreaterThan(0)
+
+    /*
+      真正要守的那条产品要求：**上传的字节**在 600KB 以内。
+
+      只断言「提交成功」是不够的 —— 那只能说明它过了服务端 640KB 的线，
+      压到 630KB 也会通过。缩略图指向的就是即将上传的那个压缩产物
+      （见 ImagePicker：收下的是 prepareImage 的产物），直接量它。
+
+      不用 Playwright 的 postDataBuffer：multipart 的请求体它取不到，返回 null。
+    */
+    const uploadedBytes = await page
+      .locator('.image-thumb img')
+      .first()
+      .evaluate(async (element) => {
+        const response = await fetch((element as HTMLImageElement).src)
+        return (await response.blob()).size
+      })
+    expect(uploadedBytes, `压缩后是 ${uploadedBytes} 字节，应当不超过 600KB`).toBeLessThanOrEqual(
+      600 * 1024,
+    )
+
+    await page.getByRole('button', { name: /提\s*交/ }).click()
+    await page.waitForURL('**/home', { timeout: 30_000 })
+    await expect(page.getByText('已提交，等待审核').first()).toBeVisible()
+  })
+
   test('重新提交产生新版本，而槽位仍然只有一个', async ({ page }) => {
     // 用另一个未打卡账号：这个用例会产生待审核记录，
     // 与前一个用例共号会让它的「重新提交」点到别的赛道上

@@ -202,16 +202,24 @@ export const zh = {
       trackNotFoundDetail: '该赛道不在此活动中，或已停用。',
       loadFailed: '没能加载打卡信息',
       dragToReorder: ' · 拖动缩略图可调整顺序',
-      /** 上传规则摘要，由活动配置拼出：1–3 张，JPEG、PNG、WebP，单张不超过 10 MB */
-      uploadRules: (min: number, max: number, formats: string, limitMb: number) =>
-        `${min}–${max} 张，${formats}，单张不超过 ${limitMb} MB`,
+      /** 上传规则摘要，由活动配置拼出：1–3 张，JPEG、PNG、WebP，单张不超过 640 KB（超出会自动压缩） */
+      uploadRules: (min: number, max: number, formats: string, limit: string) =>
+        `${min}–${max} 张，${formats}，单张不超过 ${limit}（超出会自动压缩）`,
       sizeLimitMb: (limitMb: number) => `${limitMb} MB`,
       tooManyImages: (max: number) => `最多只能上传 ${max} 张图片`,
       ignoredExtra: (room: number) => `最多还能再加 ${room} 张，已忽略多余的图片`,
       notAnImage: (name: string) => `「${name}」不是有效的图片，可能只是改了扩展名`,
       unsupportedFormat: (name: string, mime: string) => `「${name}」是 ${mime}，当前活动不接受该格式`,
-      tooLarge: (name: string, size: string, limitMb: number) =>
-        `「${name}」${size}，超过单张 ${limitMb} MB 的限制`,
+      /** 选完图后在浏览器里压缩的耗时，手机上每张几百毫秒到一两秒 */
+      preparing: '正在处理图片…',
+      /** 压缩之后的兜底：极限情况下（比如满屏噪点）确实压不到限额以内 */
+      tooLargeAfterCompress: (name: string, size: string, limit: string) =>
+        `「${name}」压缩后仍有 ${size}，超过单张 ${limit} 的限制`,
+      /** 大到连解码都不敢试，避免把手机上的标签页撑爆 */
+      tooLargeToProcess: (name: string, size: string) =>
+        `「${name}」${size}，超出可处理的范围，请先用其他工具压缩后再上传`,
+      /** 浏览器解不开：文件损坏，或不是 JPEG/PNG/WebP 里的一种 */
+      cannotProcess: (name: string) => `「${name}」无法处理，请换一张图片`,
       deleteImage: (index: number) => `删除第 ${index + 1} 张`,
       proofAlt: (index: number) => `证明材料 ${index + 1}`,
     },

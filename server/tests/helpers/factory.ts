@@ -1,5 +1,5 @@
 import sharp from 'sharp'
-import { DEFAULT_TRACKS, type UserRole } from '../../src/config/constants.js'
+import { DEFAULT_MAX_IMAGE_BYTES, DEFAULT_TRACKS, type UserRole } from '../../src/config/constants.js'
 import { randomObjectKey, sha256Hex } from '../../src/core/crypto.js'
 import { hashPassword } from '../../src/core/password.js'
 import { truncateToSecond } from '../../src/core/time.js'
@@ -107,7 +107,8 @@ export async function createCampaign(options: CreateCampaignOptions) {
       nameDisplayMode: options.nameDisplayMode ?? 'real',
       minImages: options.minImages ?? 1,
       maxImages: options.maxImages ?? 3,
-      maxImageBytes: options.maxImageBytes ?? 10 * 1024 * 1024,
+      // 跟随生产默认值，免得测试跑在一个已经不存在的限额上
+      maxImageBytes: options.maxImageBytes ?? DEFAULT_MAX_IMAGE_BYTES,
       campaignTracks: {
         create: tracks.map((track) => {
           const override = options.trackConfig?.[track.slug]

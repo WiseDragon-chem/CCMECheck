@@ -238,7 +238,8 @@ export const DEFAULT_TRACKS = [
 
 export const DEFAULT_MIN_IMAGES = 1
 export const DEFAULT_MAX_IMAGES = 3
-export const DEFAULT_MAX_IMAGE_BYTES = 10 * 1024 * 1024
+/** 与 src/config/campaign.ts 的默认值保持一致：前端压到 600KB，后端留 40KB 余量 */
+export const DEFAULT_MAX_IMAGE_BYTES = 640 * 1024
 export const DEFAULT_ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const
 
 /** 图片像素上限，防御解压炸弹 */

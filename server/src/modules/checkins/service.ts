@@ -2,6 +2,7 @@ import { SUBMITTABLE_CAMPAIGN_STATUSES, type EntryStatus } from '../../config/co
 import { randomObjectKey } from '../../core/crypto.js'
 import { AppError, notFound } from '../../core/errors.js'
 import type { AuthPrincipal } from '../../core/principal.js'
+import { formatBytes } from '../../core/text.js'
 import { isSubmissionAllowed, toActivityDate, windowState } from '../../core/time.js'
 import { getPrismaClient, type Db } from '../../db/client.js'
 import { runInTransaction } from '../../db/tx.js'
@@ -517,8 +518,7 @@ function assertFilesWithinRules(
   }
   for (const file of files) {
     if (file.size > rules.maxImageBytes) {
-      const limitMb = (rules.maxImageBytes / 1024 / 1024).toFixed(1)
-      throw new AppError('UPLOAD_INVALID', `单张图片不能超过 ${limitMb} MB`)
+      throw new AppError('UPLOAD_INVALID', `单张图片不能超过 ${formatBytes(rules.maxImageBytes)}`)
     }
   }
 }

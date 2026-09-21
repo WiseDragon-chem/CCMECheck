@@ -153,12 +153,25 @@ test.describe('管理后台', () => {
   test('队列真的审空后，看照片的地方说「待审核队列为空」', async ({ page }) => {
     await openReview(page)
 
-    // 逐条通过直到队列清空。条数取决于当次播种（十几条），上限只是兜底，
-    // 免得一个断言写错就把用例挂成死循环
+    /*
+      逐条通过直到队列清空。条数取决于当次播种，上限只是兜底，
+      免得一个断言写错就把用例挂成死循环。
+
+      每按一次都等**这条真的从队列里消失**，而不是等那句「已通过」浮层：
+      浮层要好几秒才消失，上一条的浮层会让断言在本次审批还没完成时就通过，
+      于是按键快过请求 —— 同一条记录带着同一个版本号被提交两次，
+      第二次必然 409，弹出「该记录已被其他人修改」，快捷键随之停用，
+      循环空转六十次，最后留下几条没审完。这个失败看起来像「队列太长」，
+      其实是断言等错了东西。
+
+      用 poll 而不是 toHaveCount(remaining - 1)：审完一条之后队列可能
+      接着加载下一页，条数不一定恰好减一，但一定会减少。
+    */
     for (let guard = 0; guard < 60; guard += 1) {
-      if ((await page.locator('.queue-item').count()) === 0) break
+      const remaining = await page.locator('.queue-item').count()
+      if (remaining === 0) break
       await page.keyboard.press('a')
-      await expect(page.locator('.ant-message').last()).toContainText('已通过')
+      await expect.poll(async () => page.locator('.queue-item').count()).toBeLessThan(remaining)
     }
 
     await expect(page.locator('.queue-item')).toHaveCount(0)

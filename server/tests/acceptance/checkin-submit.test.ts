@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { DEFAULT_MAX_IMAGE_BYTES } from '../../src/config/constants.js'
 import { getPrismaClient } from '../../src/db/client.js'
 import { api, authed, login } from '../helpers/app.js'
 import { bootstrapCampaign, createParticipant, createUser, makeImage, TEST_PASSWORD } from '../helpers/factory.js'
@@ -186,6 +187,27 @@ describe('打卡提交', () => {
 
     expect(response.status).toBe(400)
     expect(response.body.code).toBe('UPLOAD_INVALID')
+    expect(await db.checkinEntry.count()).toBe(0)
+  })
+
+  it('单张超出活动限额的图片被拒，且不留下记录', async () => {
+    /*
+      限额来自活动配置（默认 640KB，见 src/config/campaign.ts）。
+      前端会在上传前把超标的图压到 600KB 以内，所以正常路径走不到这里；
+      这条守的是绕过压缩的客户端（旧缓存的 JS、脚本）与压不下来的兜底。
+    */
+    const oversize = Buffer.alloc(DEFAULT_MAX_IMAGE_BYTES + 1, 1)
+
+    const response = await authed(token)
+      .post('/api/v1/checkins')
+      .field('track', 'reading')
+      .field('activity_date', ACTIVITY_DATE)
+      .attach('images', oversize, 'huge.jpg')
+
+    expect(response.status, JSON.stringify(response.body)).toBe(400)
+    expect(response.body.code).toBe('UPLOAD_INVALID')
+    // 640KB 不能打印成「0.6 MB」—— 前端提示写的是 KB，两边要对得上
+    expect(response.body.message).toContain('640 KB')
     expect(await db.checkinEntry.count()).toBe(0)
   })
 

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import {
   CAMPAIGN_STATUSES,
+  DEFAULT_MAX_IMAGE_BYTES,
   NAME_DISPLAY_MODES,
   SUPPORTED_TIMEZONES,
   TIE_BREAK_RULES,
@@ -38,7 +39,9 @@ export const createCampaignBodySchema = z
     name_display_mode: z.enum(NAME_DISPLAY_MODES).default('real'),
     min_images: z.coerce.number().int().min(0).max(9).default(1),
     max_images: z.coerce.number().int().min(1).max(9).default(3),
-    max_image_bytes: z.coerce.number().int().min(1024).max(50 * 1024 * 1024).default(10 * 1024 * 1024),
+    // 默认值引用常量而不是重复写一遍字面量：超管建活动时不填这一项，
+    // 拿到的是与 campaign.ts 一致的限制，不会凭空回到 10MB
+    max_image_bytes: z.coerce.number().int().min(1024).max(50 * 1024 * 1024).default(DEFAULT_MAX_IMAGE_BYTES),
     allowed_mime_types: z.array(z.enum(['image/jpeg', 'image/png', 'image/webp'])).min(1).default(['image/jpeg', 'image/png', 'image/webp']),
     tracks: z.array(trackConfigSchema).optional(),
   })
