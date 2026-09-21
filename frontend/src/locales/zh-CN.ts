@@ -71,7 +71,6 @@ export const zh = {
       notActivatedYet: '还没有激活？',
       goActivate: '去激活',
       forgotPassword: '忘记密码请联系活动管理员重置。',
-      notActivatedNotice: '该账号尚未激活，请先使用激活码完成激活',
     },
     activate: {
       title: '激活账号',

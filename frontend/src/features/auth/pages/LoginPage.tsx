@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
-import { Alert, Button, Form, Input, Typography, App as AntdApp } from 'antd'
+import { Alert, Button, Form, Input, Typography } from 'antd'
 import { presentError } from '@/api/presentError'
 import AuthLayout from '@/layouts/AuthLayout'
 import { zh } from '@/locales/zh-CN'
@@ -17,7 +17,6 @@ export default function LoginPage() {
   const login = useAuthStore((state) => state.login)
   const navigate = useNavigate()
   const location = useLocation()
-  const { message } = AntdApp.useApp()
   const t = zh.auth
 
   const [submitting, setSubmitting] = useState(false)
@@ -36,14 +35,9 @@ export default function LoginPage() {
     } catch (caught) {
       const presented = presentError(caught)
 
-      // 账号未激活不是错误，是「你还没走激活流程」——给个去激活的入口更实用
-      if (presented.code === 'ACCOUNT_NOT_ACTIVATED') {
-        message.info(t.login.notActivatedNotice)
-        navigate(paths.activate)
-        return
-      }
-
-      // 限流时不透露剩余时间（服务端也没给），只提示稍后再试
+      // 登录接口不会回 ACCOUNT_NOT_ACTIVATED：未激活的账号与「学号不存在」
+      // 在服务端是同一条错误，否则就成了免认证的名单探针（见 auth/service.ts）。
+      // 未激活的用户由下方常驻的「尚未激活？去激活」入口引导。
       setError(presented.text)
     } finally {
       setSubmitting(false)

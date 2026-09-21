@@ -10,7 +10,6 @@ import { signAccessToken } from '../../services/tokens.service.js'
 import { toPublicUser, type PublicUser } from '../users/serializer.js'
 
 const REFRESH_TTL_MS = env.refreshTokenTtlDays * 24 * 60 * 60 * 1000
-const ACTIVATION_TTL_MS = env.activationTokenTtlDays * 24 * 60 * 60 * 1000
 const DEVICE_INFO_MAX_LENGTH = 255
 
 export interface TokenBundle {
@@ -86,15 +85,15 @@ export async function activateAccount(params: {
   const prisma = getPrismaClient()
 
   const user = await prisma.user.findUnique({ where: { studentId: params.studentId } })
-  if (!user) {
-    // 名单外的学号不能激活（design.md §16.1），但不透露学号是否存在
-    throw new AppError('ACTIVATION_INVALID', '学号或激活码不正确')
-  }
-  if (user.status === 'disabled') {
-    throw new AppError('ACCOUNT_DISABLED', '账号已被禁用，请联系管理员')
-  }
-  if (user.passwordHash) {
-    throw new AppError('ACTIVATION_INVALID', '该账号已激活，请直接登录或联系管理员重置密码')
+
+  // 四种失败共用一个错误码与文案：名单外（design.md §16.1）、已禁用、已激活、激活码无效。
+  // 各自给各自的提示等于提供了一个免认证的名单探针 —— 学号是可枚举的低熵值，
+  // 「该账号已激活」这句提示就能确认某个学号是否在参赛名单里。
+  // 代价是已激活的人重试激活时会看到一句泛泛的提示，激活页本身有更明确的说明兜底。
+  const invalidActivation = (): AppError => new AppError('ACTIVATION_INVALID', '学号或激活码不正确')
+
+  if (!user || user.status === 'disabled' || user.passwordHash) {
+    throw invalidActivation()
   }
 
   const tokenHash = sha256Hex(params.activationCode)
@@ -139,14 +138,13 @@ export async function login(params: {
   const prisma = getPrismaClient()
   const user = await prisma.user.findUnique({ where: { studentId: params.studentId } })
 
-  if (!user) {
-    // 恒定时间：账号不存在时也做一次哈希校验
+  // 「账号不存在」与「账号尚未激活」对外必须完全一致（design.md §7.1）。
+  // 未激活的账号还没有密码，单独回一句「尚未激活」等于告诉任何人这个学号在名单里；
+  // 两条路径都做一次哈希校验，连响应时间也不留差异（恒定时间）。
+  // 未激活的人该走的是激活流程，登录页常驻着「尚未激活？去激活」的入口。
+  if (!user || !user.passwordHash) {
     await verifyPassword(getDummyPasswordHash(), params.password)
     throw new AppError('INVALID_CREDENTIALS', '学号或密码不正确')
-  }
-
-  if (!user.passwordHash) {
-    throw new AppError('ACCOUNT_NOT_ACTIVATED', '账号尚未激活，请先使用激活码完成激活')
   }
 
   const passwordOk = await verifyPassword(user.passwordHash, params.password)

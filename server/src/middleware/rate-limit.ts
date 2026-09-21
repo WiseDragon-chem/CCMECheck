@@ -9,8 +9,11 @@ import { AppError } from '../core/errors.js'
  * skipSuccessfulRequests 让正常用户不受影响，只统计失败尝试。
  */
 function clientKey(req: { ip?: string; body?: unknown }): string {
-  const body = req.body as { studentId?: unknown } | undefined
-  const studentId = typeof body?.studentId === 'string' ? body.studentId.slice(0, 64) : ''
+  // 字段名必须是 snake_case 的 student_id（见 modules/auth/schema.ts）：
+  // 曾经写成 studentId，取值恒为 undefined，键退化成 "<ip>:" ——
+  // 注释里承诺的「IP + 学号」双维度实际只剩 IP。
+  const body = req.body as { student_id?: unknown } | undefined
+  const studentId = typeof body?.student_id === 'string' ? body.student_id.slice(0, 64) : ''
   return `${ipKeyGenerator(req.ip ?? '')}:${studentId}`
 }
 
@@ -37,6 +40,26 @@ export const activateRateLimiter = rateLimit({
   skipSuccessfulRequests: true,
   keyGenerator: clientKey,
   handler: limitExceeded('激活尝试过于频繁，请稍后再试'),
+})
+
+/**
+ * 打卡提交：按用户计数（未认证时回落 IP）。
+ *
+ * 与登录限流不同，这里**不跳过成功请求** —— 要限制的正是「成功的重复上传」：
+ * 每个请求最多在内存里缓冲一个活动限额的图片，不限制次数等于把内存放大的开关交给调用方。
+ */
+function principalKey(req: { ip?: string; principal?: { userId?: string } }): string {
+  const userId = req.principal?.userId
+  return userId ? `user:${userId}` : ipKeyGenerator(req.ip ?? '')
+}
+
+export const checkinSubmitRateLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 30,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  keyGenerator: principalKey,
+  handler: limitExceeded('打卡提交过于频繁，请稍后再试'),
 })
 
 export const refreshRateLimiter = rateLimit({

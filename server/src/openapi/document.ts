@@ -167,8 +167,9 @@ export function buildOpenApiDocument() {
     tags: ['认证'],
     summary: '使用学号与激活码激活账号',
     description:
-      '激活码只保存哈希，成功使用后立即失效。名单外的学号无法激活，但错误信息不区分学号是否存在。' +
-      '按 IP + 学号限流。',
+      '激活码只保存哈希，成功使用后立即失效。' +
+      '失败一律返回同一条 ACTIVATION_INVALID：名单外、已激活、已禁用、激活码无效不可区分，' +
+      '否则任何人都能用学号探出名单成员（design.md §7.1）。按 IP + 学号限流。',
     request: jsonBody(activateBodySchema),
     responses: {
       201: jsonResponse('激活成功，同时在 HttpOnly Cookie 中下发刷新令牌', AuthResponseSchema),
@@ -181,7 +182,11 @@ export function buildOpenApiDocument() {
     path: '/api/v1/auth/login',
     tags: ['认证'],
     summary: '登录',
-    description: '连续失败会触发限流（按 IP + 学号双维度）。',
+    description:
+      '连续失败会触发限流（键为 IP + 学号）。' +
+      '「学号不存在」与「账号尚未激活」返回同一条 INVALID_CREDENTIALS，' +
+      '并且都走一次哈希校验，避免用响应内容或耗时枚举名单；' +
+      '只有密码正确后才会暴露账号已被禁用。',
     request: jsonBody(loginBodySchema),
     responses: {
       200: jsonResponse('登录成功', AuthResponseSchema),
@@ -884,5 +889,3 @@ export function buildOpenApiDocument() {
     ],
   })
 }
-
-export type OpenApiDocument = ReturnType<typeof buildOpenApiDocument>

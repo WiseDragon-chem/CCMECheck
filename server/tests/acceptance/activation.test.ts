@@ -208,12 +208,26 @@ describe('账号激活', () => {
     expect(noSuchUser.body.message).toBe(wrongPassword.body.message)
   })
 
-  it('未激活的账号不能直接登录', async () => {
+  it('未激活的账号在登录时与「不存在」「密码错」表现完全一致', async () => {
     await rosterStudent('2026006', 'ACT-2026-0006')
 
-    const response = await api().post('/api/v1/auth/login').send({ student_id: '2026006', password: TEST_PASSWORD })
+    const pending = await api()
+      .post('/api/v1/auth/login')
+      .send({ student_id: '2026006', password: TEST_PASSWORD })
+    const wrongPassword = await api()
+      .post('/api/v1/auth/login')
+      .send({ student_id: '2026001', password: 'WrongPassword1' })
+    const noSuchUser = await api()
+      .post('/api/v1/auth/login')
+      .send({ student_id: '2026977', password: 'WrongPassword1' })
 
-    expect(response.status, JSON.stringify(response.body)).toBe(401)
-    expect(response.body.code).toBe('ACCOUNT_NOT_ACTIVATED')
+    // 三者必须无法区分：未激活的账号没有密码，若单独回一句「尚未激活」，
+    // 任何人用一个学号就能确认它在不在名单里（学号可枚举）
+    for (const response of [pending, wrongPassword, noSuchUser]) {
+      expect(response.status, JSON.stringify(response.body)).toBe(401)
+      expect(response.body.code).toBe('INVALID_CREDENTIALS')
+    }
+    expect(pending.body.message).toBe(wrongPassword.body.message)
+    expect(noSuchUser.body.message).toBe(wrongPassword.body.message)
   })
 })

@@ -17,7 +17,30 @@ if (process.env.NODE_ENV !== 'test') {
   }
 }
 
-const EnvSchema = z.object({
+/**
+ * .env.example 里的示例值必须被拒。
+ *
+ * 那些占位值长度都超过 32，能顺利通过长度校验 —— 照抄示例启动之后，
+ * 两把密钥就是人人可查的公开常量：FILE_SIGNING_SECRET 泄漏可以给任意 assetId
+ * 伪造长期有效的图片地址，JWT_SECRET 泄漏可以伪造任意已知用户的访问令牌。
+ *
+ * 匹配刻意写得很窄：开发用的 `dev-only-…-do-not-use-in-production-…` 与
+ * 测试用的 `test-jwt-secret-…` 都不含这些字样，不会被误伤。
+ */
+const PLACEHOLDER_SECRET_PATTERNS = [/^replace-me/i, /^change-me/i, /^your[-_]/i, /placeholder/i]
+
+function signingSecretSchema(name: string) {
+  const hint =
+    `请生成一个随机密钥：node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`
+  return z
+    .string()
+    .min(32, `${name} 至少 32 个字符`)
+    .refine((value) => !PLACEHOLDER_SECRET_PATTERNS.some((pattern) => pattern.test(value)), {
+      message: `${name} 仍是 .env.example 里的占位值，${hint}`,
+    })
+}
+
+export const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
   LOG_LEVEL: z.string().default('info'),
@@ -25,8 +48,8 @@ const EnvSchema = z.object({
 
   DATABASE_URL: z.string().min(1),
 
-  JWT_SECRET: z.string().min(32, 'JWT_SECRET 至少 32 个字符'),
-  FILE_SIGNING_SECRET: z.string().min(32, 'FILE_SIGNING_SECRET 至少 32 个字符'),
+  JWT_SECRET: signingSecretSchema('JWT_SECRET'),
+  FILE_SIGNING_SECRET: signingSecretSchema('FILE_SIGNING_SECRET'),
 
   ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(900),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
@@ -36,6 +59,20 @@ const EnvSchema = z.object({
   COOKIE_NAME: z.string().default('ccme_refresh'),
 
   CORS_ORIGINS: z.string().default(''),
+
+  /**
+   * Express 的 trust proxy 设置，取值 true / false / 非负整数（代理跳数）。
+   *
+   * 默认 false —— 用 socket 地址而不是 X-Forwarded-For。限流的键与 audit_logs.ip
+   * 都取自 req.ip，直连时信任代理头等于让调用方自己申报 IP，限流可被绕过。
+   * 只有确实部署在可信反向代理之后才设置，并且必须由该代理覆写请求头。
+   */
+  TRUST_PROXY: z
+    .string()
+    .default('false')
+    .refine((value) => value === 'true' || value === 'false' || /^\d+$/.test(value), {
+      message: 'TRUST_PROXY 只能是 true、false 或非负整数（代理跳数）',
+    }),
 
   STORAGE_ROOT: z.string().default('./storage'),
 
@@ -72,6 +109,11 @@ const EnvSchema = z.object({
   SEED_REVIEWER_STUDENT_ID: z.string().default('reviewer'),
   SEED_REVIEWER_NAME: z.string().default('审核员'),
   SEED_REVIEWER_PASSWORD: z.string().optional(),
+}).refine((value) => value.JWT_SECRET !== value.FILE_SIGNING_SECRET, {
+  // 两把密钥用途不同（访问令牌 / 图片签名），复用等于让一处泄漏连带另一处：
+  // 图片签名密钥出现在每个签名地址的校验路径上，暴露面更大。
+  path: ['FILE_SIGNING_SECRET'],
+  message: 'FILE_SIGNING_SECRET 不能与 JWT_SECRET 相同，请分别随机生成',
 })
 
 const parsed = EnvSchema.safeParse(process.env)
@@ -103,14 +145,11 @@ function resolveStorageRoot(storageRoot: string): string {
 export const env = {
   nodeEnv: raw.NODE_ENV,
   isProduction: raw.NODE_ENV === 'production',
-  isTest: raw.NODE_ENV === 'test',
-  isDevelopment: raw.NODE_ENV === 'development',
 
   port: raw.PORT,
   logLevel: raw.LOG_LEVEL,
   publicBaseUrl: raw.PUBLIC_BASE_URL.replace(/\/+$/, ''),
 
-  databaseUrl: raw.DATABASE_URL,
   databaseFile: resolveDatabaseFile(raw.DATABASE_URL),
 
   jwtSecret: raw.JWT_SECRET,
@@ -126,6 +165,9 @@ export const env = {
   corsOrigins: raw.CORS_ORIGINS.split(',')
     .map((origin) => origin.trim())
     .filter((origin) => origin.length > 0),
+
+  trustProxy:
+    raw.TRUST_PROXY === 'true' ? true : raw.TRUST_PROXY === 'false' ? false : Number(raw.TRUST_PROXY),
 
   storageRoot: resolveStorageRoot(raw.STORAGE_ROOT),
   backupRoot: resolveStorageRoot(raw.BACKUP_ROOT),

@@ -11,8 +11,10 @@ import { accessLogger, requestContext } from './middleware/request-context.js'
 export function createApp(): Express {
   const app = express()
 
-  // 部署在反向代理后，限流需要真实客户端 IP
-  app.set('trust proxy', 1)
+  // 默认不信任 X-Forwarded-For：限流的键与审计里的 ip 都取自 req.ip，
+  // 而直连时信任代理头等于让客户端自己申报 IP（每换一个头就是一个新的限流桶）。
+  // 只有确实部署在可信反向代理之后，才把 TRUST_PROXY 设为代理跳数。
+  app.set('trust proxy', env.trustProxy)
   app.disable('x-powered-by')
 
   app.use(requestContext)
