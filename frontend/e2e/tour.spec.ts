@@ -136,6 +136,25 @@ test.describe('操作指导', () => {
     await expect(page.getByText('每天更新一次，各赛道等权')).toBeVisible()
   })
 
+  test('「我的」页重播打卡说明后，气泡不会在下一秒自己消失', async ({ page }) => {
+    await seedToursSeen(page)
+    await login(page, SUBMITTED_PARTICIPANT)
+
+    await page.goto('/me')
+    await page.getByRole('button', { name: '打卡流程说明' }).click()
+    await page.waitForURL('**/home')
+    await expect(page.getByText('每天到点截止，过时不能补交')).toBeVisible()
+
+    /*
+      主页面每秒重渲染一次（倒计时的 useTicker），引导若只靠「重播请求」
+      撑着就会在那一拍里自己关掉 —— 断言不加等待，会在气泡出现的**那一帧**
+      就通过，正好放过这个 bug（排行榜那条重播用例就是这么漏过去的：
+      那边没有 ticker，压根不重渲染）。所以这里必须等过至少一拍再断言。
+    */
+    await page.waitForTimeout(1200)
+    await expect(page.getByText('每天到点截止，过时不能补交')).toBeVisible()
+  })
+
   test('手机尺寸下气泡不溢出视口', async ({ page }) => {
     // mobile-chrome 项目就是 Pixel 7（412px），这里再确认气泡本身没被挤出去
     await page.goto('/login')

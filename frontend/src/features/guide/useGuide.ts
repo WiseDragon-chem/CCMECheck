@@ -24,7 +24,9 @@ export interface GuideState {
  * 操作指导的开关。
  *
  * 「开不开」是**渲染期直接推导**的，不走 effect：open 就是
- * 「内容就绪 且 这次会话里没关过 且 （有重播请求 或 这个浏览器没看过）」。
+ * 「内容就绪 且 这次会话里没关过 且 （重播请求待兑现 / 已兑现过 /
+ * 这个浏览器没看过）」。三个「要开」的理由都必须是重渲染翻不动的 ——
+ * 前两个见 replayClaimed 的说明。
  *
  * 这么写不只是为了少一个 effect，更是因为页面的数据会反复重取
  * （react-query 的 staleTime 一到就重取，审核结果变化也会让卡片刷新）。
@@ -40,12 +42,40 @@ export function useGuide(id: GuideId, { ready }: UseGuideOptions): GuideState {
   const [closed, setClosed] = useState(false)
   const [current, setCurrent] = useState(0)
 
-  const open = ready && !closed && (isReplayRequested(id) || !hasSeen(id))
+  /**
+   * 这次播放是重播请求兑现来的。
+   *
+   * 必须落成状态，不能只认 isReplayRequested —— 那个请求在打开的瞬间
+   * 就被 consume 掉了，而 open 是**渲染期推导**的：请求一没，下一次
+   * 重渲染就会把它翻回 false，引导自己关掉。
+   *
+   * 主页面每秒因倒计时重渲染一次（useTicker），所以那里必然复现：
+   * 在「我的」点「打卡流程说明」跳到首页，气泡出现不到 1 秒就消失 ——
+   * 用户早看过（!hasSeen 为 false），重播请求是唯一撑着它开着的理由。
+   * 排行榜没有 ticker，同样的 bug 只是没被触发出来。
+   */
+  const [replayClaimed, setReplayClaimed] = useState(false)
 
   /*
-    重播请求兑现掉。这里只改模块里那个变量，不碰 React 状态，
-    所以放 effect 里是合适的；放在渲染期反而不行 —— StrictMode 会
-    把渲染跑两遍，第一遍就把请求取走了，第二遍看到的是「没有请求」。
+    渲染期把「这次是重播」记下来，而不是等 effect —— open 在同一帧就要
+    用到它：effect 要等渲染提交之后才跑，那时 open 已经按「没有重播请求」
+    算过一遍了，晚一帧就是气泡一闪而过。
+
+    渲染期 setState 是 React 认可的「依据外部输入调整状态」写法
+    （react.dev 的 you-might-not-need-an-effect），前提是有
+    !replayClaimed 这样的收敛条件，否则每轮渲染都会再设一次。
+
+    这里刻意不顺手 consumeReplayRequest —— 渲染可能被丢弃（StrictMode
+    会把渲染跑两遍，并发渲染下也可能作废），那次播放就永远丢了。
+    兑现仍然留在下面的 effect 里。
+  */
+  if (!replayClaimed && isReplayRequested(id)) setReplayClaimed(true)
+
+  const open = ready && !closed && (isReplayRequested(id) || replayClaimed || !hasSeen(id))
+
+  /*
+    重播请求兑现掉。这里只改模块里那个变量，不碰 React 状态 ——
+    放在渲染期反而不行，理由见上。
   */
   useEffect(() => {
     if (open) consumeReplayRequest(id)

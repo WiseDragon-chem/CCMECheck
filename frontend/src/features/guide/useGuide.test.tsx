@@ -89,6 +89,27 @@ describe('useGuide', () => {
     expect(result.current.open).toBe(true)
   })
 
+  it('重播打开之后页面重渲染，引导不会自己关掉', () => {
+    /*
+      主页面每秒因倒计时的 useTicker 重渲染一次。open 是渲染期推导的，
+      而重播请求在打开的瞬间就被 consume 掉了 —— 若不把「兑现过」记成
+      状态，下一次重渲染会看到「既没有重播请求、又早已看过」，把引导关掉。
+      表现为：在「我的」点「打卡流程说明」，跳到首页后气泡出现不到 1 秒
+      就消失（排行榜没有 ticker，所以那边不复现）。
+    */
+    markSeen('home')
+    requestReplay('home')
+
+    const { result, rerender } = renderHook(({ ready }) => useGuide('home', { ready }), {
+      initialProps: { ready: true },
+    })
+    expect(result.current.open).toBe(true)
+
+    // 就是 useTicker 那一拍
+    rerender({ ready: true })
+    expect(result.current.open).toBe(true)
+  })
+
   it('重播请求只兑现一次', () => {
     markSeen('leaderboard')
     requestReplay('leaderboard')
