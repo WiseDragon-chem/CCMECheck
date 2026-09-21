@@ -19,6 +19,12 @@ function errorBody(code: ErrorCode, message: string, requestId: string, details?
   return { code, message, request_id: requestId, details: details ?? {} }
 }
 
+/** body-parser 的体积超限错误（express.json / express.urlencoded 抛出） */
+function isBodyTooLarge(error: unknown): boolean {
+  const candidate = error as { status?: unknown; type?: unknown } | null
+  return candidate?.status === 413 && candidate?.type === 'entity.too.large'
+}
+
 export function zodIssuesToFields(error: ZodError): Array<{ field: string; message: string }> {
   return error.issues.map((issue) => ({
     field: issue.path.length > 0 ? issue.path.join('.') : '(root)',
@@ -62,6 +68,15 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next) => {
           : '上传的文件不合法'
     log.warn({ multer_code: error.code }, message)
     res.status(400).json(errorBody('UPLOAD_INVALID', message, requestId, { multer_code: error.code }))
+    return
+  }
+
+  // ---- 请求体超过 express.json / urlencoded 的体积上限 ----
+  // body-parser 抛的是带 status/type 的普通错误。不认出来的话会落到「未知异常」，
+  // 客户端拿到 500，看不出是自己把请求送大了。
+  if (isBodyTooLarge(error)) {
+    log.warn({ content_type: req.header('content-type') }, 'request body too large')
+    res.status(400).json(errorBody('UPLOAD_INVALID', '请求体超出大小限制（JSON 与表单上限 1MB）', requestId))
     return
   }
 

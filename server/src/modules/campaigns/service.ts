@@ -6,7 +6,7 @@ import {
   type CampaignStatus,
 } from '../../config/constants.js'
 import { AppError } from '../../core/errors.js'
-import { addDays, cstToday, toActivityDate } from '../../core/time.js'
+import { cstToday, toActivityDate } from '../../core/time.js'
 import { getPrismaClient, type Db } from '../../db/client.js'
 
 export function parseMimeList(raw: string): string[] {
@@ -72,8 +72,31 @@ function findCampaignWithTracks(db: Db, campaignId: string) {
   })
 }
 
-export function toPublicCampaign(campaign: NonNullable<CampaignRecord>): PublicCampaign {
+export interface UploadRules {
+  minImages: number
+  maxImages: number
+  maxImageBytes: number
+  allowedMimeTypes: string[]
+}
+
+/**
+ * 上传限制的唯一事实来源。
+ *
+ * 对外的 `upload_rules` 与上传前的预算闸（middleware/upload.ts）都从这里取值 ——
+ * 两处各算一遍的话，「页面上写的限额」和「后端真正拦的限额」迟早会分家。
+ */
+export function toUploadRules(campaign: NonNullable<CampaignRecord>): UploadRules {
   const allowed = parseMimeList(campaign.allowedMimeTypes)
+  return {
+    minImages: campaign.minImages ?? DEFAULT_MIN_IMAGES,
+    maxImages: campaign.maxImages ?? DEFAULT_MAX_IMAGES,
+    maxImageBytes: campaign.maxImageBytes ?? DEFAULT_MAX_IMAGE_BYTES,
+    allowedMimeTypes: allowed.length > 0 ? allowed : [...DEFAULT_ALLOWED_MIME_TYPES],
+  }
+}
+
+export function toPublicCampaign(campaign: NonNullable<CampaignRecord>): PublicCampaign {
+  const rules = toUploadRules(campaign)
   return {
     id: campaign.id,
     name: campaign.name,
@@ -89,10 +112,10 @@ export function toPublicCampaign(campaign: NonNullable<CampaignRecord>): PublicC
     name_display_mode: campaign.nameDisplayMode,
     tie_break_rule: campaign.tieBreakRule,
     upload_rules: {
-      min_images: campaign.minImages ?? DEFAULT_MIN_IMAGES,
-      max_images: campaign.maxImages ?? DEFAULT_MAX_IMAGES,
-      max_image_bytes: campaign.maxImageBytes ?? DEFAULT_MAX_IMAGE_BYTES,
-      allowed_mime_types: allowed.length > 0 ? allowed : [...DEFAULT_ALLOWED_MIME_TYPES],
+      min_images: rules.minImages,
+      max_images: rules.maxImages,
+      max_image_bytes: rules.maxImageBytes,
+      allowed_mime_types: rules.allowedMimeTypes,
     },
     created_at: campaign.createdAt.toISOString(),
     updated_at: campaign.updatedAt.toISOString(),
@@ -143,6 +166,25 @@ export async function resolveCurrentCampaign(db: Db = getPrismaClient()) {
   })
 }
 
+/**
+ * 当前活动的上传预算，供中间件在读取请求体**之前**预检。
+ *
+ * 刻意不用 requireCurrentCampaign：那会连赛道一起查（守卫用不到），
+ * 也会在没有活动时抛 409 —— 而「此刻能不能提交」是 submitCheckin 的判断，
+ * 守卫只需要一份最宽的预算：没有活动时回落到默认限制，让请求继续走到业务层去拿准确错误。
+ *
+ * 不做缓存：管理员随时可能下调限额，缓存旧值会让超限请求继续被放行。
+ */
+export async function currentUploadBudget(
+  db: Db = getPrismaClient(),
+): Promise<{ maxImages: number; maxImageBytes: number }> {
+  const campaign = await resolveCurrentCampaign(db)
+  if (!campaign) {
+    return { maxImages: DEFAULT_MAX_IMAGES, maxImageBytes: DEFAULT_MAX_IMAGE_BYTES }
+  }
+  return { maxImages: campaign.maxImages, maxImageBytes: campaign.maxImageBytes }
+}
+
 /** 取当前活动并附带赛道配置；没有活动时抛出可读错误 */
 export async function requireCurrentCampaign(db: Db = getPrismaClient()) {
   const current = await resolveCurrentCampaign(db)
@@ -177,39 +219,6 @@ export function computeAutoStatus(
   if (campaign.status === 'published' && today >= campaign.startDate) return 'active'
   if (campaign.status === 'active' && today > campaign.endDate) return 'settling'
   return null
-}
-
-/** 该活动日的下一个截止时刻，供倒计时使用（design.md §7.3） */
-export function nextDeadline(
-  campaign: { startDate: string; endDate: string; dailyDeadline: string },
-  now: Date = new Date(),
-): { activity_date: string; deadline: string } | null {
-  const today = cstToday(now)
-  if (today > campaign.endDate) return null
-  const date = today < campaign.startDate ? campaign.startDate : today
-  return { activity_date: date, deadline: campaign.dailyDeadline }
-}
-
-/** 活动包含的活动日数量 */
-export function campaignDayCount(campaign: { startDate: string; endDate: string }): number {
-  let count = 0
-  let cursor = campaign.startDate
-  while (cursor <= campaign.endDate) {
-    count += 1
-    cursor = addDays(cursor, 1)
-  }
-  return count
-}
-
-/** 当前活动日（未开始时返回开始日期，已结束时返回结束日期） */
-export function currentActivityDate(
-  campaign: { startDate: string; endDate: string },
-  now: Date = new Date(),
-): string {
-  const today = cstToday(now)
-  if (today < campaign.startDate) return campaign.startDate
-  if (today > campaign.endDate) return campaign.endDate
-  return today
 }
 
 export { toActivityDate }

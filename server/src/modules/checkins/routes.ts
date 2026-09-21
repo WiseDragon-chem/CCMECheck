@@ -3,7 +3,9 @@ import { AppError, notFound } from '../../core/errors.js'
 import { route } from '../../core/route.js'
 import { getPrismaClient } from '../../db/client.js'
 import { authenticate, requirePrincipal } from '../../middleware/authenticate.js'
-import { uploadImages, uploadedImages } from '../../middleware/upload.js'
+import { checkinSubmitRateLimiter } from '../../middleware/rate-limit.js'
+import { createUploadBudgetGuard, uploadImages, uploadedImages } from '../../middleware/upload.js'
+import { currentUploadBudget } from '../campaigns/service.js'
 import { signAssetUrl } from '../../storage/signed-url.js'
 import {
   assetParamsSchema,
@@ -12,6 +14,9 @@ import {
   submitCheckinFieldsSchema,
 } from './schema.js'
 import { getCheckinDetail, getTodayOverview, listCheckins, submitCheckin } from './service.js'
+
+/** 活动限额的来源注入给守卫，中间件本身不认识活动服务 */
+const uploadBudgetGuard = createUploadBudgetGuard(currentUploadBudget)
 
 export function createCheckinsRouter(): Router {
   const router = Router()
@@ -47,6 +52,10 @@ export function createCheckinsRouter(): Router {
   /** 创建或重新提交打卡（design.md §7.4） */
   router.post(
     '/',
+    // 顺序要紧：限流按调用方计数（需要 authenticate 解析出的身份），
+    // 预算闸必须早于 multer —— 后者一跑就会把整个请求体读进内存
+    checkinSubmitRateLimiter,
+    uploadBudgetGuard,
     // multer 必须在 route() 之前跑：multipart 的文本字段由它填进 req.body
     uploadImages,
     route({ body: submitCheckinFieldsSchema }, async ({ req, res, body }) => {
