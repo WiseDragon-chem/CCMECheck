@@ -65,6 +65,12 @@ const ADMIN_ROUTES: AdminRoute[] = [
   { method: 'post', path: '/api/v1/admin/participants/nonexistent-id/activation-code', minRole: 'super_admin' },
   { method: 'post', path: '/api/v1/admin/participants/nonexistent-id/reset-password', minRole: 'super_admin' },
 
+  // 后台账号管理 —— §5 管理管理员账号仅超级管理员
+  { method: 'get', path: '/api/v1/admin/accounts', minRole: 'super_admin' },
+  { method: 'post', path: '/api/v1/admin/accounts', minRole: 'super_admin' },
+  { method: 'patch', path: '/api/v1/admin/accounts/nonexistent-id', minRole: 'super_admin' },
+  { method: 'post', path: '/api/v1/admin/accounts/nonexistent-id/reset-password', minRole: 'super_admin' },
+
   // 审核 —— §5 审核证明材料、查看全部参赛者记录
   { method: 'get', path: '/api/v1/admin/reviews/queue', minRole: 'reviewer' },
   { method: 'get', path: '/api/v1/admin/reviews/nonexistent-id', minRole: 'reviewer' },

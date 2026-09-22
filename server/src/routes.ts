@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { createAccountsRouter } from './modules/accounts/routes.js'
 import { createAdminJobsRouter } from './modules/admin-jobs/routes.js'
 import { createAdminOpsRouter } from './modules/admin-ops/routes.js'
 import { createAssetsRouter } from './modules/assets/routes.js'
@@ -46,6 +47,8 @@ export function registerApiRoutes(): Router {
   api.use('/admin/jobs', createAdminJobsRouter())
   api.use('/admin/dashboard', createAdminDashboardRouter())
   api.use('/admin/participants', createAdminParticipantsRouter())
+  // 后台账号管理（§5「管理管理员账号」）
+  api.use('/admin/accounts', createAccountsRouter())
   api.use('/admin/reviews', createAdminReviewsRouter())
   // 补录、撤销、作废、积分调整（design.md §8.5）
   api.use('/admin', createAdminOpsRouter())

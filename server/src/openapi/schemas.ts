@@ -12,6 +12,7 @@ import {
   USER_ROLES,
   USER_STATUSES,
 } from '../config/constants.js'
+import { ACCOUNT_ROLES } from '../modules/accounts/schema.js'
 
 /**
  * OpenAPI 组件 schema。
@@ -477,6 +478,63 @@ export const AnonymizeParticipantResponseSchema = z
     revoked_sessions: z.number().int(),
   })
   .openapi('AnonymizeParticipantResponse')
+
+// ---------------------------------------------------------------------------
+// 管理后台：后台账号
+// ---------------------------------------------------------------------------
+
+/**
+ * 后台账号（§5「管理管理员账号」）。
+ *
+ * 与 AdminParticipant 是两套视图：那边是「参赛者在本活动内的身份」，
+ * 这边是账号本身 —— 后台账号不属于任何活动，所以没有 class_name、joined_at。
+ */
+export const AdminAccountSchema = z
+  .object({
+    id: z.string(),
+    student_id: z.string(),
+    name: z.string(),
+    role: z.enum(ACCOUNT_ROLES),
+    /** 后台账号不走激活流程，因此不会是 pending_activation */
+    status: z.enum(['active', 'disabled']),
+    activated: z.boolean().openapi({ description: '是否设置过密码' }),
+    password_changed_at: z
+      .string()
+      .nullable()
+      .openapi({ description: '密码最后变更时间；null 表示从未设置过密码' }),
+    created_at: z.string(),
+  })
+  .openapi('AdminAccount')
+
+export const AdminAccountListResponseSchema = PaginationFieldsSchema.extend({
+  items: z.array(AdminAccountSchema).openapi({ description: '超级管理员在前，同角色内按学号升序' }),
+  active_super_admin_count: z.number().int().openapi({
+    description: '当前活跃超级管理员的**全局**总数，不受筛选条件影响；系统始终保留至少一个',
+  }),
+}).openapi('AdminAccountListResponse')
+
+/**
+ * 创建账号与重置密码共用。
+ *
+ * 两个接口返回的都是「账号 + 一个只出现一次的明文密码」，合成一个组件是为了
+ * 让前端只写一份「弹出明文并提示立即转交」的逻辑（同上方的 ParticipantActivationResponse）。
+ */
+export const AccountCredentialResponseSchema = z
+  .object({
+    account: AdminAccountSchema,
+    password: z.string().openapi({ description: '一次性密码，只在此响应中出现一次，库里只保存哈希' }),
+  })
+  .openapi('AccountCredentialResponse')
+
+export const AccountUpdateResponseSchema = z
+  .object({
+    account: AdminAccountSchema,
+    revoked_sessions: z
+      .number()
+      .int()
+      .openapi({ description: '被一并撤销的登录会话数；禁用之外的操作恒为 0' }),
+  })
+  .openapi('AccountUpdateResponse')
 
 // ---------------------------------------------------------------------------
 // 管理后台：名单导入

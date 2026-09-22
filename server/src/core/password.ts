@@ -1,5 +1,6 @@
 import { Algorithm, hash, hashSync, verify } from '@node-rs/argon2'
 import { randomToken } from './crypto.js'
+import { internalError } from './errors.js'
 
 /**
  * design.md §13 要求密码使用 Argon2id。
@@ -58,4 +59,23 @@ export function checkPasswordPolicy(password: string): PasswordPolicyResult {
     return { ok: false, message: '密码需要同时包含字母和数字' }
   }
   return { ok: true }
+}
+
+/**
+ * 生成符合密码策略的一次性明文密码。
+ *
+ * 参赛者的重置密码与后台账号的初始密码/重置密码共用这一处实现 ——
+ * 两边的语义完全相同（系统生成、只展示一次、库里只存哈希），
+ * 分开写迟早会在「保证含数字」这类要求上出现分歧。
+ *
+ * 反复调用 randomToken 直到通过 checkPasswordPolicy —— base64url 字母表本身含字母与数字，
+ * 一般一次就通过；直接拼字符串更容易在策略变更时出错。
+ */
+export function generateTemporaryPassword(): string {
+  for (let attempt = 0; attempt < 16; attempt += 1) {
+    const candidate = randomToken(12)
+    if (checkPasswordPolicy(candidate).ok) return candidate
+  }
+  // 连续 16 次都不满足策略的概率可以忽略，走到这里说明随机源出了问题
+  throw internalError('无法生成符合密码策略的临时密码')
 }

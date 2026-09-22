@@ -6,6 +6,7 @@ import { getDummyPasswordHash, hashPassword, verifyPassword } from '../../core/p
 import { truncateToSecond } from '../../core/time.js'
 import { getPrismaClient, type Db } from '../../db/client.js'
 import { runInTransaction } from '../../db/tx.js'
+import { revokeAllSessions } from '../../services/sessions.service.js'
 import { signAccessToken } from '../../services/tokens.service.js'
 import { toPublicUser, type PublicUser } from '../users/serializer.js'
 
@@ -266,10 +267,7 @@ export async function changePassword(params: {
       data: { passwordHash, passwordChangedAt },
     })
     // 改密后所有长期会话立即失效（design.md §7.2、§16.13）
-    await tx.refreshSession.updateMany({
-      where: { userId: user.id, revokedAt: null },
-      data: { revokedAt: new Date() },
-    })
+    await revokeAllSessions(tx, user.id)
   })
 
   // 给当前设备补发一套新凭证，避免用户改完密码立刻被踢下线

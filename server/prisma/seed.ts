@@ -3,9 +3,15 @@ import { DEFAULT_TRACKS } from '../src/config/constants.js'
 import { env } from '../src/config/env.js'
 import { randomToken } from '../src/core/crypto.js'
 import { hashPassword } from '../src/core/password.js'
+import { truncateToSecond } from '../src/core/time.js'
 
 /**
  * 初始化数据：超级管理员 + 审核员 + 三个赛道。
+ *
+ * 这两个账号是**引导**用的：首次启动时系统里还没有任何后台账号，
+ * 也就没人能通过后台账号页（§5「管理管理员账号」）创建它们 ——
+ * 创建第一个账号的能力只能来自这里。之后新增超管与审核员走
+ * `POST /api/v1/admin/accounts`，不必再改 .env 重跑种子。
  *
  * 刻意不预置活动：活动与计分规则定义在 `src/config/campaign.ts` 里，
  * 由 `npm run campaign:init` 写入。两件事分开是因为它们的时点不同 ——
@@ -61,7 +67,9 @@ async function main(): Promise<void> {
           role: 'super_admin',
           status: 'active',
           passwordHash: await hashPassword(generated),
-          passwordChangedAt: new Date(),
+          // 截断到秒：JWT 的 iat 只到秒，带毫秒的 passwordChangedAt 会让
+          // 「同一秒内登录」被 authenticate 判成「密码已变更」，令牌当场失效
+          passwordChangedAt: truncateToSecond(new Date()),
         },
       })
       console.log(`✔ 已创建超级管理员：${studentId}`)
@@ -74,8 +82,8 @@ async function main(): Promise<void> {
 
     // ---- 审核员 ----
     //
-    // §5 要求超管能管理管理员账号，但那套接口尚不存在。在其他办法之前，
-    // 审核员只能由这里创建 —— 没有审核员，系统上线后没人能审材料。
+    // 与超管同理：这是第一个审核员的引导路径。审核员也归后台账号页管理（§5），
+    // 但首次启动时还没有人能登录后台去创建它。
     const reviewer = env.seedReviewer
     const existingReviewer = await prisma.user.findUnique({ where: { studentId: reviewer.studentId } })
 
@@ -95,7 +103,9 @@ async function main(): Promise<void> {
           role: 'reviewer',
           status: 'active',
           passwordHash: await hashPassword(generated),
-          passwordChangedAt: new Date(),
+          // 截断到秒：JWT 的 iat 只到秒，带毫秒的 passwordChangedAt 会让
+          // 「同一秒内登录」被 authenticate 判成「密码已变更」，令牌当场失效
+          passwordChangedAt: truncateToSecond(new Date()),
         },
       })
       console.log(`✔ 已创建审核员：${reviewer.studentId}`)

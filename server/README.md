@@ -56,7 +56,7 @@ npm run prisma:generate
 # 建库并应用迁移
 npm run prisma:migrate
 
-# 写入初始数据：超级管理员 + 审核员 + 三个赛道（不预置活动）
+# 写入初始数据：第一个超级管理员 + 审核员 + 三个赛道（不预置活动）
 npm run seed
 
 # 启动开发服务（HTTP + 定时任务同进程）
@@ -65,6 +65,11 @@ npm run dev
 
 首次执行 `npm run seed` 时，如果 `.env` 里的 `SEED_ADMIN_PASSWORD` 为空，
 脚本会随机生成一个管理员密码并**只打印一次**，请立即保存并登录后修改。
+
+这两个账号是**引导**用的：首次启动时系统里还没有任何后台账号，也就没人能
+通过后台的「账号管理」页创建它们。之后新增超管与审核员都在后台页面完成
+（`POST /api/v1/admin/accounts`），不必再改 `.env` 重跑种子 —— 重跑种子也
+不会重置已有账号的密码。
 
 服务启动后：`http://localhost:3000/healthz` 可用于存活探测。
 
@@ -87,7 +92,7 @@ npm run dev
 | `npm run typecheck` | 全量类型检查 |
 | `npm run prisma:migrate` | 开发期迁移 |
 | `npm run prisma:deploy` | 生产环境应用迁移 |
-| `npm run seed` | 写入初始数据：管理员、审核员、三个赛道（幂等） |
+| `npm run seed` | 写入初始数据：第一个管理员、审核员、三个赛道（幂等；后续账号走后台「账号管理」页） |
 | `npm run campaign:init` | 把 `src/config/campaign.ts` 里的活动与计分规则同步到库（幂等，会打印改了哪些字段） |
 | `npm test` / `npm run test:watch` | Vitest |
 
@@ -197,6 +202,10 @@ Zod schema 在 `schema.ts`（同时供 OpenAPI 注册）。
 | GET | `/admin/participants/activation-codes.csv` | super_admin | 激活码状态导出 |
 | POST | `/admin/participants/import/preview` | super_admin | 校验并预览名单 |
 | POST | `/admin/participants/import/commit` | super_admin | 正式导入 |
+| GET | `/admin/accounts` | super_admin | 后台账号列表 |
+| POST | `/admin/accounts` | super_admin | 新建后台账号（一次性初始密码） |
+| PATCH | `/admin/accounts/:accountId` | super_admin | 改名 / 改角色 / 启用禁用 |
+| POST | `/admin/accounts/:accountId/reset-password` | super_admin | 重置密码（一次性新密码） |
 | POST | `/admin/checkins/:entryId/reopen` | super_admin | 临时重新开放 |
 | POST | `/admin/checkins/:entryId/revoke` | super_admin | 撤销审核结果 |
 | POST | `/admin/checkins/:entryId/void` | super_admin | 作废记录 |

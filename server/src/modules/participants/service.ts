@@ -4,12 +4,13 @@ import { CSV_TEMPLATE_HEADERS, type ParticipantStatus } from '../../config/const
 import { env } from '../../config/env.js'
 import { randomCode, randomToken, sha256Hex } from '../../core/crypto.js'
 import { AppError, conflict, internalError, notFound, validationFailed } from '../../core/errors.js'
-import { hashPassword, checkPasswordPolicy } from '../../core/password.js'
+import { generateTemporaryPassword, hashPassword } from '../../core/password.js'
 import { csvFormulaCast } from '../../core/text.js'
 import { truncateToSecond } from '../../core/time.js'
 import { getPrismaClient, type Db } from '../../db/client.js'
 import { runInTransaction } from '../../db/tx.js'
 import { recordAudit, type AuditEntry } from '../../services/audit.service.js'
+import { revokeAllSessions } from '../../services/sessions.service.js'
 import { getStorage } from '../../storage/index.js'
 import { LocalStorage } from '../../storage/local.js'
 import { requireCurrentCampaign } from '../campaigns/service.js'
@@ -856,11 +857,7 @@ export async function updateParticipantStatus(params: {
         data: { status: 'disabled', disabledAt: new Date() },
       })
       // 禁用必须立刻生效：撤销全部刷新会话，否则旧令牌还能换到新的访问令牌（§7.2）
-      const result = await tx.refreshSession.updateMany({
-        where: { userId: participant.userId, revokedAt: null },
-        data: { revokedAt: new Date() },
-      })
-      revoked = result.count
+      revoked = await revokeAllSessions(tx, participant.userId)
       nextAccountStatus = 'disabled'
     } else {
       // 只解除禁用，不凭空激活：从未设置过密码的账号要退回 pending_activation，
@@ -940,20 +937,6 @@ export async function regenerateActivationCode(params: {
   return { participant: toAdminParticipant(full), activation_code: code }
 }
 
-/**
- * 生成符合密码策略的初始密码。
- * 反复调用 randomToken 直到通过 checkPasswordPolicy —— base64url 字母表本身含字母与数字，
- * 一般一次就通过；直接拼字符串更容易在「保证含数字」这类要求上出错。
- */
-function generateResetPassword(): string {
-  for (let attempt = 0; attempt < 16; attempt += 1) {
-    const candidate = randomToken(12)
-    if (checkPasswordPolicy(candidate).ok) return candidate
-  }
-  // 连续 16 次都不满足策略的概率可以忽略，走到这里说明随机源出了问题
-  throw internalError('无法生成符合密码策略的临时密码')
-}
-
 export async function resetParticipantPassword(params: {
   participantId: string
   actor: ActorContext
@@ -965,7 +948,7 @@ export async function resetParticipantPassword(params: {
   const participant = await requireParticipantInCampaign(prisma, campaign.id, params.participantId)
 
   // 没有邮箱，只能由管理员生成一次性密码当面/私下转交（§7.2）
-  const password = generateResetPassword()
+  const password = generateTemporaryPassword()
   const passwordHash = await hashPassword(password)
   const passwordChangedAt = truncateToSecond(new Date())
 
@@ -988,10 +971,7 @@ export async function resetParticipantPassword(params: {
     })
 
     // 重置密码后旧会话全部失效（§7.2）
-    await tx.refreshSession.updateMany({
-      where: { userId: participant.userId, revokedAt: null },
-      data: { revokedAt: new Date() },
-    })
+    await revokeAllSessions(tx, participant.userId)
 
     await recordAudit(
       {
@@ -1150,10 +1130,7 @@ export async function anonymizeParticipant(params: {
       },
     })
 
-    const sessions = await tx.refreshSession.updateMany({
-      where: { userId: participant.userId, revokedAt: null },
-      data: { revokedAt: new Date() },
-    })
+    const revokedSessions = await revokeAllSessions(tx, participant.userId)
 
     await tx.activationToken.deleteMany({ where: { userId: participant.userId } })
 
@@ -1193,13 +1170,13 @@ export async function anonymizeParticipant(params: {
           reason: params.reason,
           delete_evidence: params.deleteEvidence,
           deleted_assets: deletedAssets,
-          revoked_sessions: sessions.count,
+          revoked_sessions: revokedSessions,
         },
       },
       tx,
     )
 
-    return { deletedAssets, revokedSessions: sessions.count }
+    return { deletedAssets, revokedSessions }
   })
 
   // 文件删除放在事务之后：失败也只是留下孤儿文件，不会造成「有记录无文件」

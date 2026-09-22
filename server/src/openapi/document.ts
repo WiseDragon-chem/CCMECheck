@@ -1,6 +1,11 @@
 import { z } from 'zod'
 import { OpenAPIRegistry, OpenApiGeneratorV31 } from '@asteasolutions/zod-to-openapi'
 import { JOB_NAMES, REJECT_REASON_CODES } from '../config/constants.js'
+import {
+  createAccountBodySchema,
+  listAccountsQuerySchema,
+  updateAccountBodySchema,
+} from '../modules/accounts/schema.js'
 import { activateBodySchema, changePasswordBodySchema, loginBodySchema } from '../modules/auth/schema.js'
 import {
   createCampaignBodySchema,
@@ -25,6 +30,10 @@ import {
   voidEntryBodySchema,
 } from '../modules/admin-ops/schema.js'
 import {
+  AccountCredentialResponseSchema,
+  AccountUpdateResponseSchema,
+  AdminAccountListResponseSchema,
+  AdminAccountSchema,
   AdminParticipantListResponseSchema,
   AdminParticipantSchema,
   AnonymizeParticipantResponseSchema,
@@ -97,6 +106,7 @@ const csvResponse = (description: string) => ({
 
 const idParams = z.object({ entryId: z.string() })
 const participantParams = z.object({ participantId: z.string() })
+const accountParams = z.object({ accountId: z.string() })
 const assetParams = z.object({ entryId: z.string(), assetId: z.string() })
 const trackParams = z.object({ trackId: z.string() })
 // 与路由上的 jobNameParamsSchema 一致：取 JobName 枚举而不是 string，
@@ -128,6 +138,10 @@ export function buildOpenApiDocument() {
   registry.register('PaginationFields', PaginationFieldsSchema)
   registry.register('AdminParticipant', AdminParticipantSchema)
   registry.register('AdminParticipantListResponse', AdminParticipantListResponseSchema)
+  registry.register('AdminAccount', AdminAccountSchema)
+  registry.register('AdminAccountListResponse', AdminAccountListResponseSchema)
+  registry.register('AccountCredentialResponse', AccountCredentialResponseSchema)
+  registry.register('AccountUpdateResponse', AccountUpdateResponseSchema)
   registry.register('CampaignConfigResponse', CampaignConfigResponseSchema)
   registry.register('CampaignUpdateResponse', CampaignUpdateResponseSchema)
   registry.register('CampaignTrackUpdateResponse', CampaignTrackUpdateResponseSchema)
@@ -513,7 +527,7 @@ export function buildOpenApiDocument() {
     path: '/api/v1/admin/participants/{participantId}/reset-password',
     tags: ['名单管理'],
     summary: '重置密码',
-    description: '首期没有绑定邮箱，忘记密码由管理员生成一次性重置码。会撤销该账号全部会话。',
+    description: '首期没有绑定邮箱，忘记密码由管理员生成一次性临时密码（明文只出现这一次）。会撤销该账号全部会话。',
     request: { params: participantParams },
     responses: {
       200: jsonResponse('新密码（只出现一次）', ParticipantPasswordResetResponseSchema),
@@ -588,6 +602,72 @@ export function buildOpenApiDocument() {
     responses: {
       200: jsonResponse('导入结果', ImportCommitResponseSchema),
       ...errorResponses(400, 401, 403, 409),
+    },
+  })
+
+  // -------------------------------------------------------------------------
+  // 后台账号管理（§5「管理管理员账号」）
+  // -------------------------------------------------------------------------
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/v1/admin/accounts',
+    tags: ['账号管理'],
+    summary: '查询后台账号列表',
+    description:
+      '只返回审核员与超级管理员 —— 参赛者在名单页管理。' +
+      'active_super_admin_count 是全局统计（不受筛选影响），前端据此提示「系统至少保留一个活跃超管」。',
+    request: { query: listAccountsQuerySchema },
+    responses: {
+      200: jsonResponse('账号列表', AdminAccountListResponseSchema),
+      ...errorResponses(401, 403),
+    },
+  })
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/v1/admin/accounts',
+    tags: ['账号管理'],
+    summary: '新建后台账号',
+    description:
+      '初始密码由系统生成，明文只在此响应中出现一次，库里只保存哈希。' +
+      '账号创建后即为 active，不需要激活流程。',
+    request: jsonBody(createAccountBodySchema),
+    responses: {
+      201: jsonResponse('创建成功', AccountCredentialResponseSchema),
+      ...errorResponses(400, 401, 403, 409),
+    },
+  })
+
+  registry.registerPath({
+    method: 'patch',
+    path: '/api/v1/admin/accounts/{accountId}',
+    tags: ['账号管理'],
+    summary: '修改后台账号',
+    description:
+      '改名、改角色、启用禁用共用一个端点（三者都受「至少保留一个活跃超管」约束，' +
+      '拆开会让这条不变量有两处实现）。禁用会立刻撤销该账号的全部登录会话；' +
+      '降级不需要撤销 —— 权限每次请求都从库里读，下一个请求即生效。' +
+      '不能对自己执行禁用或降级（改名可以）。需要 5 分钟内的新鲜认证。',
+    request: { params: accountParams, ...jsonBody(updateAccountBodySchema) },
+    responses: {
+      200: jsonResponse('更新成功', AccountUpdateResponseSchema),
+      ...errorResponses(400, 401, 403, 404, 409),
+    },
+  })
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/v1/admin/accounts/{accountId}/reset-password',
+    tags: ['账号管理'],
+    summary: '重置后台账号密码',
+    description:
+      '生成一次性新密码并撤销该账号的全部会话。不能对自己执行 —— ' +
+      '本人改密码应走 /auth/change-password（那条路要求提供当前密码）。需要 5 分钟内的新鲜认证。',
+    request: { params: accountParams },
+    responses: {
+      200: jsonResponse('新密码（只出现一次）', AccountCredentialResponseSchema),
+      ...errorResponses(401, 403, 404, 409),
     },
   })
 
