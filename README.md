@@ -21,7 +21,7 @@ cp .env.example .env          # 必须填 JWT_SECRET 与 FILE_SIGNING_SECRET，�
 npm install
 npm run prisma:generate
 npm run prisma:migrate        # 建库
-npm run seed                  # 超级管理员 + 审核员 + 三个赛道
+npm run seed                  # 第一个超级管理员 + 审核员 + 三个赛道
 npm run dev                   # http://localhost:3000
 
 # ---- 前端（终端 2）----
@@ -46,6 +46,9 @@ npm run dev                   # http://localhost:5173
 
 **前两项在 `.env.example` 里是空的**，而 `server/.env` 不入库 —— 全新克隆后
 `npm run seed` 会随机生成密码并**只打印一次**。本地开发建议先把它们填好再跑种子。
+
+这两个账号是引导用的：之后新增超管与审核员都在后台的「账号管理」页完成，
+初始密码由系统生成、只显示一次（超管之间平权，且系统始终保留至少一个活跃超管）。
 
 审核员与超管登录后直接进管理后台；参赛者进主页面。
 
@@ -85,6 +88,7 @@ npm run campaign:init         # 幂等：创建活动或把库改成与代码一
 | 概览：统计、赛道提交率、任务状态 | `/admin` | [DashboardPage.tsx](frontend/src/features/admin/pages/DashboardPage.tsx) | 审核员 |
 | 流水线审核（键盘流） | `/admin/review` | [ReviewPipelinePage.tsx](frontend/src/features/admin/pages/ReviewPipelinePage.tsx) | 审核员 |
 | 名单管理（导入、激活码） | `/admin/participants` | [ParticipantsPage.tsx](frontend/src/features/admin/pages/ParticipantsPage.tsx) | 超管 |
+| 账号管理（超管与审核员） | `/admin/accounts` | [AccountsPage.tsx](frontend/src/features/admin/pages/AccountsPage.tsx) | 超管 |
 | 异常处理（补录、撤销、榜单维护） | `/admin/ops` | [OpsPage.tsx](frontend/src/features/admin/pages/OpsPage.tsx) | 超管 |
 | 审计日志 | `/admin/audit` | [AuditLogPage.tsx](frontend/src/features/admin/pages/AuditLogPage.tsx) | 超管 |
 
