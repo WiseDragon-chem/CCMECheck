@@ -198,13 +198,17 @@ test.describe('管理后台', () => {
     await loginAs(page, REVIEWER)
     await page.waitForURL('**/admin')
 
-    // 审核员不该看到这两个入口（§5）。隐藏不是权限控制，
+    // 审核员不该看到这几个入口（§5）。隐藏不是权限控制，
     // 真正的边界在后端 —— 但入口露出来会让人以为自己点错了
     await expect(page.locator('.ant-menu-item', { hasText: '异常处理' })).toHaveCount(0)
     await expect(page.locator('.ant-menu-item', { hasText: '审计日志' })).toHaveCount(0)
+    await expect(page.locator('.ant-menu-item', { hasText: '账号' })).toHaveCount(0)
 
     await page.goto('/admin/ops')
     // 手敲 URL 进来会被挡回后台首页（路由上再挡一道，不只是隐藏入口）
+    await page.waitForURL('**/admin')
+
+    await page.goto('/admin/accounts')
     await page.waitForURL('**/admin')
   })
 })
@@ -400,5 +404,70 @@ test.describe('异常处理与审计日志', () => {
     for (const text of await page.locator('.ant-table-row').allInnerTexts()) {
       expect(text).toContain('review.approve')
     }
+  })
+})
+
+/**
+ * 账号管理（§5「管理管理员账号」）。
+ *
+ * 端到端要盯住的是**一次性明文**这条链：新建账号生成的初始密码只在响应里
+ * 出现一次，界面上少一个出口（比如被塞进 3 秒就消失的 toast）就等于把它弄丢了。
+ *
+ * 其次是「按钮为什么点不动」。自我操作与最后一个活跃超管都会被服务端拒绝，
+ * 页面上必须把原因写出来，否则灰按钮会被当成 bug。
+ */
+test.describe('账号管理', () => {
+  const NEW_ACCOUNT = { studentId: 'E2EACC1', name: '端到端新审核员' }
+
+  async function openAccounts(page: Page): Promise<void> {
+    await loginAs(page, ADMIN)
+    await page.waitForURL('**/admin')
+    await page.goto('/admin/accounts')
+    await expect(page.locator('.ant-table-row').first()).toBeVisible()
+  }
+
+  test('新建账号：弹出一次性密码，关掉之后能拿它登录', async ({ page }) => {
+    await openAccounts(page)
+
+    await page.getByRole('button', { name: '添加账号' }).click()
+    const form = page.getByRole('dialog', { name: '添加账号' })
+    await form.locator('#student_id').fill(NEW_ACCOUNT.studentId)
+    await form.locator('#name').fill(NEW_ACCOUNT.name)
+    await form.getByRole('button', { name: /确\s*认/ }).click()
+
+    // 明文对话框。关闭按钮必须存在 —— 这个弹窗曾经只给一个复制按钮，
+    // 遮罩又不可点关闭，管理员复制完就出不去了（见 ActivationCodeModal 的注释）
+    const secretDialog = page.getByRole('dialog', { name: '临时密码（只显示这一次）' })
+    await expect(secretDialog).toBeVisible()
+    const password = (await secretDialog.locator('input').first().inputValue()).trim()
+    expect(password.length).toBeGreaterThanOrEqual(8)
+
+    await secretDialog.getByRole('button', { name: /关\s*闭/ }).click()
+
+    // 新账号进了列表
+    await expect(page.locator('.ant-table-row', { hasText: NEW_ACCOUNT.studentId })).toBeVisible()
+
+    // 退出当前会话，改用新账号登录 —— 这才是「那个密码真的能用」的证明
+    await page.goto('/me')
+    await page.getByRole('button', { name: '退出登录' }).click()
+    await page.locator('.ant-modal-confirm').getByRole('button', { name: /^退\s*出$/ }).click()
+    await page.waitForURL('**/login')
+
+    await loginAs(page, { studentId: NEW_ACCOUNT.studentId, password })
+    await page.waitForURL('**/admin')
+    await expect(page.getByText('各赛道今日提交率')).toBeVisible()
+  })
+
+  test('自己对那一行的禁用与重置密码是灰的，并且页面上写明了原因', async ({ page }) => {
+    await openAccounts(page)
+
+    // 只有一个活跃超管时，页面顶部必须给出警告 —— 否则「按钮点不动」无从解释
+    await expect(page.getByText('只剩一个活跃超级管理员')).toBeVisible()
+
+    const selfRow = page.locator('.ant-table-row', { hasText: ADMIN.studentId }).first()
+    await expect(selfRow.getByText('本人')).toBeVisible()
+
+    await expect(selfRow.getByRole('button', { name: /禁\s*用/ })).toBeDisabled()
+    await expect(selfRow.getByRole('button', { name: '重置密码' })).toBeDisabled()
   })
 })

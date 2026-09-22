@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   AuditOutlined,
   DashboardOutlined,
+  IdcardOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   SafetyOutlined,
@@ -45,10 +46,11 @@ export default function AdminLayout() {
     () => [
       { key: paths.admin.dashboard, icon: <DashboardOutlined />, label: zh.admin.nav.dashboard },
       { key: paths.admin.review, icon: <UnorderedListOutlined />, label: zh.admin.nav.review },
-      // 名单、异常操作与审计只有超管能做（§5），但后端才是真正的边界
+      // 名单、账号、异常操作与审计只有超管能做（§5），但后端才是真正的边界
       ...(isSuperAdmin
         ? [
             { key: paths.admin.participants, icon: <TeamOutlined />, label: zh.admin.nav.participants },
+            { key: paths.admin.accounts, icon: <IdcardOutlined />, label: zh.admin.nav.accounts },
             { key: paths.admin.ops, icon: <SafetyOutlined />, label: zh.admin.nav.ops },
             { key: paths.admin.audit, icon: <AuditOutlined />, label: zh.admin.nav.audit },
           ]

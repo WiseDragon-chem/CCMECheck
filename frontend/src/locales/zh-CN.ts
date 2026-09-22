@@ -300,6 +300,7 @@ export const zh = {
       dashboard: '概览',
       review: '审核',
       participants: '名单',
+      accounts: '账号',
       ops: '异常处理',
       audit: '审计日志',
     },
@@ -604,6 +605,76 @@ export const zh = {
       emptyFiltered: '当前筛选条件下没有匹配的参赛者。',
     },
 
+    /**
+     * 后台账号管理（§5「管理管理员账号」）。
+     *
+     * 这一页的文案有一条主线：**说清「为什么这个按钮点不动」**。
+     * 自我操作与最后一个超管都会被按钮前置灰拦下，如果只灰不说，
+     * 会被当成 bug。
+     */
+    accounts: {
+      title: '账号管理',
+      subtitle: '管理超级管理员与审核员。参赛者在名单页管理。',
+
+      add: '添加账号',
+      search: '按学号或姓名搜索',
+      allRoles: '全部角色',
+
+      studentId: '学号',
+      name: '姓名',
+      role: '角色',
+      status: '状态',
+      passwordChangedAt: '密码更新',
+      createdAt: '创建时间',
+      actions: '操作',
+      self: '本人',
+      neverChanged: '未设置',
+
+      roleLabel: {
+        reviewer: '审核员',
+        super_admin: '超级管理员',
+      },
+      statusLabel: {
+        active: '正常',
+        disabled: '已禁用',
+      },
+      roleOptions: {
+        reviewer: '设为审核员',
+        super_admin: '设为超级管理员',
+      },
+
+      activeSuperAdminHint: (count: number) => `当前活跃超级管理员 ${count} 人，系统始终保留至少 1 人。`,
+      lastSuperAdminAlert:
+        '只剩一个活跃超级管理员，因此不能再禁用它或把它降级 —— 否则没人能再进后台。请先添加或启用另一个超管。',
+
+      resetPassword: '重置密码',
+      disable: '禁用',
+      enable: '启用',
+
+      selfActionTip: '不能对自己的账号执行这个操作，请让其他超级管理员处理',
+      lastSuperAdminTip: '系统至少要保留一个活跃的超级管理员',
+      /** 自我操作里改名是允许的，所以提示要说清禁止的是哪几件事 */
+      selfRenameAllowedTip: '可以改自己的姓名；禁用、降级与重置密码需要其他超管操作',
+
+      resetConfirm: '重置密码？',
+      resetConfirmBody: '会生成一个临时密码并撤销该账号的所有登录状态，旧密码同时失效。',
+      resetDone: '已生成临时密码',
+      disableConfirm: '禁用这个账号？',
+      disableConfirmBody: '该账号将无法登录，已登录的会话会被立即撤销。',
+      disableDone: '账号已禁用',
+      disableRevoked: (n: number) => `已一并撤销 ${n} 个登录会话`,
+      enableDone: '账号已启用',
+      roleConfirm: (label: string) => `${label}？`,
+      roleConfirmBody: '权限在下一个请求即生效。降级不会撤销对方的登录状态，只是不再拥有后台管理权限。',
+      roleDone: '角色已修改',
+
+      passwordTitle: '临时密码（只显示这一次）',
+      passwordWarning: '关闭后无法再查看。请通过可靠渠道交给本人，并提醒对方尽快修改。',
+
+      empty: '还没有后台账号。',
+      emptyFiltered: '当前筛选条件下没有匹配的账号。',
+    },
+
     ops: {
       title: '异常处理',
       subtitle: '以下操作不可逆，每一项都必须填写原因并会写入审计日志。',
@@ -719,6 +790,10 @@ export const zh = {
         'participant.activation.regenerate': '重发激活码',
         'participant.password.reset': '重置密码',
         'participant.anonymize': '匿名化参赛者',
+        'account.create': '新建后台账号',
+        'account.update': '修改后台账号',
+        'account.status.update': '启用/禁用后台账号',
+        'account.password.reset': '重置后台账号密码',
         'leaderboard.rebuild': '重算排行榜',
         'leaderboard.freeze': '冻结榜单',
         'leaderboard.unfreeze': '解冻榜单',

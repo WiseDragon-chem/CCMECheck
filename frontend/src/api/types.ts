@@ -38,6 +38,12 @@ export type AdminCampaignConfig = Schemas['CampaignConfigResponse']
 export type AdminParticipant = Schemas['AdminParticipant']
 export type AdminParticipantList = Schemas['AdminParticipantListResponse']
 
+export type AdminAccount = Schemas['AdminAccount']
+export type AdminAccountList = Schemas['AdminAccountListResponse']
+/** 创建账号与重置密码共用的响应体：账号 + 只出现一次的明文密码 */
+export type AccountCredential = Schemas['AccountCredentialResponse']
+export type AccountUpdateResult = Schemas['AccountUpdateResponse']
+
 export type ImportSummary = Schemas['ImportSummary']
 export type ImportPreviewRow = Schemas['ImportPreviewRow']
 export type ImportPreviewResponse = Schemas['ImportPreviewResponse']

@@ -17,6 +17,7 @@ const ADMIN_QUEUE_PREFIX = ['admin', 'reviews', 'queue'] as const
 const ADMIN_AUDIT_PREFIX = ['admin', 'audit'] as const
 const ADMIN_JOB_RUNS_PREFIX = ['admin', 'jobs', 'runs'] as const
 const ADMIN_PARTICIPANTS_PREFIX = ['admin', 'participants'] as const
+const ADMIN_ACCOUNTS_PREFIX = ['admin', 'accounts'] as const
 
 export const qk = {
   /** 当前用户 */
@@ -58,6 +59,8 @@ export const qk = {
     campaign: ['admin', 'campaign'] as const,
     /** 名单，管理端各处的参赛者搜索共用 */
     participants: (filters: Record<string, unknown>) => [...ADMIN_PARTICIPANTS_PREFIX, filters] as const,
+    /** 后台账号（超管与审核员），按筛选条件区分 */
+    accounts: (filters: Record<string, unknown>) => [...ADMIN_ACCOUNTS_PREFIX, filters] as const,
     /** 审计日志，按筛选条件区分 */
     auditLogs: (filters: Record<string, unknown>) => [...ADMIN_AUDIT_PREFIX, filters] as const,
     /** 任务执行历史 */
@@ -119,6 +122,14 @@ export const invalidationMap = {
 
   /** 改活动或赛道规则：两份配置都要失效 */
   campaignConfig: [qk.admin.campaign, qk.admin.dashboard],
+
+  /**
+   * 后台账号的增改（创建、改名、改角色、启用禁用、重置密码）。
+   *
+   * 刻意**不失效** `qk.admin.dashboard`：首页统计的是参赛者与打卡，
+   * 后台账号的变动不影响其中任何一个数字。
+   */
+  accountManage: [ADMIN_ACCOUNTS_PREFIX, ADMIN_AUDIT_PREFIX],
 } as const
 
 /** 整个管理端缓存前缀。退出登录或切到参赛者视图时用它一次性作废 */

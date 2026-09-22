@@ -9,10 +9,13 @@ import { matchNavKey, paths } from './paths'
  * 点「审核」页面换了，高亮没换，而界面上没有任何报错。
  */
 
+// 这份清单是 AdminLayout 导航项的手工镜像。漏加一项**不会报错**，
+// 只会让「其余各页各自命中」那条循环少覆盖一个新页面。
 const KEYS = [
   paths.admin.dashboard,
   paths.admin.review,
   paths.admin.participants,
+  paths.admin.accounts,
   paths.admin.ops,
   paths.admin.audit,
 ]

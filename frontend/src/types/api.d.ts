@@ -1163,7 +1163,7 @@ export interface paths {
                         min_images?: number | null;
                         /** @default 3 */
                         max_images?: number;
-                        /** @default 10485760 */
+                        /** @default 655360 */
                         max_image_bytes?: number;
                         /**
                          * @default [
@@ -1607,7 +1607,7 @@ export interface paths {
         put?: never;
         /**
          * 重置密码
-         * @description 首期没有绑定邮箱，忘记密码由管理员生成一次性重置码。会撤销该账号全部会话。
+         * @description 首期没有绑定邮箱，忘记密码由管理员生成一次性临时密码（明文只出现这一次）。会撤销该账号全部会话。
          */
         post: {
             parameters: {
@@ -1963,6 +1963,309 @@ export interface paths {
                 };
                 /** @description 权限不足 */
                 403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description 与当前状态冲突 */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询后台账号列表
+         * @description 只返回审核员与超级管理员 —— 参赛者在名单页管理。active_super_admin_count 是全局统计（不受筛选影响），前端据此提示「系统至少保留一个活跃超管」。
+         */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    page_size?: number;
+                    role?: "reviewer" | "super_admin";
+                    keyword?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 账号列表 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminAccountListResponse"];
+                    };
+                };
+                /** @description 未认证或令牌失效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description 权限不足 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * 新建后台账号
+         * @description 初始密码由系统生成，明文只在此响应中出现一次，库里只保存哈希。账号创建后即为 active，不需要激活流程。
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        student_id: string;
+                        name: string;
+                        /** @enum {string} */
+                        role: "reviewer" | "super_admin";
+                    };
+                };
+            };
+            responses: {
+                /** @description 创建成功 */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccountCredentialResponse"];
+                    };
+                };
+                /** @description 请求参数校验未通过 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description 未认证或令牌失效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description 权限不足 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description 与当前状态冲突 */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/accounts/{accountId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 修改后台账号
+         * @description 改名、改角色、启用禁用共用一个端点（三者都受「至少保留一个活跃超管」约束，拆开会让这条不变量有两处实现）。禁用会立刻撤销该账号的全部登录会话；降级不需要撤销 —— 权限每次请求都从库里读，下一个请求即生效。不能对自己执行禁用或降级（改名可以）。需要 5 分钟内的新鲜认证。
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    accountId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        /** @enum {string} */
+                        role?: "reviewer" | "super_admin";
+                        /** @enum {string} */
+                        status?: "active" | "disabled";
+                    };
+                };
+            };
+            responses: {
+                /** @description 更新成功 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccountUpdateResponse"];
+                    };
+                };
+                /** @description 请求参数校验未通过 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description 未认证或令牌失效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description 权限不足 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description 资源不存在 */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description 与当前状态冲突 */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/admin/accounts/{accountId}/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 重置后台账号密码
+         * @description 生成一次性新密码并撤销该账号的全部会话。不能对自己执行 —— 本人改密码应走 /auth/change-password（那条路要求提供当前密码）。需要 5 分钟内的新鲜认证。
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    accountId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 新密码（只出现一次） */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccountCredentialResponse"];
+                    };
+                };
+                /** @description 未认证或令牌失效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description 权限不足 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description 资源不存在 */
+                404: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -3759,6 +4062,36 @@ export interface components {
         AdminParticipantListResponse: components["schemas"]["PaginationFields"] & {
             /** @description 按学号升序，便于与纸质名单核对 */
             items: components["schemas"]["AdminParticipant"][];
+        };
+        AdminAccount: {
+            id: string;
+            student_id: string;
+            name: string;
+            /** @enum {string} */
+            role: "reviewer" | "super_admin";
+            /** @enum {string} */
+            status: "active" | "disabled";
+            /** @description 是否设置过密码 */
+            activated: boolean;
+            /** @description 密码最后变更时间；null 表示从未设置过密码 */
+            password_changed_at: string | null;
+            created_at: string;
+        };
+        AdminAccountListResponse: components["schemas"]["PaginationFields"] & {
+            /** @description 超级管理员在前，同角色内按学号升序 */
+            items: components["schemas"]["AdminAccount"][];
+            /** @description 当前活跃超级管理员的**全局**总数，不受筛选条件影响；系统始终保留至少一个 */
+            active_super_admin_count: number;
+        };
+        AccountCredentialResponse: {
+            account: components["schemas"]["AdminAccount"];
+            /** @description 一次性密码，只在此响应中出现一次，库里只保存哈希 */
+            password: string;
+        };
+        AccountUpdateResponse: {
+            account: components["schemas"]["AdminAccount"];
+            /** @description 被一并撤销的登录会话数；禁用之外的操作恒为 0 */
+            revoked_sessions: number;
         };
         CampaignConfigResponse: {
             campaign: components["schemas"]["Campaign"];

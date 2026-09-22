@@ -20,6 +20,7 @@ export const paths = {
     review: '/admin/review',
     reviewEntry: (entryId: string) => `/admin/review/${entryId}`,
     participants: '/admin/participants',
+    accounts: '/admin/accounts',
     ops: '/admin/ops',
     audit: '/admin/audit',
   },

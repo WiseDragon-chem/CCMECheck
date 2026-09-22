@@ -19,7 +19,7 @@ cd server
 npm install
 npm run prisma:generate
 npm run prisma:migrate
-npm run seed          # 建超管与三个赛道
+npm run seed          # 建第一个超管、审核员与三个赛道
 npm run dev           # http://localhost:3000
 
 # 终端 2 —— 前端
@@ -33,7 +33,7 @@ npm run dev           # http://localhost:5173
 
 ### 为什么需要 `seed:dev`
 
-后端的 `npm run seed` 只建超管与三个赛道，**不建活动**。
+后端的 `npm run seed` 只建第一个超管、审核员与三个赛道，**不建活动**。
 于是 `resolveCurrentCampaign` 会对所有参赛者接口返回 `CAMPAIGN_NOT_ACTIVE` ——
 全新拉下来的项目，前端每个页面都是空的。`seed:dev` 补上这一块。
 
@@ -108,7 +108,7 @@ src/
 │   ├── auth/
 │   ├── checkin/
 │   ├── leaderboard/
-│   └── admin/    管理后台五页（概览/审核/名单/异常处理/审计）
+│   └── admin/    管理后台六页（概览/审核/名单/账号/异常处理/审计）
 ├── hooks/
 ├── layouts/
 ├── lib/          日期、毫点、幂等键等纯函数

@@ -68,6 +68,9 @@ function readServerEnv() {
 const serverEnv = readServerEnv()
 const ADMIN_STUDENT_ID = serverEnv.SEED_ADMIN_STUDENT_ID || 'admin'
 const ADMIN_PASSWORD = serverEnv.SEED_ADMIN_PASSWORD || 'admin12345'
+// 审核员由 server 的种子脚本创建（后台「账号管理」页也能建，但这里是列给开发者看的）
+const REVIEWER_STUDENT_ID = serverEnv.SEED_REVIEWER_STUDENT_ID || 'reviewer'
+const REVIEWER_PASSWORD = serverEnv.SEED_REVIEWER_PASSWORD || 'reviewer12345'
 
 // ---------------------------------------------------------------------------
 // HTTP 辅助
@@ -559,7 +562,7 @@ function printSummary(participants) {
   log(`  管理员     ${ADMIN_STUDENT_ID} / ${ADMIN_PASSWORD}       （超管）`)
   log(`  参赛者     ${participants[0].studentId} / ${DEV_PASSWORD}`)
   log(`             ${participants[1].studentId} / ${DEV_PASSWORD}   …共 ${participants.length} 人`)
-  log('  审核员     随管理后台一并在下一阶段提供（本轮不含后台界面）')
+  log(`  审核员     ${REVIEWER_STUDENT_ID} / ${REVIEWER_PASSWORD}     （由 server 的 seed 创建）`)
   log('')
   log('  场景切换（只改活动窗口，不重播数据）')
   log('    npm run seed:dev -- --scenario-only --scenario day        今日混合状态')
