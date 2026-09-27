@@ -6,6 +6,12 @@ coverage/
 playwright-report/
 test-results/
 
+# 赞助商图片：只存在本机与构建机上，不入库（组织者自己保管）
+# 目录本身靠已入库的 README.md 留着；这里忽略的是**目录内容**（/*）而不是
+# 目录，否则下面那句否定也救不回来（被忽略目录里的文件无法再被单独放行）
+src/assets/sponsors/*
+!src/assets/sponsors/README.md
+
 # 本机环境覆盖
 .env.local
 .env.*.local
