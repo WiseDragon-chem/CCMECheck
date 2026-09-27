@@ -57,6 +57,14 @@ export const zh = {
     trackingId: (id: string) => `追踪号 ${id}`,
   },
 
+  /** 首页与「我的」页最下方的赞助商展示位。图片目录见 src/assets/sponsors/ */
+  sponsor: {
+    /** 展示位上方的小字。结尾的冒号是产品指定的，别改标点 */
+    thanks: '特别感谢本次活动的赞助：',
+    /** 图片文件名里给不出名字时的兜底 alt */
+    alt: '赞助商图片',
+  },
+
   auth: {
     login: {
       title: '登录',

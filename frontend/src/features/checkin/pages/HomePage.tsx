@@ -7,6 +7,7 @@ import { fetchToday } from '@/api/endpoints/checkins'
 import { qk } from '@/api/queryKeys'
 import type { TodayCard } from '@/api/types'
 import LoadError from '@/components/LoadError'
+import SponsorBanner from '@/components/SponsorBanner'
 import GuideTour from '@/features/guide/GuideTour'
 import { serverNow, syncServerClock, useTicker } from '@/hooks/useServerClock'
 import { formatActivityDate, formatRemaining } from '@/lib/datetime'
@@ -226,6 +227,13 @@ export default function HomePage() {
           </Typography.Text>
         </Card>
       )}
+
+      {/*
+        赞助商展示位。放在 GuideTour 之前 —— 它必须是最后一个子元素
+        （见上面的说明）。只挂在这一条 return 上：骨架屏、加载失败、
+        非参赛者那三条只有几行，不该跟着出现广告。
+      */}
+      <SponsorBanner />
 
       {/*
         排在所有 data-tour 目标之后（见 GuideTour 的说明）。

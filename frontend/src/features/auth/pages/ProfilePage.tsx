@@ -5,6 +5,7 @@ import { ControlOutlined } from '@ant-design/icons'
 import { changePassword } from '@/api/endpoints/auth'
 import { presentError } from '@/api/presentError'
 import { setAccessToken } from '@/api/tokenStore'
+import SponsorBanner from '@/components/SponsorBanner'
 import { requestReplay } from '@/features/guide/guideIds'
 import { zh } from '@/locales/zh-CN'
 import { paths } from '@/routes/paths'
@@ -188,6 +189,8 @@ export default function ProfilePage() {
       <Button danger block onClick={onLogout} style={{ marginBottom: 24 }}>
         {t.logout}
       </Button>
+
+      <SponsorBanner />
     </div>
   )
 }

@@ -102,6 +102,7 @@ cd ../server && rm prisma/dev.db* && npm run prisma:migrate && npm run seed && n
 ```
 src/
 ├── api/          HTTP 客户端、拦截器、错误映射、query key、生成的类型
+├── assets/       静态图片。目前只有 sponsors/（赞助商），约定见那里的 README
 ├── components/   跨 feature 的通用组件
 ├── config/       环境变量等
 ├── features/     按业务域划分，页面放在各自的 feature 内
@@ -125,6 +126,12 @@ src/
   却没规定谁放什么，两个家必然导致漂移。
 - 增加 `lib/` 与 `locales/`。毫点换算、活动日格式化、幂等键会被 4 个以上 feature 用到；
   不抽出来就会各写一遍，而那正是「积分差 1000 倍」「10-01 显示成 09-30」这类事故的来源。
+
+**另外增加 `assets/`**：赞助商图片是**全仓库唯一的静态图片**，放在一个目录里，
+`import.meta.glob` 自动发现（`src/components/sponsorImages.ts`），组织者增删图片
+不用改代码。它不走服务端那套私有存储 + 签名地址 —— 赞助图是公开的、对所有人
+一样的资源，与打卡证明是两类东西；代价是**换图要重新构建部署**（dev 下即时生效，
+线上是带内容哈希的构建产物）。目录约定与图片建议见 `src/assets/sponsors/README.md`。
 
 ---
 

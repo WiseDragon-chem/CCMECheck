@@ -23,6 +23,15 @@ const JUST_ABOVE: ViewportSize = { width: 992, height: 900 }
 const DESKTOP: ViewportSize = { width: 1280, height: 800 }
 
 /**
+ * 手机的**真实视口**高度，与上面的 MOBILE（915）不是一回事。
+ *
+ * 915 是 Pixel 7 的物理屏高，`devices['Pixel 7']` 实际的 viewport 是
+ * 412×839（`playwright-core` 的 device descriptor），mobile-chrome 项目跑的
+ * 就是 839。用 915 量「一屏放不放得下」等于白送 76px。
+ */
+const PHONE_VIEWPORT: ViewportSize = { width: 412, height: 839 }
+
+/**
  * 两个盒子是否在同一排。
  *
  * 不能断言 `y` 相等：同一排里字高不同的两个元素按中心对齐，`y` 会差几个像素
@@ -65,6 +74,31 @@ test.describe('参赛者端布局', () => {
     // 手机上少了这块留白，最后一张卡会被底部导航压住
     const paddingBottom = await shell.evaluate((el) => getComputedStyle(el).paddingBottom)
     expect(paddingBottom, '底部导航的留白只能由手机规则提供').toBe('56px')
+  })
+
+  /**
+   * 「一屏放得下」这条产品要求（§7.3：一分钟内完成打卡，关键信息一屏看完）
+   * 今天**没有任何 CSS 强制**：.participant-shell 是 min-height: 100vh，
+   * 页面之所以不滚，全靠内容比视口短。这条断言守的就是这份预算。
+   *
+   * 底部的赞助商展示位（§7.7）按剩余空间自适应（88–160px），常态下会把余量
+   * 吃到只剩几像素 —— 这条断言主要验的就是**广告位算得对**：它没有多占。
+   * 会顶出滚动条的是这几种，产品已明确接受，不在这里覆盖：
+   *   1. 广告位缩到 88px 下限而上方内容还在长 —— 活动未开放时首页顶部多一条
+   *      提示横幅（实测溢出约 85px）、当天三条驳回（约 65px）；
+   *   2. 手机上展开「修改密码」（表单比广告位让出来的空间更高）；
+   *   3. 赞助目录为空时广告位不渲染，这条断言退化成只守着页面本身。
+   */
+  test('412×839：常态下首页与「我的」页都放得下一屏', async ({ page }) => {
+    await openAt(page, PHONE_VIEWPORT, '/home')
+
+    const heightOf = () =>
+      page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight)
+
+    expect(await heightOf(), '首页常态下不该出现纵向滚动').toBeLessThanOrEqual(0)
+
+    await page.goto('/me')
+    expect(await heightOf(), '「我的」页不该出现纵向滚动').toBeLessThanOrEqual(0)
   })
 
   test('1280px 下：顶栏铺满视口，内容居中在一列，标题不被顶栏压住', async ({ page }) => {

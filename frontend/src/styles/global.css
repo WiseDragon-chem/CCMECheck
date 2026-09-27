@@ -325,6 +325,48 @@ body {
   border-radius: 8px;
 }
 
+/* ---- 赞助商展示 ---- */
+.sponsor {
+  margin-top: 16px;
+}
+
+.sponsor__thanks {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.sponsor__frame {
+  /* 高度由 SponsorBanner 按页面剩余空间算出来，以 CSS 变量传进来。
+     这里不写定值：写一个数只会在两端各错一次 —— 首页给不了那么多，
+     「我的」页又远不止那么多。 */
+  height: var(--sponsor-height);
+  /* 不填底色：赞助商图多是白底的，填浅灰反而在框里显出一块白方块。
+     一条细边框只负责把这一个位划出来 */
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  overflow: hidden;
+  /* react-slick 会给它包出来的每一层塞 display: inline-block，
+     行盒的 strut 会让画面比算出来的高度多出几个像素。这一条不能删：
+     整页不滚动是按像素算的预算，多出来的几像素就够顶出滚动条。 */
+  line-height: 0;
+}
+
+.sponsor__img {
+  display: block;
+  width: 100%;
+  /* 高度同样取那个变量，而不是 height: 100%：antd Carousel 的 DOM 是
+     .slick-slide > div > div 再套图片，百分比高度要逐层传递才成立。
+     取到一个像素值之后，图片再大也撑不高这一屏。
+     contain 而不是 cover：赞助商的 logo 不该被裁掉。 */
+  height: var(--sponsor-height);
+  object-fit: contain;
+}
+
+/* 这里原本有一组给轮播指示点重新着色的规则（antd 的圆点是按深色图设计的白点，
+   落在浅色 logo 上看不见）。指示点本身已经关掉（见 SponsorBanner 的说明），
+   那组规则一并不留 —— 留着就是没人执行的死代码。 */
+
 /* ===========================================================================
    参赛者端 · 桌面适配
 
