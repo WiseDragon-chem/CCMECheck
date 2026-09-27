@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { App as AntdApp, Button, Card, Descriptions, Divider, Form, Input, Space, Typography } from 'antd'
+import { App as AntdApp, Button, Card, Collapse, Descriptions, Divider, Form, Input, Space, Typography } from 'antd'
 import { ControlOutlined } from '@ant-design/icons'
 import { changePassword } from '@/api/endpoints/auth'
 import { presentError } from '@/api/presentError'
@@ -122,51 +122,66 @@ export default function ProfilePage() {
         </Space>
       </Card>
 
-      <Card title={t.changePassword} size="small">
-        <Form<FormValues> form={form} layout="vertical" onFinish={onChangePassword} requiredMark={false}>
-          <Form.Item
-            name="current_password"
-            label={t.currentPassword}
-            rules={[{ required: true, message: t.currentPasswordRequired }]}
-          >
-            <Input.Password autoComplete="current-password" />
-          </Form.Item>
+      {/*
+        修改密码平时用不到，三个输入框常驻只会把页面拖长，折叠成一行表头。
+        Collapse 的表头自带 role="button" 与 aria-expanded，无障碍不必自己补；
+        不传 defaultActiveKey，默认收起（与「提交历史」「历史版本」一致）。
+      */}
+      <Collapse
+        ghost
+        size="small"
+        items={[
+          {
+            key: 'change-password',
+            label: t.changePassword,
+            children: (
+              <Form<FormValues> form={form} layout="vertical" onFinish={onChangePassword} requiredMark={false}>
+                <Form.Item
+                  name="current_password"
+                  label={t.currentPassword}
+                  rules={[{ required: true, message: t.currentPasswordRequired }]}
+                >
+                  <Input.Password autoComplete="current-password" />
+                </Form.Item>
 
-          <Form.Item
-            name="new_password"
-            label={t.newPassword}
-            rules={[
-              { required: true, message: t.newPasswordRequired },
-              { min: PASSWORD_MIN, message: t.newPasswordMin(PASSWORD_MIN) },
-              { pattern: /[A-Za-z]/, message: t.newPasswordNeedsLetter },
-              { pattern: /\d/, message: t.newPasswordNeedsDigit },
-            ]}
-          >
-            <Input.Password autoComplete="new-password" placeholder={t.newPasswordPlaceholder} />
-          </Form.Item>
+                <Form.Item
+                  name="new_password"
+                  label={t.newPassword}
+                  rules={[
+                    { required: true, message: t.newPasswordRequired },
+                    { min: PASSWORD_MIN, message: t.newPasswordMin(PASSWORD_MIN) },
+                    { pattern: /[A-Za-z]/, message: t.newPasswordNeedsLetter },
+                    { pattern: /\d/, message: t.newPasswordNeedsDigit },
+                  ]}
+                >
+                  <Input.Password autoComplete="new-password" placeholder={t.newPasswordPlaceholder} />
+                </Form.Item>
 
-          <Form.Item
-            name="confirm"
-            label={t.confirmNewPassword}
-            dependencies={['new_password']}
-            rules={[
-              { required: true, message: t.confirmRequired },
-              ({ getFieldValue }) => ({
-                validator: (_rule, value) =>
-                  !value || getFieldValue('new_password') === value
-                    ? Promise.resolve()
-                    : Promise.reject(new Error(t.confirmMismatch)),
-              }),
-            ]}
-          >
-            <Input.Password autoComplete="new-password" />
-          </Form.Item>
+                <Form.Item
+                  name="confirm"
+                  label={t.confirmNewPassword}
+                  dependencies={['new_password']}
+                  rules={[
+                    { required: true, message: t.confirmRequired },
+                    ({ getFieldValue }) => ({
+                      validator: (_rule, value) =>
+                        !value || getFieldValue('new_password') === value
+                          ? Promise.resolve()
+                          : Promise.reject(new Error(t.confirmMismatch)),
+                    }),
+                  ]}
+                >
+                  <Input.Password autoComplete="new-password" />
+                </Form.Item>
 
-          <Button type="primary" htmlType="submit" block loading={submitting}>
-            {t.savePassword}
-          </Button>
-        </Form>
-      </Card>
+                <Button type="primary" htmlType="submit" block loading={submitting}>
+                  {t.savePassword}
+                </Button>
+              </Form>
+            ),
+          },
+        ]}
+      />
 
       <Divider />
 
