@@ -186,6 +186,13 @@ export interface CreateEntryOptions {
   reviewedBy?: string | null
   /** 建一条带素材的 revision，用于图片相关测试 */
   withAsset?: boolean
+  /**
+   * 申报明细（design.md §9.1），决定这条记录值几分。
+   * 这里直接写库、绕过 HTTP 校验，所以不带这两个参数时记录值基础分 ——
+   * 要造二档记录必须显式给 wordCount: 50 或 exerciseType 里的二档取值。
+   */
+  wordCount?: number | null
+  exerciseType?: string | null
   db?: Db
 }
 
@@ -210,6 +217,8 @@ export async function createEntry(options: CreateEntryOptions) {
       entryId: entry.id,
       revisionNumber: 1,
       note: options.note ?? null,
+      wordCount: options.wordCount ?? null,
+      exerciseType: options.exerciseType ?? null,
       assets: options.withAsset
         ? {
             create: {

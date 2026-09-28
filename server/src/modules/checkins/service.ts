@@ -8,6 +8,7 @@ import { getPrismaClient, type Db } from '../../db/client.js'
 import { runInTransaction } from '../../db/tx.js'
 import type { UploadedFile } from '../../middleware/upload.js'
 import { processImage, type ProcessedImage } from '../../services/image.service.js'
+import { resolveDeclaration } from '../../services/judge.service.js'
 import { computeTrackScore, type ScoringAdjustment, type ScoringEntry } from '../../services/scoring.service.js'
 import { getStorage } from '../../storage/index.js'
 import { requireCurrentCampaign } from '../campaigns/service.js'
@@ -141,7 +142,15 @@ export async function getTodayOverview(principal: AuthPrincipal, now: Date = new
         status: 'approved',
         activityDate: { lte: activityDate },
       },
-      select: { trackId: true, activityDate: true, reviewedAt: true, track: { select: { slug: true } } },
+      select: {
+        trackId: true,
+        activityDate: true,
+        reviewedAt: true,
+        track: { select: { slug: true } },
+        // 卡片上的赛道积分必须和排行榜同源，否则主页显示 1 分、榜单显示 2 分。
+        // 少了这两列，这里的分值会静默停在基础分上。
+        currentRevision: { select: { wordCount: true, exerciseType: true } },
+      },
     }),
     prisma.scoreAdjustment.findMany({
       where: { participantId: participant.id, campaignId: campaign.id },
@@ -156,6 +165,12 @@ export async function getTodayOverview(principal: AuthPrincipal, now: Date = new
       trackSlug: entry.track.slug,
       activityDate: entry.activityDate,
       reviewedAt: entry.reviewedAt,
+      declaration: entry.currentRevision
+        ? {
+            wordCount: entry.currentRevision.wordCount,
+            exerciseType: entry.currentRevision.exerciseType,
+          }
+        : null,
     }
     if (list) list.push(item)
     else entriesBySlug.set(entry.track.slug, [item])
@@ -506,6 +521,13 @@ export interface SubmitResult {
   idempotent_replay: boolean
 }
 
+/**
+ * 图片数量与体积校验。
+ *
+ * `minImages` 是**调用方算好的该赛道生效下限**，不是活动配置的原始值：
+ * 读书赛道的下限被 resolveDeclaration 降为 0（图片与备注有一个即可）。
+ * 上限与单张体积与赛道无关，照活动配置来。
+ */
 function assertFilesWithinRules(
   files: readonly UploadedFile[],
   rules: { minImages: number; maxImages: number; maxImageBytes: number },
@@ -615,8 +637,20 @@ export async function submitCheckin(params: {
     throw new AppError('STATE_TRANSITION_INVALID', '该记录已被管理员处置，无法重新提交')
   }
 
+  // 申报明细的校验与归一化与管理员补录共用同一个函数（judge.service.ts）：
+  // 两条路径的规则必须一致，否则同一条 60 分钟运动自己交记 2 分、补录记 1 分。
+  // 它同时给出该赛道生效的图片下限 —— 读书只要图片与备注有一个就算交齐材料。
+  const { declaration, minImages } = resolveDeclaration({
+    trackSlug: campaignTrack.track.slug,
+    wordCount: fields.word_count,
+    exerciseType: fields.exercise_type,
+    note: fields.note,
+    imageCount: files.length,
+    campaignMinImages: campaign.minImages,
+  })
+
   assertFilesWithinRules(files, {
-    minImages: campaign.minImages,
+    minImages,
     maxImages: campaign.maxImages,
     maxImageBytes: campaign.maxImageBytes,
   })
@@ -675,6 +709,10 @@ export async function submitCheckin(params: {
         entryId: targetEntry.id,
         revisionNumber: nextRevisionNumber,
         note: fields.note,
+        // 明细存在版本上：它是「这一版材料申报了什么」，历史版本也该留着。
+        // 分值不在这里算，也不存 —— 见 judge.service.ts 的文件头。
+        wordCount: declaration.wordCount,
+        exerciseType: declaration.exerciseType,
         submittedAt: now,
         submittedBy: principal.userId,
         clientToken: fields.client_token,

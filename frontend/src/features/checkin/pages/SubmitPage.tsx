@@ -1,7 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Alert, App as AntdApp, Button, Card, Input, Progress, Result, Skeleton, Space, Typography } from 'antd'
+import {
+  Alert,
+  App as AntdApp,
+  Button,
+  Card,
+  Input,
+  InputNumber,
+  Progress,
+  Radio,
+  Result,
+  Skeleton,
+  Space,
+  Typography,
+} from 'antd'
 import { fetchCurrentCampaign } from '@/api/endpoints/campaign'
 import { fetchToday } from '@/api/endpoints/checkins'
 import { qk } from '@/api/queryKeys'
@@ -16,6 +29,8 @@ import { paths } from '@/routes/paths'
 import ImagePicker from '../components/ImagePicker'
 import type { SelectedImage } from '../components/imagePicker.utils'
 import { resolveCardDisplayState } from '../cardStateMeta'
+import { exerciseTypeLabel } from '@/components/exerciseTypeMeta'
+import { FITNESS_EXERCISE_TYPES, WORD_COUNT_MIN, isLenientImageTrack } from '../declaration'
 
 /**
  * 提交打卡（design.md §7.4）。
@@ -32,6 +47,12 @@ export default function SubmitPage() {
 
   const [images, setImages] = useState<SelectedImage[]>([])
   const [note, setNote] = useState('')
+  /**
+   * 申报明细（design.md §9.1）：单词填数量，运动选类型，读书两者都不用。
+   * 它们与图片、备注一样是**幂等键的一部分** —— 见下面 clientToken 的依赖数组。
+   */
+  const [wordCount, setWordCount] = useState<number | null>(null)
+  const [exerciseType, setExerciseType] = useState<string | null>(null)
   const [percent, setPercent] = useState(0)
 
   /**
@@ -41,6 +62,8 @@ export default function SubmitPage() {
    * 服务端按 (entry_id, client_token) 去重，命中就原样返回那一版 ——
    * 如果改完图片还沿用旧键，提交会「成功」但存进去的是上一次的图片，
    * 而且不会有任何报错。这是最隐蔽的一类 bug。
+   * 申报明细同理：把单词数从 30 改成 50 而键没换，存进去的仍是 30 个，
+   * 而且分值判定会安静地按 1 分算。
    *
    * 反过来，内容没变时（比如网络失败后重试）保持同一个键，
    * 才是真正的防重复提交。
@@ -57,7 +80,7 @@ export default function SubmitPage() {
    * 「依赖有没有在回调里用到」，无法表达「仅作为失效信号」这种用法。
    */
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const clientToken = useMemo(() => newClientToken(), [images, note])
+  const clientToken = useMemo(() => newClientToken(), [images, note, wordCount, exerciseType])
 
   const campaignQuery = useQuery({ queryKey: qk.campaign, queryFn: fetchCurrentCampaign, staleTime: Infinity })
   const todayQuery = useQuery({ queryKey: qk.today, queryFn: fetchToday, staleTime: 15_000 })
@@ -73,6 +96,10 @@ export default function SubmitPage() {
         track,
         activityDate: todayQuery.data?.activity_date ?? '',
         note: note.trim() || null,
+        // 只传本赛道认的那个字段：服务端 resolveDeclaration 也会清掉无关字段，
+        // 但两边一致时错误信息更贴近用户实际做的事
+        wordCount: track === 'vocabulary' ? wordCount : null,
+        exerciseType: track === 'fitness' ? exerciseType : null,
         clientToken,
         images: images.map((image) => image.file),
         onProgress: setPercent,
@@ -189,7 +216,39 @@ export default function SubmitPage() {
   const submitting = submit.isPending
   const presented = submit.error ? presentError(submit.error) : null
 
-  const tooFew = images.length < rules.min_images
+  /**
+   * 提交前的即时校验。
+   *
+   * 与服务端 resolveDeclaration 一一对应，目的是让用户在点提交之前就知道差什么，
+   * 而不是被服务端拒一次。**服务端仍然是权威**，这里只是把同一套规则提前说一遍。
+   */
+  const lenientImages = isLenientImageTrack(track)
+  // 读书只要图片与备注有一个就算交齐材料，所以它不看 min_images
+  const missingProof = lenientImages
+    ? images.length === 0 && note.trim() === ''
+    : images.length < rules.min_images
+  const missingDeclaration = track === 'vocabulary'
+    ? !(wordCount !== null && Number.isInteger(wordCount) && wordCount >= WORD_COUNT_MIN)
+    : track === 'fitness'
+      ? exerciseType === null
+      : false
+  const blocked = missingProof || missingDeclaration
+
+  // 只显示一条提示：材料与申报明细可能同时缺，一次说一件事更容易照做
+  let blockerHint: string | null = null
+  if (missingProof) {
+    blockerHint = lenientImages
+      ? zh.checkin.submit.readingNeedsOne
+      : zh.checkin.submit.minImages(rules.min_images)
+  } else if (missingDeclaration) {
+    if (track === 'vocabulary') {
+      blockerHint = wordCount !== null && wordCount < WORD_COUNT_MIN
+        ? zh.checkin.submit.wordCountTooFew(WORD_COUNT_MIN)
+        : zh.checkin.submit.wordCountRequired
+    } else {
+      blockerHint = zh.checkin.submit.exerciseTypeRequired
+    }
+  }
 
   return (
     <div className="page page--readable">
@@ -231,6 +290,49 @@ export default function SubmitPage() {
         <ImagePicker value={images} onChange={setImages} rules={rules} disabled={submitting} />
       </Card>
 
+      {/*
+        申报明细紧跟在证明材料下面，且是**必填**（单词与运动）：
+        它决定这条打卡值几分，所以不能等到审核员去猜（design.md §9.1）。
+      */}
+      {track === 'vocabulary' && (
+        <Card size="small" title={zh.checkin.submit.wordCount} style={{ marginBottom: 16 }}>
+          {/*
+            下限刻意不设成 WORD_COUNT_MIN：antd 的 InputNumber 会在失焦时把值
+            **静默夹到 min**，于是用户填 20 会看到它自己变成 30，然后以为交的是 20。
+            改成一个只是挡掉零和负数的下限，让「不能少于 30 个」那句提示来说清楚 ——
+            按钮禁用 + 明说原因，比悄悄改掉用户填的数字诚实。
+          */}
+          <InputNumber
+            value={wordCount}
+            onChange={setWordCount}
+            min={1}
+            precision={0}
+            style={{ width: '100%' }}
+            placeholder={zh.checkin.submit.wordCountPlaceholder}
+            disabled={submitting}
+            addonAfter="个"
+          />
+        </Card>
+      )}
+
+      {track === 'fitness' && (
+        <Card size="small" title={zh.checkin.submit.exerciseType} style={{ marginBottom: 16 }}>
+          <Radio.Group
+            value={exerciseType}
+            onChange={(event) => setExerciseType(event.target.value as string)}
+            disabled={submitting}
+          >
+            <Space direction="vertical" size={4}>
+              {FITNESS_EXERCISE_TYPES.map((code) => (
+                <Radio key={code} value={code}>
+                  {exerciseTypeLabel(code)}
+                </Radio>
+              ))}
+            </Space>
+          </Radio.Group>
+        </Card>
+      )}
+
       <Card size="small" title={zh.checkin.submit.note} style={{ marginBottom: 16 }}>
         <Input.TextArea
           value={note}
@@ -269,15 +371,15 @@ export default function SubmitPage() {
         block
         size="large"
         loading={submitting}
-        disabled={tooFew}
+        disabled={blocked}
         onClick={() => submit.mutate()}
       >
         {submit.isError ? zh.common.retrySubmit : zh.common.submit}
       </Button>
 
-      {tooFew && (
+      {blockerHint && (
         <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', textAlign: 'center', marginTop: 8 }}>
-          {zh.checkin.submit.minImages(rules.min_images)}
+          {blockerHint}
         </Typography.Text>
       )}
 

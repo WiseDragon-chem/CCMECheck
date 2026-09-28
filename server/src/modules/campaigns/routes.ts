@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { AppError, notFound } from '../../core/errors.js'
+import { AppError, notFound, validationFailed } from '../../core/errors.js'
 import { route } from '../../core/route.js'
 import { cstTimeOfDay, cstToday } from '../../core/time.js'
 import { getPrismaClient } from '../../db/client.js'
@@ -7,6 +7,7 @@ import { runInTransaction } from '../../db/tx.js'
 import { authenticate, requirePrincipal } from '../../middleware/authenticate.js'
 import { requireFreshAuth, requireRole } from '../../middleware/authorize.js'
 import { auditContextFrom, recordAudit } from '../../services/audit.service.js'
+import { dailyCapTierProblem } from '../../services/judge.service.js'
 import {
   campaignTrackParamsSchema,
   createCampaignBodySchema,
@@ -259,6 +260,18 @@ export function createAdminCampaignsRouter(): Router {
           body.campaign_cap !== undefined ||
           body.overall_weight !== undefined ||
           body.enabled !== undefined)
+
+      /*
+        上限这扇门也要拦：低于两倍基础分值的每日上限会把单词/运动的二档静默压掉，
+        而审核页显示的是判定值，两边就对不上了（design.md §16.16）。
+        两个字段可能被同一次请求改，所以取改完之后的值来判断。
+      */
+      const capProblem = dailyCapTierProblem({
+        trackSlug: campaignTrack.track.slug,
+        dailyPoints: body.daily_points ?? campaignTrack.dailyPoints,
+        dailyCap: body.daily_cap === undefined ? campaignTrack.dailyCap : body.daily_cap,
+      })
+      if (capProblem) throw validationFailed(capProblem)
 
       await runInTransaction(prisma, async (tx) => {
         await tx.campaignTrack.update({

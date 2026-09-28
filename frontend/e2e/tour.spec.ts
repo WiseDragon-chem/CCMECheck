@@ -117,11 +117,12 @@ test.describe('操作指导', () => {
     await page.waitForTimeout(800)
 
     /*
-      这句是常驻的，而且必须与真实算分一致：三个赛道各 1 分、等权，
-      一天全通过总榜加 3 分。引导只是把它指出来，不是它的载体。
+      这句是常驻的，而且必须与真实算分一致：读书固定 1 分，单词按背诵数量、
+      运动按运动类型分档（各 1–2 分），三条赛道等权、总榜为各赛道之和。
+      引导只是把它指出来，不是它的载体 —— 所以它不随引导消失。
     */
-    await expect(page.getByText(/每通过一次打卡得 1 分/)).toBeVisible()
-    await expect(page.getByText(/3 条赛道全部通过，总榜加 3 分/)).toBeVisible()
+    await expect(page.getByText(/读书每次 1 分/)).toBeVisible()
+    await expect(page.getByText(/3 条赛道等权/)).toBeVisible()
   })
 
   test('「我的」页能重新播放排行榜说明', async ({ page }) => {

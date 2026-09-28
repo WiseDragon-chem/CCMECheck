@@ -110,6 +110,8 @@ export function createAdminOpsRouter(): Router {
         activityDate: body.activity_date,
         reason: body.reason,
         note: body.note,
+        wordCount: body.word_count,
+        exerciseType: body.exercise_type,
         status: body.status,
         actor: { userId: principal.userId, role: principal.role },
         audit: auditContextFrom(req),

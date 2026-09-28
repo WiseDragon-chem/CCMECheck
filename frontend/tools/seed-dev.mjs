@@ -130,6 +130,21 @@ const SURNAMES = ['张', '李', '王', '刘', '陈', '杨', '赵', '黄', '周',
 const GIVEN = ['文博', '思远', '雨欣', '子涵', '佳怡', '宇轩', '梓萱', '浩然', '欣怡', '俊杰', '诗涵', '泽宇']
 const TRACKS = ['reading', 'vocabulary', 'fitness']
 
+/**
+ * 申报明细（design.md §9.1）：单词与运动是必填的，读书不填。
+ * 两种档位都造一些数据，排行榜上才看得出梯度。
+ * 码表与阈值见 server/src/services/judge.service.ts。
+ */
+function declarationFor(track, index) {
+  if (track === 'vocabulary') return { word_count: index % 2 === 0 ? 60 : 35 }
+  if (track === 'fitness') return { exercise_type: index % 2 === 0 ? 'run_gt_3km' : 'workout_30min' }
+  return {}
+}
+
+function appendDeclaration(form, track, index) {
+  for (const [key, value] of Object.entries(declarationFor(track, index))) form.append(key, String(value))
+}
+
 const PARTICIPANT_COUNT = 24
 const IMAGE_SIZES = [
   [320, 240],
@@ -343,6 +358,7 @@ async function backfillPastDays(participants) {
               track_id: trackIds.get(slug),
               activity_date: activityDate,
               reason: '开发数据：活动开始前已线下打卡，管理员补录',
+              ...declarationFor(slug, index),
               status: 'approved',
             },
           })
@@ -374,6 +390,7 @@ async function submitToday(tokens) {
       form.append('activity_date', TODAY)
       form.append('note', `${track} 今日打卡`)
       form.append('client_token', `seed-${studentId}-${track}-${Date.now()}`)
+      appendDeclaration(form, track, index)
       for (let i = 0; i < imageCount; i++) {
         const [w, h] = IMAGE_SIZES[i % IMAGE_SIZES.length]
         form.append('images', new Blob([makePng(w, h, [40 + i * 60, 120, 200])], { type: 'image/png' }), `${track}-${i}.png`)
@@ -397,6 +414,7 @@ async function submitToday(tokens) {
     form.append('activity_date', TODAY)
     form.append('note', `${entry.track} 打卡（补充说明）`)
     form.append('client_token', `seed-resubmit-${entry.entryId}`)
+    appendDeclaration(form, entry.track, 0)
     form.append('images', new Blob([makePng(400, 300, [200, 90, 60])], { type: 'image/png' }), 'again.png')
     try {
       const again = await call('POST', '/checkins', { token, form })

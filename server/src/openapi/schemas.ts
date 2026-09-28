@@ -646,6 +646,14 @@ export const ReviewEntryDetailSchema = z
         revision_id: z.string(),
         revision_number: z.number().int(),
         note: z.string().nullable(),
+        // 申报明细与判定分值（design.md §9.1）。
+        // 用 nullable 而不是 optional：服务端总是返回它们（读书/补录/历史记录为 null），
+        // 前端因此拿到精确类型，不用到处写 `?.`。
+        word_count: z.number().int().nullable(),
+        exercise_type: z.string().nullable().openapi({
+          description: '运动类型码，见 POST /checkins 的 exercise_type',
+        }),
+        judged_points: z.number().int().openapi({ description: '这一版通过后得多少毫点（1000 = 1 分）' }),
         submitted_at: z.string(),
         assets: z.array(
           z.object({

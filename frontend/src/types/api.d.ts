@@ -533,7 +533,11 @@ export interface paths {
                         note?: string;
                         /** @description 幂等键，建议每个提交动作生成一次 */
                         client_token?: string;
-                        /** @description 1–3 张证明材料 */
+                        /** @description 单词赛道必填：当日背诵数量（整数，不少于 30） */
+                        word_count?: string;
+                        /** @description 运动赛道必填：运动类型，取值 run_gt_2km / run_gt_3km / workout_30min / workout_60min */
+                        exercise_type?: string;
+                        /** @description 证明材料，1–3 张；读书赛道可以为 0 张（填备注即可） */
                         images: string[];
                     };
                 };
@@ -2956,6 +2960,9 @@ export interface paths {
                         activity_date: string;
                         reason: string;
                         note?: string;
+                        word_count?: number | null;
+                        /** @enum {string} */
+                        exercise_type?: "run_gt_2km" | "run_gt_3km" | "workout_30min" | "workout_60min";
                         /**
                          * @default pending
                          * @enum {string}
@@ -4219,6 +4226,11 @@ export interface components {
                 revision_id: string;
                 revision_number: number;
                 note: string | null;
+                word_count: number | null;
+                /** @description 运动类型码，见 POST /checkins 的 exercise_type */
+                exercise_type: string | null;
+                /** @description 这一版通过后得多少毫点（1000 = 1 分） */
+                judged_points: number;
                 submitted_at: string;
                 assets: {
                     asset_id: string;

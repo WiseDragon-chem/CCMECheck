@@ -293,6 +293,16 @@ model SubmissionRevision {
   submittedAt DateTime @default(now()) @map("submitted_at")
   submittedBy String?  @map("submitted_by")
 
+  /// 参赛者申报的打卡明细，决定这一版值几分（见 src/services/judge.service.ts）。
+  /// 单词赛道用 wordCount，运动赛道用 exerciseType，读书与历史记录两者皆空。
+  ///
+  /// 刻意可空：历史记录没有这两个值，给非空默认值等于撒谎。
+  /// 也刻意**不**在这里存判定出来的分值 —— 分值必须每次从 checkin_entries
+  /// 经 currentRevision 现算，否则「一个打卡只算一次分」会被破坏。
+  wordCount    Int?    @map("word_count")
+  /// 取值见 judge.service.ts 的 FITNESS_EXERCISE_TYPES
+  exerciseType String? @map("exercise_type")
+
   /// 防重复点击：同一 entry 下同一 client_token 只产生一个版本（design.md §7.4）
   clientToken String? @map("client_token")
 

@@ -165,8 +165,15 @@ Zod schema 在 `schema.ts`（同时供 OpenAPI 注册）。
 | GET | `/checkins/:entryId/assets/:assetId` | 签发短期图片地址 |
 | GET | `/assets/:assetId?exp&uid&sig` | 凭签名取回图片字节 |
 
-`POST /checkins` 的 multipart 字段：`track`、`activity_date`、`note?`、`client_token?`、`images`（1–3 张）。
+`POST /checkins` 的 multipart 字段：`track`、`activity_date`、`note?`、`client_token?`、
+`word_count?`、`exercise_type?`、`images`。
 `client_token` 是防重复点击的幂等键，同一 token 重复提交只会得到一个版本。
+
+申报明细（`word_count` / `exercise_type`）决定这条打卡值几分，取值与阈值见
+[`src/services/judge.service.ts`](./src/services/judge.service.ts)：
+单词赛道必填 `word_count`（整数，不少于 30），运动赛道必填 `exercise_type`
+（`run_gt_2km` / `run_gt_3km` / `workout_30min` / `workout_60min`），读书赛道两个都不填。
+`images` 是 1–3 张，**读书赛道例外：可以为 0 张，只要 `note` 非空**（图片与备注有一个即可）。
 
 **图片字节端点刻意不做会话认证**：`<img src>` 无法携带 Bearer 令牌，
 签名本身就是短期能力凭证（默认 10 分钟）。签发端点已校验请求者身份。
@@ -282,13 +289,28 @@ ISO 文本的字典序与时间序一致，因此既能范围查询，也能让�
 ### 7.4 计分与快照
 
 - 只有 `approved` 记录计分；`pending` / `rejected` / `revoked` / `void` 一律不计分。
+- **分值按申报明细分档**（§9.1，判定见 [`src/services/judge.service.ts`](./src/services/judge.service.ts)）：
+  读书固定 `daily_points`；单词 30–49 个 1 分、≥50 个 2 分；
+  运动 `>2km跑步` 与 `一般运动30min` 1 分、`>3km跑步` 与 `一般运动60min` 2 分。
+  二档是**两倍 `daily_points`** 而不是写死的 2000，所以管理员调基础分值时整张表跟着走。
+- **分值不落库，每次读的时候现算。** 这是「一个打卡只算一次分」成立的原因：
+  槽位唯一约束保证一人一天一赛道一条记录，分值经 `entry.currentRevision` 读取，
+  所以重新提交后再次通过是**替换**而不是累加（先交 30 个得 1 分、重开后交 50 个，总分是 2 分不是 3 分）。
+  **不要给 `submission_revisions` 加 points 列，也不要把版本分值相加** —— 那会静默破坏这条规则。
+- 每日上限低于两倍 `daily_points` 会把二档压成基础分，`validateCampaignConfig` 与
+  `PATCH /admin/campaigns/tracks/:trackId` 都会拦这种事。
 - **人工调整不受活动上限约束** —— 否则管理员为特殊记录加分会被 `campaign_cap` 静默吃掉。
 - 人工调整只新增 `score_adjustments` 行，**从不改写原始积分字段**（§9.1 的硬性要求）。
+- 补录（§8.5）的申报明细走**与参赛者提交同一个校验函数**，必填规则也一致。
 - 快照幂等由 `(campaign_id, cutoff_date)` 唯一约束 + 单事务内「先删后插」保证，重复执行只刷新同一份快照。
 - 统计口径：`activity_date <= cutoff_date` 且生成时刻已通过审核的记录。
 - 管理员重算不填统计截止日时算到「此刻应有的最新一天」（已有更新的快照时不倒退）。
   刻意**不是**「最近一份快照的截止日」—— 快照落后时那样点多少次重算都只是在重算同一份旧榜单。
 - 冻结后快照行永不被重写；冻结前会检查待审核队列是否已清空。
+- **改分值规则后必须重算快照**：`leaderboard_rows` 读的是快照而不是实时数据，
+  所以在重算之前，榜单仍是旧分值，而主页卡片与审核页已经是新分值。
+  已冻结（`is_final`）的快照要先解冻才能重算。另外二档会改变 `reachedAt`，
+  因而可能改变 §9.3 的同分排序。
 
 ### 7.5 定时任务
 

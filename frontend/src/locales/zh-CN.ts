@@ -192,6 +192,18 @@ export const zh = {
       note: '文字备注',
       notePlaceholder: '可选，补充说明本次打卡的内容',
       minImages: (n: number) => `至少需要 ${n} 张证明材料`,
+      /*
+        申报明细（design.md §9.1）。单词与运动必须填，读书不填 ——
+        码与阈值的前端镜像在 features/checkin/declaration.ts。
+      */
+      wordCount: '背诵的单词数量',
+      wordCountPlaceholder: '例如 50',
+      wordCountRequired: '请填写当日背诵的单词数量',
+      wordCountTooFew: (min: number) => `单词数量不能少于 ${min} 个`,
+      exerciseType: '本次运动类型',
+      exerciseTypeRequired: '请选择本次运动类型',
+      /** 读书赛道的材料要求放宽了：图片与备注有一个即可 */
+      readingNeedsOne: '请上传证明材料或填写备注，二者至少填一个',
       uploading: '正在上传证明材料…',
       processing: '服务器正在处理图片…',
       submitted: '已提交，等待审核',
@@ -230,6 +242,18 @@ export const zh = {
       cannotProcess: (name: string) => `「${name}」无法处理，请换一张图片`,
       deleteImage: (index: number) => `删除第 ${index + 1} 张`,
       proofAlt: (index: number) => `证明材料 ${index + 1}`,
+    },
+    /**
+     * 运动类型的显示名。键是服务端的稳定英文码
+     * （server/src/services/judge.service.ts 的 FITNESS_EXERCISE_TYPES）——
+     * 存码不存中文，改名才不用洗数据。
+     * 提交页与审核页共用这一份，未知码由代码兜底显示原码而不是空白。
+     */
+    exerciseTypes: {
+      run_gt_2km: '>2km跑步',
+      run_gt_3km: '>3km跑步',
+      workout_30min: '一般运动30min',
+      workout_60min: '一般运动60min',
     },
     records: {
       title: '打卡记录',
@@ -296,7 +320,8 @@ export const zh = {
       改那里的评分默认值，这里必须跟着改。
     */
     scoringRule: (trackCount: number) =>
-      `每通过一次打卡得 1 分，各赛道等权；一天 ${trackCount} 条赛道全部通过，总榜加 ${trackCount} 分。`,
+      `读书每次 1 分；单词按背诵数量、运动按运动类型分档，每次 1–2 分。` +
+      `${trackCount} 条赛道等权，总榜为各赛道积分之和。`,
     /** 权重或上限被改过时的兜底：不编造具体数字，只说清结构 */
     scoringFallback: '总榜分数由各赛道分数按权重折算得出。',
     loadMore: (shown: number, total: number) => `加载更多（已显示 ${shown} / ${total}）`,
@@ -444,6 +469,13 @@ export const zh = {
       reopenNotice: (time: string) => `已重新开放至 ${time}`,
       note: '参赛者备注',
       noNote: '（未填写）',
+      /*
+        申报明细与判定分值（design.md §9.1）。梯度化之后同一个「通过」按钮
+        对应的分值是变的，这两行是审核员判断该不该通过的依据之一。
+      */
+      wordCountLine: (n: number) => `单词数量：${n} 个`,
+      exerciseTypeLine: (label: string) => `运动类型：${label}`,
+      judgedPointsLine: (points: string) => `本次计分：${points} 分`,
       history: '审核历史',
       noHistory: '还没有审核记录',
       previousRevisions: (n: number) => `较早的提交版本（${n}）`,

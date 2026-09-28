@@ -8,6 +8,7 @@ import {
   DatePicker,
   Input,
   InputNumber,
+  Radio,
   Row,
   Select,
   Space,
@@ -15,7 +16,9 @@ import {
 } from 'antd'
 import { presentError } from '@/api/presentError'
 import { invalidationMap, qk } from '@/api/queryKeys'
-import type { AdminParticipant } from '@/api/types'
+import type { AdminParticipant, Track } from '@/api/types'
+import { exerciseTypeOptions } from '@/components/exerciseTypeMeta'
+import { WORD_COUNT_MIN, type FitnessExerciseType } from '@/features/checkin/declaration'
 import { fromPickerDate, toPickerDate } from '@/lib/datetime'
 import { parsePointsToMilli } from '@/lib/milli'
 import { zh } from '@/locales/zh-CN'
@@ -137,16 +140,36 @@ function trackOptions(tracks: { id: string; name: string }[], withOverall = fals
 // 补录
 // ---------------------------------------------------------------------------
 
-function ManualSection({ tracks }: { tracks: { id: string; name: string }[] }) {
+/**
+ * `tracks` 的类型用 Track 而不是 { id, name }：下拉只用到 id 与 name，
+ * 但补录要按**赛道**决定填哪个申报明细，所以 slug 是必需的 ——
+ * 它本来就在数据里，原先的类型标注只是把它藏起来了。
+ */
+function ManualSection({ tracks }: { tracks: Track[] }) {
   const [participant, setParticipant] = useState<AdminParticipant | null>(null)
   const [trackId, setTrackId] = useState<string | undefined>()
   const [activityDate, setActivityDate] = useState<string | undefined>()
   const [status, setStatus] = useState<'pending' | 'approved'>('pending')
   const [note, setNote] = useState('')
+  const [wordCount, setWordCount] = useState<number | null>(null)
+  // 类型取服务端生成的联合类型：加了新选项而这里没跟上，typecheck 会红
+  const [exerciseType, setExerciseType] = useState<FitnessExerciseType | null>(null)
 
   const mutation = useOpsMutation(createManualEntry, zh.admin.ops.done.manual)
 
-  const ready = Boolean(participant && trackId && activityDate)
+  const trackSlug = tracks.find((track) => track.id === trackId)?.slug
+  /*
+    补录的申报明细与参赛者自己提交时**同规则必填**（judge.service.ts）：
+    补录记录没有后续编辑入口，不在这里采集就永远是错的档位 ——
+    同一条 60 分钟运动，自己交记 2 分、补录记 1 分，没人解释得清。
+  */
+  const declarationReady = trackSlug === 'vocabulary'
+    ? wordCount !== null && Number.isInteger(wordCount) && wordCount >= WORD_COUNT_MIN
+    : trackSlug === 'fitness'
+      ? exerciseType !== null
+      : true
+
+  const ready = Boolean(participant && trackId && activityDate) && declarationReady
 
   return (
     <OpsAction
@@ -163,11 +186,16 @@ function ManualSection({ tracks }: { tracks: { id: string; name: string }[] }) {
         status,
         reason,
         note: note.trim() || undefined,
+        // 只传本赛道认的那个字段，与服务端 resolveDeclaration 的清空规则一致
+        word_count: trackSlug === 'vocabulary' ? (wordCount ?? undefined) : undefined,
+        exercise_type: trackSlug === 'fitness' ? (exerciseType ?? undefined) : undefined,
       })}
       onDone={() => {
         setParticipant(null)
         setActivityDate(undefined)
         setNote('')
+        setWordCount(null)
+        setExerciseType(null)
       }}
     >
       <Field label={zh.admin.ops.participant}>
@@ -182,6 +210,37 @@ function ManualSection({ tracks }: { tracks: { id: string; name: string }[] }) {
           placeholder={zh.admin.ops.track}
         />
       </Field>
+      {/* 申报明细：按赛道只显示该填的那一个，与服务端规则一一对应 */}
+      {trackSlug === 'vocabulary' && (
+        <Field label={zh.checkin.submit.wordCount}>
+          <InputNumber
+            style={{ width: '100%' }}
+            value={wordCount}
+            // 下限交给服务端判定与提示，不在失焦时静默夹到 30（见 SubmitPage 的说明）
+            min={1}
+            precision={0}
+            placeholder={zh.checkin.submit.wordCountPlaceholder}
+            onChange={setWordCount}
+          />
+        </Field>
+      )}
+      {trackSlug === 'fitness' && (
+        <Field label={zh.checkin.submit.exerciseType}>
+          <Radio.Group
+            value={exerciseType}
+            onChange={(event) => setExerciseType(event.target.value as FitnessExerciseType)}
+          >
+            <Space direction="vertical" size={4}>
+              {exerciseTypeOptions().map((option) => (
+                <Radio key={option.value} value={option.value}>
+                  {option.label}
+                </Radio>
+              ))}
+            </Space>
+          </Radio.Group>
+        </Field>
+      )}
+
       <Field label={zh.admin.ops.activityDate}>
         <DatePicker
           style={{ width: '100%' }}

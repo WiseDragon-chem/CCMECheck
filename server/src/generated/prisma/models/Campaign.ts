@@ -1792,6 +1792,10 @@ export type $CampaignPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     tieBreakRule: string
     minImages: number
     maxImages: number
+    /**
+     * 与 src/config/constants.ts 的 DEFAULT_MAX_IMAGE_BYTES 保持一致。
+     * 实际写入值永远是显式的（campaign:init 与管理端接口），这一列默认值只是兜底
+     */
     maxImageBytes: number
     /**
      * JSON 字符串数组，例如 ["image/jpeg","image/png","image/webp"]

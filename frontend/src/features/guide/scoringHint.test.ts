@@ -26,7 +26,7 @@ function track(overrides: Partial<Track> = {}): Track {
 }
 
 describe('explainScoring', () => {
-  it('全等权时说明一次打卡 1 分、各赛道等权', () => {
+  it('全等权时给出分档说明', () => {
     expect(explainScoring([track()])).toBe(zh.leaderboard.scoringRule(1))
   })
 

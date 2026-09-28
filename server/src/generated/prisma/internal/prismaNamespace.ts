@@ -1950,6 +1950,8 @@ export const SubmissionRevisionScalarFieldEnum = {
   note: 'note',
   submittedAt: 'submittedAt',
   submittedBy: 'submittedBy',
+  wordCount: 'wordCount',
+  exerciseType: 'exerciseType',
   clientToken: 'clientToken',
   createdAt: 'createdAt'
 } as const

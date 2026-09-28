@@ -1,5 +1,6 @@
 import { OVERALL_TRACK_SENTINEL, SCORING_ENTRY_STATUSES } from '../config/constants.js'
 import { getPrismaClient, type Db } from '../db/client.js'
+import { judgePoints, type CheckinDeclaration } from './judge.service.js'
 
 /**
  * 计分引擎（design.md §9.1、§9.3）。
@@ -19,7 +20,14 @@ export interface TrackScoringConfig {
   slug: string
   /** 每次审核通过获得的分值（毫点） */
   dailyPoints: number
-  /** 单个活动日的上限（毫点）；null 表示不限 */
+  /**
+   * 单个活动日的上限（毫点）；null 表示不限。
+   *
+   * **设了它就必须 ≥ 2 × dailyPoints。** 单词与运动赛道的二档是基础分的两倍，
+   * 上限低于它会把 2 分档静默压成 1 分 —— 而审核页显示的是判定值 2 分，
+   * 于是导出与榜单对不上（design.md §16.16）。campaign.ts 的
+   * validateCampaignConfig 与 TrackRule.dailyCap 的注释都提到了这件事。
+   */
   dailyCap: number | null
   /** 整个活动的上限（毫点）；null 表示不限 */
   campaignCap: number | null
@@ -34,6 +42,14 @@ export interface ScoringEntry {
   activityDate: string
   /** 审核通过时间，决定「达到当前积分的时间」 */
   reviewedAt: Date | null
+  /**
+   * 该记录**当前版本**申报的明细（单词数量 / 运动类型），决定这条值几分。
+   *
+   * 可选：历史记录、读书赛道、测试夹具都没有它，缺省时回退到赛道基础分值。
+   * 读的必须是当前版本 —— 重新提交会把 currentRevisionId 指到新版本，
+   * 「一个打卡只算一次分」就是靠这一点成立的（见 judge.service.ts 的文件头）。
+   */
+  declaration?: CheckinDeclaration | null
 }
 
 export interface ScoringAdjustment {
@@ -80,7 +96,16 @@ function dailyTotals(
     // 槽位唯一约束保证同一天同一赛道只有一条通过记录，
     // 这里仍然按「先到先得 + 每日上限」处理，避免未来放开约束时静默算错
     if (!existing) {
-      byDate.set(entry.activityDate, { points: config.dailyPoints, reviewedAt: entry.reviewedAt })
+      // 分值按这条记录自己申报的明细判定（单词数量 / 运动类型，design.md §9.1）。
+      // 明细缺失时 judgePoints 回退到赛道基础分值，所以历史记录等价于原来的行为。
+      byDate.set(entry.activityDate, {
+        points: judgePoints({
+          trackSlug: entry.trackSlug,
+          declaration: entry.declaration,
+          basePoints: config.dailyPoints,
+        }),
+        reviewedAt: entry.reviewedAt,
+      })
       continue
     }
     if (existing.reviewedAt && entry.reviewedAt && entry.reviewedAt < existing.reviewedAt) {
@@ -329,6 +354,9 @@ export async function loadScoringInputs(
         activityDate: true,
         reviewedAt: true,
         track: { select: { slug: true } },
+        // 只读当前版本：重新提交会把 currentRevisionId 指到新版本，
+        // 于是重新通过审核是**替换**分值而不是累加（见 judge.service.ts 的文件头）
+        currentRevision: { select: { wordCount: true, exerciseType: true } },
       },
     }),
     db.scoreAdjustment.findMany({
@@ -370,6 +398,12 @@ export async function loadScoringInputs(
       trackSlug: entry.track.slug,
       activityDate: entry.activityDate,
       reviewedAt: entry.reviewedAt,
+      declaration: entry.currentRevision
+        ? {
+            wordCount: entry.currentRevision.wordCount,
+            exerciseType: entry.currentRevision.exerciseType,
+          }
+        : null,
     })
   }
 

@@ -20,6 +20,9 @@ export interface SubmitCheckinInput {
   track: string
   activityDate: string
   note: string | null
+  /** 申报明细（design.md §9.1）：单词赛道填数量，运动赛道填类型，读书两者皆 null */
+  wordCount: number | null
+  exerciseType: string | null
   /** 幂等键。每次提交动作重新生成 —— 固定值会让第二次提交被当成重复而静默返回旧版本 */
   clientToken: string
   /** 顺序即服务端的 sort_order，调用方要保证它等于界面上的展示顺序 */
@@ -44,7 +47,10 @@ export function buildCheckinFormData(input: Omit<SubmitCheckinInput, 'onProgress
   form.append('track', input.track)
   form.append('activity_date', input.activityDate)
   form.append('client_token', input.clientToken)
+  // 都是「有值才 append」：服务端 schema 的 transform 依赖字段缺失，而不是空串
   if (input.note) form.append('note', input.note)
+  if (input.wordCount !== null) form.append('word_count', String(input.wordCount))
+  if (input.exerciseType) form.append('exercise_type', input.exerciseType)
 
   // 用 for 循环而不是 forEach，是为了让「顺序即指标」这件事显式可见
   for (let index = 0; index < input.images.length; index += 1) {

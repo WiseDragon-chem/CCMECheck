@@ -63,6 +63,35 @@ describe('活动配置', () => {
     expect(Object.keys(CAMPAIGN_CONFIG.tracks).sort()).toEqual(['fitness', 'reading', 'vocabulary'])
   })
 
+  /*
+    单词与运动的分值分档（judge.service.ts），二档是基础分的两倍。
+    每日上限低于它会把二档静默压成基础分，而审核页显示的是判定值 ——
+    两边对不上，且不会有任何报错（design.md §16.16）。
+  */
+  it('分档赛道的每日上限低于两倍基础分值时被拒', () => {
+    const withCap = (slug: string, dailyCap: number) => ({
+      ...VALID,
+      tracks: { ...VALID.tracks, [slug]: { ...VALID.tracks[slug]!, dailyCap } },
+    })
+
+    // 基础分 1000，上限 1000 → 二档（2000）会被压成 1000
+    expect(() => validateCampaignConfig(withCap('vocabulary', 1000))).toThrow(/每日上限/)
+    expect(() => validateCampaignConfig(withCap('fitness', 1500))).toThrow(/每日上限/)
+    // 恰好两倍是允许的；不限（null）当然也允许
+    expect(() => validateCampaignConfig(withCap('vocabulary', 2000))).not.toThrow()
+    expect(() => validateCampaignConfig(withCap('fitness', null as never))).not.toThrow()
+  })
+
+  it('不分档的赛道，上限多低都不管', () => {
+    // 读书固定基础分，没有二档会被压掉
+    expect(() =>
+      validateCampaignConfig({
+        ...VALID,
+        tracks: { ...VALID.tracks, reading: { ...VALID.tracks['reading']!, dailyCap: 500 } },
+      }),
+    ).not.toThrow()
+  })
+
   it('毫点与权重都是整数', () => {
     // 后端刻意用整数存分值与权重，浮点尾差会让「同分并列」的判定
     // 在两次计算之间漂移（§9.3）

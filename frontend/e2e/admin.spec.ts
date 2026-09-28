@@ -42,6 +42,63 @@ function progressValue(page: Page, label: string) {
 }
 
 test.describe('管理后台', () => {
+  /**
+   * 申报明细与备注搬进中栏图片下方之后，中栏多了一条固定高度的块。
+   *
+   * 要守的约束互相拉扯：备注最长 1000 字，但它不能把图片挤没，
+   * 也不能让中栏自己长出滚动条（§8.2 的三栏各自滚动的结构）。
+   * 所以它必须**自己滚动** —— 这条用例守住这一点，以及需求要的
+   * 「备注栏在图片下方」。
+   *
+   * 注意这里**不**断言 document 级滚动：审核页在 1280×720 下本来就有
+   * 约 24px 的页面滚动，成因是 .review-pipeline 的
+   * `calc(100vh - 56px - 32px)` 用了 56px（那是参赛者端导航的高度
+   * --top-nav-height），而后台 .admin-header 实际是 80px。
+   * 与本次改动无关 —— 把 .materials-note 藏起来再量，溢出仍是 24px，
+   * 而且 .review-pipeline 是定高 + overflow: hidden，栏内的东西
+   * 影响不到文档高度。那个偏差另有出处，见提交说明。
+   */
+  test('审核页 1280×720：备注栏在图片下方，且不会把图片挤没', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 })
+    await openReview(page)
+
+    const stage = await page.locator('.materials-stage').boundingBox()
+    const note = await page.locator('.materials-note').boundingBox()
+
+    // 图片区仍在，且没有被备注压到看不见
+    expect(stage!.height, '图片区被备注挤没了').toBeGreaterThan(120)
+    // 「在图片下方」：备注的顶边在图片区顶边之下
+    expect(note!.y, '备注栏跑到图片上面去了').toBeGreaterThan(stage!.y)
+
+    // 长备注由备注块自己滚动，中栏不长出滚动条
+    const columnOverflow = await page.locator('.review-pipeline__col--materials').evaluate(
+      (element) => element.scrollHeight - element.clientHeight,
+    )
+    expect(columnOverflow, '备注把中栏撑出了滚动条').toBeLessThanOrEqual(1)
+  })
+
+  /**
+   * 需求要的「用户输入的单词数量、运动类型在备注栏显示」。
+   *
+   * 分值梯度化之后同一个「通过」按钮对应的分值是变的，所以判定值也一并显示 ——
+   * 审核员据此判断该不该通过，也顺带能看出虚报（填了 50 个但截图明显不够）。
+   */
+  test('备注栏显示申报明细与判定分值', async ({ page }) => {
+    await openReview(page)
+
+    // 只看单词赛道，这样队列里的记录一定带单词数量。
+    // 筛选走 URL（与「队列被筛空」那条用例同一套做法），比点 antd 的下拉稳
+    await page.goto('/admin/review?track=vocabulary')
+    await expect(page.locator('.queue-item').first()).toBeVisible()
+
+    const note = page.locator('.materials-note')
+    await expect(note).toContainText(/单词数量：\d+ 个/)
+    // 一档与二档都可能是 1 分或 2 分，这里只要求它印出来且是个整数
+    await expect(note).toContainText(/本次计分：[12] 分/)
+    // 备注本身也在这块里
+    await expect(note).toContainText('参赛者备注')
+  })
+
   test('审核员登录后直接落到后台，而不是参赛者主页', async ({ page }) => {
     await loginAs(page, REVIEWER)
     // 审核员是来干活的，不是来打卡的（见 routes/roles.ts）

@@ -95,16 +95,12 @@ export default function ContextColumn({ detail, isStale, onAcceptRefreshed }: Co
         </Descriptions.Item>
       </Descriptions>
 
-      <div className="context-note">
-        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-          {zh.admin.review.note}
-        </Typography.Text>
-        <Typography.Paragraph style={{ marginBottom: 0, whiteSpace: 'pre-wrap' }}>
-          {detail.current_revision?.note || (
-            <Typography.Text type="secondary">{zh.admin.review.noNote}</Typography.Text>
-          )}
-        </Typography.Paragraph>
-      </div>
+      {/*
+        参赛者备注与申报明细不在这里 —— 它们搬到了中栏图片的下方
+        （MaterialsColumn），因为审核员是盯着图核对这些信息的。
+        上面那个「备注」（participant.remark）是**管理员对参赛者**的辅助线索，
+        是另一件东西，留在这里。
+      */}
 
       <Typography.Text strong style={{ display: 'block', marginTop: 16, marginBottom: 8 }}>
         {zh.admin.review.history}

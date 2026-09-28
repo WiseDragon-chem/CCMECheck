@@ -22,7 +22,8 @@ export const UPLOAD_HARD_MAX_BYTES = 50 * 1024 * 1024
 
 /**
  * multipart 编码本身的余量：每个 part 的头约 200 字节，
- * 文本字段（note / client_token / track）合计不到 2KB —— 64KiB 有二十倍以上富余。
+ * 文本字段（note / client_token / track / activity_date / word_count / exercise_type）
+ * 合计不到 2KB —— 64KiB 有二十倍以上富余。
  */
 export const UPLOAD_MULTIPART_OVERHEAD_BYTES = 64 * 1024
 

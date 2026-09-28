@@ -2,6 +2,7 @@ import { OVERALL_TRACK_SENTINEL, SCORING_ENTRY_STATUSES } from '../../config/con
 import { formatCstDateTime } from '../../core/time.js'
 import { toCsv } from '../../core/text.js'
 import { getPrismaClient, type Db } from '../../db/client.js'
+import { judgePoints } from '../../services/judge.service.js'
 import { buildScoredRows, loadScoringInputs } from '../../services/scoring.service.js'
 import { toScore } from '../leaderboards/service.js'
 
@@ -45,11 +46,22 @@ export async function exportCheckinsCsv(
     include: {
       track: { select: { slug: true, name: true } },
       participant: { include: { user: { select: { studentId: true, name: true } } } },
-      currentRevision: { select: { revisionNumber: true, note: true, submittedAt: true, _count: { select: { assets: true } } } },
+      currentRevision: {
+        select: {
+          revisionNumber: true,
+          note: true,
+          submittedAt: true,
+          wordCount: true,
+          exerciseType: true,
+          _count: { select: { assets: true } },
+        },
+      },
     },
   })
 
-  // 每条记录的得分以其所属赛道的当日分值计，未通过审核一律记 0
+  // 每条记录的得分走与排行榜同一个判定函数（judgePoints），未通过审核一律记 0 ——
+  // §16.16 要求导出与库内统计一致，所以这里不能另写一套规则。
+  // 赛道基础分仍作兜底：历史记录、读书赛道与补录都没有申报明细。
   const campaignTracks = await db.campaignTrack.findMany({
     where: { campaignId },
     include: { track: { select: { slug: true } } },
@@ -75,7 +87,16 @@ export async function exportCheckinsCsv(
 
   const rows = entries.map((entry) => {
     const points = SCORING_ENTRY_STATUSES.includes(entry.status as never)
-      ? (dailyPointsBySlug.get(entry.track.slug) ?? 0)
+      ? judgePoints({
+          trackSlug: entry.track.slug,
+          declaration: entry.currentRevision
+            ? {
+                wordCount: entry.currentRevision.wordCount,
+                exerciseType: entry.currentRevision.exerciseType,
+              }
+            : null,
+          basePoints: dailyPointsBySlug.get(entry.track.slug) ?? 0,
+        })
       : 0
 
     return [

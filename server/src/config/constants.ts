@@ -211,7 +211,8 @@ export const DEFAULT_TRACKS = [
     name: '读书',
     description: '每日阅读打卡',
     icon: 'book',
-    proofInstructions: '请上传包含阅读书名、当日日期与阅读页数或时长的截图。',
+    proofInstructions:
+      '上传包含阅读书名、当日日期与阅读页数或时长的截图，或填写阅读情况备注 —— 二者至少填一个。',
     sortOrder: 1,
   },
   {
@@ -219,7 +220,8 @@ export const DEFAULT_TRACKS = [
     name: '单词背诵',
     description: '每日单词背诵打卡',
     icon: 'language',
-    proofInstructions: '请上传单词软件的学习记录截图，截图需显示当日日期与背诵数量。',
+    proofInstructions:
+      '请上传单词软件的学习记录截图，截图需显示当日日期与背诵数量，并在下方填写当日背诵的单词数量。',
     sortOrder: 2,
   },
   {
@@ -227,7 +229,8 @@ export const DEFAULT_TRACKS = [
     name: '运动健身',
     description: '每日运动打卡',
     icon: 'run',
-    proofInstructions: '请上传运动记录截图，截图需显示日期、运动类型与运动时长。',
+    proofInstructions:
+      '请上传运动记录截图，截图需显示日期、运动类型与运动时长，并在下方选择本次运动的类型。',
     sortOrder: 3,
   },
 ] as const

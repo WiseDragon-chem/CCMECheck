@@ -8,7 +8,10 @@ import {
   ZoomOutOutlined,
 } from '@ant-design/icons'
 import { Button, Empty, Space, Tooltip, Typography } from 'antd'
+import type { ReviewEntryDetail } from '@/api/types'
 import SignedImage from '@/components/SignedImage'
+import { exerciseTypeLabel } from '@/components/exerciseTypeMeta'
+import { formatMilli } from '@/lib/milli'
 import { zh } from '@/locales/zh-CN'
 import { useHotkeys } from '../hooks/useHotkeys'
 
@@ -20,15 +23,13 @@ import { useHotkeys } from '../hooks/useHotkeys'
  * 于是「看着大图按了一下 A」会直接通过一条正在看的记录。
  * 自己持有状态才能在预览打开时把决策键关掉（见 useHotkeys 的注释）。
  */
-export interface MaterialAsset {
-  asset_id: string
-  width: number | null
-  height: number | null
-}
-
 export interface MaterialsColumnProps {
   entryId: string
-  assets: MaterialAsset[]
+  /**
+   * 当前版本。材料、申报明细与备注都从它取 —— 整块传进来，
+   * 比 assets / note / wordCount 各拆一个 prop 少一层会各自走样的中间状态。
+   */
+  revision: ReviewEntryDetail['current_revision']
   /** 补录的记录没有材料，文案要说明「这是正常的」而不是当成错误 */
   isManual: boolean
   /** 缩放/旋转/全屏状态变化时告知页面，用于闸掉决策快捷键 */
@@ -60,11 +61,12 @@ const INITIAL_VIEW = (entryId: string): ViewState => ({ entryId, activeIndex: 0,
 
 export default function MaterialsColumn({
   entryId,
-  assets,
+  revision,
   isManual,
   onViewModeChange,
   hotkeysEnabled,
 }: MaterialsColumnProps) {
+  const assets = revision?.assets ?? []
   /**
    * 视角状态**带着它属于哪一条记录**一起存。
    *
@@ -128,6 +130,17 @@ export default function MaterialsColumn({
 
   const asset = assets[view.activeIndex]
   const canZoom = assets.length > 0
+
+  /**
+   * 申报明细那一行。按赛道只认一个字段，两个都没有（读书、补录、历史记录）
+   * 时整行不渲染 —— 印一句「单词数量：—」只会占地方。
+   */
+  const declarationLine =
+    revision && typeof revision.word_count === 'number'
+      ? zh.admin.review.wordCountLine(revision.word_count)
+      : revision?.exercise_type
+        ? zh.admin.review.exerciseTypeLine(exerciseTypeLabel(revision.exercise_type))
+        : null
 
   return (
     <div className="review-pipeline__col review-pipeline__col--materials">
@@ -240,6 +253,43 @@ export default function MaterialsColumn({
           ))}
         </div>
       )}
+
+      {/*
+        备注栏在图片下方（不是右栏）：审核员的视线本来就停在图上，
+        而「申报了多少 / 值几分 / 他自己怎么说」是看图时用来对账的东西，
+        隔到另一栏去就得来回转头。
+        加粗放大是为了扫一眼就能看清，而不是当成附属信息略过。
+      */}
+      <div className="materials-note">
+        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+          {zh.admin.review.note}
+        </Typography.Text>
+
+        {/*
+          申报明细放最前、与备注分开：它是**机器事实**（分值就是按它判的），
+          而备注是参赛者自己写的话。历史记录、读书赛道与补录没有明细，整行不渲染。
+        */}
+        {declarationLine && (
+          <Typography.Text strong style={{ display: 'block', fontSize: 18, lineHeight: 1.5 }}>
+            {declarationLine}
+          </Typography.Text>
+        )}
+
+        <Typography.Text strong style={{ display: 'block', fontSize: 18, lineHeight: 1.5 }}>
+          {revision ? zh.admin.review.judgedPointsLine(formatMilli(revision.judged_points)) : ''}
+        </Typography.Text>
+
+        {/* 备注可能很长（最多 1000 字），所以它排在最后 ——
+            滚动只发生在它身上，上面两行永远看得见 */}
+        <Typography.Paragraph
+          strong
+          style={{ marginBottom: 0, marginTop: 4, fontSize: 17, whiteSpace: 'pre-wrap' }}
+        >
+          {revision?.note || (
+            <Typography.Text type="secondary">{zh.admin.review.noNote}</Typography.Text>
+          )}
+        </Typography.Paragraph>
+      </div>
     </div>
   )
 }

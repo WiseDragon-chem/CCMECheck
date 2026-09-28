@@ -809,9 +809,25 @@ body {
   justify-content: center;
 }
 
-/* 右栏：参赛者备注 */
-.context-note {
+/*
+ * 中栏底部：参赛者申报的明细、判定分值与备注。
+ *
+ * 三个约束共同决定了这里的写法：
+ *   * §8.2 要求 1280×720 下页面不滚动，而 .materials-stage 是 flex:1 ——
+ *     备注必须 flex: 0 0 auto，否则它会把图挤走，而不是自己被挤；
+ *   * 备注最长 1000 字，所以要有 max-height + overflow: auto：
+ *     让**备注自己滚动**，图片区的高度保持不变；
+ *   * 上方的申报明细与分值行不进滚动区，所以怎么滚都看得见。
+ */
+.materials-note {
+  flex: 0 0 auto;
+  max-height: 34%;
+  overflow: auto;
   margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid #f0f0f0;
 }
 
 /* 异常处理：按 ID 查到的那条记录的摘要 */

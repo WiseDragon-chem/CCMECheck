@@ -325,7 +325,21 @@ export function buildOpenApiDocument() {
               activity_date: z.string().openapi({ example: '2026-10-01' }),
               note: z.string().optional(),
               client_token: z.string().optional().openapi({ description: '幂等键，建议每个提交动作生成一次' }),
-              images: z.array(z.string().openapi({ format: 'binary' })).openapi({ description: '1–3 张证明材料' }),
+              /*
+                申报明细（judge.service.ts）：单词赛道必填数量，运动赛道必填类型，
+                读书赛道两个都不传。读书的证明材料也放宽为「图片与备注有一个即可」。
+              */
+              word_count: z
+                .string()
+                .optional()
+                .openapi({ description: '单词赛道必填：当日背诵数量（整数，不少于 30）' }),
+              exercise_type: z.string().optional().openapi({
+                description:
+                  '运动赛道必填：运动类型，取值 run_gt_2km / run_gt_3km / workout_30min / workout_60min',
+              }),
+              images: z
+                .array(z.string().openapi({ format: 'binary' }))
+                .openapi({ description: '证明材料，1–3 张；读书赛道可以为 0 张（填备注即可）' }),
             }),
           },
         },

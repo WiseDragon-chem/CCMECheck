@@ -1,3 +1,4 @@
+import { dailyCapTierProblem } from '../services/judge.service.js'
 import type { CampaignStatus, NameDisplayMode, TieBreakRule } from './constants.js'
 
 /**
@@ -24,7 +25,14 @@ export interface TrackRule {
   enabled: boolean
   /** 每次审核通过的得分 */
   dailyPoints: number
-  /** 每日得分上限；null = 不限 */
+  /**
+   * 每日得分上限；null = 不限。
+   *
+   * 单词与运动的分值是分档的（judge.service.ts），二档是 `dailyPoints` 的两倍。
+   * 因此这两个赛道的上限**必须为 null 或 ≥ 2 × dailyPoints** ——
+   * 低于它，二档会被静默压成基础分，而审核页仍显示判定值，两边对不上。
+   * `validateCampaignConfig` 会拒绝这种配置。
+   */
   dailyCap: number | null
   /** 整个活动的得分上限；null = 不限 */
   campaignCap: number | null
@@ -180,6 +188,17 @@ export function validateCampaignConfig(config: CampaignConfig = CAMPAIGN_CONFIG)
   }
   if (config.minImages > config.maxImages) {
     throw new Error(`最少图片数不能大于最多图片数：${config.minImages} > ${config.maxImages}`)
+  }
+
+  // 每日上限低于两倍基础分值会把二档压掉（见 dailyCapTierProblem 的说明）。
+  // 这里拦的是配置这一扇门，PATCH /admin/campaigns/tracks/:trackId 那扇门在路由里拦。
+  for (const [slug, rule] of Object.entries(config.tracks)) {
+    const problem = dailyCapTierProblem({
+      trackSlug: slug,
+      dailyPoints: rule.dailyPoints,
+      dailyCap: rule.dailyCap,
+    })
+    if (problem) throw new Error(problem)
   }
 }
 

@@ -39,13 +39,25 @@ describe('打卡提交', () => {
   })
 
   it('三个赛道可以分别完成当日打卡', async () => {
+    // 单词与运动必须带申报明细（judge.service.ts 的 resolveDeclaration），读书不用
+    const declarations: Record<string, Record<string, string>> = {
+      reading: {},
+      vocabulary: { word_count: '50' },
+      fitness: { exercise_type: 'run_gt_3km' },
+    }
+
     for (const track of ['reading', 'vocabulary', 'fitness']) {
-      const response = await authed(token)
+      const request = authed(token)
         .post('/api/v1/checkins')
         .field('track', track)
         .field('activity_date', ACTIVITY_DATE)
         .field('note', `${track} 打卡`)
-        .attach('images', jpeg, 'proof.jpg')
+
+      for (const [field, value] of Object.entries(declarations[track] ?? {})) {
+        request.field(field, value)
+      }
+
+      const response = await request.attach('images', jpeg, 'proof.jpg')
 
       expect(response.status, JSON.stringify(response.body)).toBe(201)
       expect(response.body.track.slug).toBe(track)
@@ -299,5 +311,132 @@ describe('打卡提交', () => {
     const response = await api().get('/api/v1/checkins/today')
     expect(response.status).toBe(401)
     expect(response.body.code).toBe('UNAUTHENTICATED')
+  })
+
+  describe('申报明细与分值梯度（design.md §9.1）', () => {
+    const submit = (fields: Record<string, string>, images = 1) => {
+      const request = authed(token).post('/api/v1/checkins')
+      for (const [key, value] of Object.entries(fields)) request.field(key, value)
+      for (let index = 0; index < images; index += 1) request.attach('images', jpeg, `proof-${index}.jpg`)
+      return request
+    }
+
+    /** 该赛道在今日接口上的累计积分（毫点） */
+    const trackScore = async (slug: string): Promise<number> => {
+      const response = await authed(token).get('/api/v1/checkins/today')
+      const card = (response.body.cards as Array<{ slug: string; track_score: number }>).find(
+        (item) => item.slug === slug,
+      )
+      if (!card) throw new Error(`今日接口没有 ${slug} 卡片`)
+      return card.track_score
+    }
+
+    it('单词赛道缺少数量时拒绝提交', async () => {
+      const response = await submit({ track: 'vocabulary', activity_date: ACTIVITY_DATE })
+
+      expect(response.status).toBe(400)
+      expect(response.body.code).toBe('VALIDATION_FAILED')
+      expect(await db.checkinEntry.count()).toBe(0)
+    })
+
+    it('单词数量少于下限时拒绝提交', async () => {
+      const response = await submit({
+        track: 'vocabulary',
+        activity_date: ACTIVITY_DATE,
+        word_count: '29',
+      })
+
+      expect(response.status).toBe(400)
+      expect(response.body.code).toBe('VALIDATION_FAILED')
+      expect(response.body.message).toContain('30')
+      expect(await db.checkinEntry.count()).toBe(0)
+    })
+
+    it('运动赛道缺少运动类型时拒绝提交', async () => {
+      const response = await submit({ track: 'fitness', activity_date: ACTIVITY_DATE })
+
+      expect(response.status).toBe(400)
+      expect(response.body.code).toBe('VALIDATION_FAILED')
+      expect(await db.checkinEntry.count()).toBe(0)
+    })
+
+    it('运动类型不在选项内时拒绝提交', async () => {
+      const response = await submit({
+        track: 'fitness',
+        activity_date: ACTIVITY_DATE,
+        exercise_type: 'swimming',
+      })
+
+      expect(response.status).toBe(400)
+      expect(response.body.code).toBe('VALIDATION_FAILED')
+    })
+
+    it('申报明细按原样落库在当前版本上', async () => {
+      await submit({ track: 'vocabulary', activity_date: ACTIVITY_DATE, word_count: '42' })
+
+      const revision = await db.submissionRevision.findFirstOrThrow({
+        where: { entry: { participantId } },
+      })
+      expect(revision.wordCount).toBe(42)
+      // 无关字段被清掉，不允许它流到计分器上
+      expect(revision.exerciseType).toBeNull()
+    })
+
+    it('读书赛道只填备注、不传图片也能提交', async () => {
+      const response = await submit(
+        { track: 'reading', activity_date: ACTIVITY_DATE, note: '读了《万历十五年》前两章' },
+        0,
+      )
+
+      expect(response.status, JSON.stringify(response.body)).toBe(201)
+      expect(response.body.asset_count).toBe(0)
+    })
+
+    it('读书赛道图片与备注都为空时拒绝提交', async () => {
+      const response = await submit({ track: 'reading', activity_date: ACTIVITY_DATE }, 0)
+
+      expect(response.status).toBe(400)
+      expect(response.body.code).toBe('VALIDATION_FAILED')
+      expect(await db.checkinEntry.count()).toBe(0)
+    })
+
+    /*
+      这条是整个梯度化改动的硬性规则（「一个打卡只能算一次分」）。
+      先交 35 个单词拿到 1 分，重开后改交 60 个再通过，总分必须是 2 分而不是 3 分。
+      它成立靠的是「分值从记录经 currentRevision 现算、从不从版本累加」，
+      所以任何把分值缓存到版本或做累加的改动都会在这里被拦下。
+    */
+    it('重新提交更高的档位是替换分值，不是累加', async () => {
+      await submit({ track: 'vocabulary', activity_date: ACTIVITY_DATE, word_count: '35', client_token: 'first-token-1' })
+      const entry = await db.checkinEntry.findFirstOrThrow({ where: { participantId } })
+
+      // 审核通过
+      await db.checkinEntry.update({
+        where: { id: entry.id },
+        data: { status: 'approved', reviewedAt: new Date() },
+      })
+      expect(await trackScore('vocabulary')).toBe(1000)
+
+      // 管理员重新开放后参赛者改交 60 个
+      await db.checkinEntry.update({ where: { id: entry.id }, data: { status: 'pending', reviewedAt: null } })
+      const resubmit = await submit({
+        track: 'vocabulary',
+        activity_date: ACTIVITY_DATE,
+        word_count: '60',
+        client_token: 'second-token-2',
+      })
+      expect(resubmit.status, JSON.stringify(resubmit.body)).toBe(201)
+      expect(resubmit.body.revision_number).toBe(2)
+
+      await db.checkinEntry.update({
+        where: { id: entry.id },
+        data: { status: 'approved', reviewedAt: new Date() },
+      })
+
+      // 2 分，不是 1 + 2 = 3 分
+      expect(await trackScore('vocabulary')).toBe(2000)
+      // 槽位始终只有一个
+      expect(await db.checkinEntry.count({ where: { participantId } })).toBe(1)
+    })
   })
 })

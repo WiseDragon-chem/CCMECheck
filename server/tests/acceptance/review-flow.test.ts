@@ -98,6 +98,58 @@ describe('§16.6 驳回原因显示给参赛者', () => {
     return card!
   }
 
+  async function submitVocabulary(wordCount: number, token: string): Promise<SubmitResult> {
+    const response = await authed(token)
+      .post('/api/v1/checkins')
+      .field('track', 'vocabulary')
+      .field('activity_date', ACTIVITY_DATE)
+      .field('word_count', String(wordCount))
+      .attach('images', jpeg, 'proof.jpg')
+
+    expect(response.status, JSON.stringify(response.body)).toBe(201)
+    return response.body as SubmitResult
+  }
+
+  // -------------------------------------------------------------------------
+  // 申报明细与判定分值 → 审核页可见（§9.1）
+  // -------------------------------------------------------------------------
+
+  it('审核详情带上申报明细与「通过后得几分」', async () => {
+    /*
+      梯度化之后同一个「通过」按钮对应的分值是变的，所以审核页必须能看到
+      判定结果 —— 否则审核员只能盲批，也发现不了虚报。
+      这条钉的是审核页渲染所依赖的那份契约。
+    */
+    const created = await submitVocabulary(50, token)
+
+    const detail = await authed(reviewerToken).get(`/api/v1/admin/reviews/${created.entry_id}`)
+    expect(detail.status, JSON.stringify(detail.body)).toBe(200)
+
+    expect(detail.body.current_revision.word_count).toBe(50)
+    expect(detail.body.current_revision.exercise_type).toBeNull()
+    // 50 个是二档：两倍基础分值
+    expect(detail.body.current_revision.judged_points).toBe(2000)
+  })
+
+  it('一档的判定值是一倍基础分值', async () => {
+    const created = await submitVocabulary(35, token)
+
+    const detail = await authed(reviewerToken).get(`/api/v1/admin/reviews/${created.entry_id}`)
+
+    expect(detail.body.current_revision.word_count).toBe(35)
+    expect(detail.body.current_revision.judged_points).toBe(1000)
+  })
+
+  it('读书赛道的判定值取基础分值，且没有申报明细', async () => {
+    const created = await submitReading()
+
+    const detail = await authed(reviewerToken).get(`/api/v1/admin/reviews/${created.entry_id}`)
+
+    expect(detail.body.current_revision.word_count).toBeNull()
+    expect(detail.body.current_revision.exercise_type).toBeNull()
+    expect(detail.body.current_revision.judged_points).toBe(1000)
+  })
+
   // -------------------------------------------------------------------------
   // 驳回 → 参赛者可见
   // -------------------------------------------------------------------------

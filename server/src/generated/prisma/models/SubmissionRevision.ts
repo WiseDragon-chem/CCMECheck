@@ -28,10 +28,12 @@ export type AggregateSubmissionRevision = {
 
 export type SubmissionRevisionAvgAggregateOutputType = {
   revisionNumber: number | null
+  wordCount: number | null
 }
 
 export type SubmissionRevisionSumAggregateOutputType = {
   revisionNumber: number | null
+  wordCount: number | null
 }
 
 export type SubmissionRevisionMinAggregateOutputType = {
@@ -41,6 +43,8 @@ export type SubmissionRevisionMinAggregateOutputType = {
   note: string | null
   submittedAt: Date | null
   submittedBy: string | null
+  wordCount: number | null
+  exerciseType: string | null
   clientToken: string | null
   createdAt: Date | null
 }
@@ -52,6 +56,8 @@ export type SubmissionRevisionMaxAggregateOutputType = {
   note: string | null
   submittedAt: Date | null
   submittedBy: string | null
+  wordCount: number | null
+  exerciseType: string | null
   clientToken: string | null
   createdAt: Date | null
 }
@@ -63,6 +69,8 @@ export type SubmissionRevisionCountAggregateOutputType = {
   note: number
   submittedAt: number
   submittedBy: number
+  wordCount: number
+  exerciseType: number
   clientToken: number
   createdAt: number
   _all: number
@@ -71,10 +79,12 @@ export type SubmissionRevisionCountAggregateOutputType = {
 
 export type SubmissionRevisionAvgAggregateInputType = {
   revisionNumber?: true
+  wordCount?: true
 }
 
 export type SubmissionRevisionSumAggregateInputType = {
   revisionNumber?: true
+  wordCount?: true
 }
 
 export type SubmissionRevisionMinAggregateInputType = {
@@ -84,6 +94,8 @@ export type SubmissionRevisionMinAggregateInputType = {
   note?: true
   submittedAt?: true
   submittedBy?: true
+  wordCount?: true
+  exerciseType?: true
   clientToken?: true
   createdAt?: true
 }
@@ -95,6 +107,8 @@ export type SubmissionRevisionMaxAggregateInputType = {
   note?: true
   submittedAt?: true
   submittedBy?: true
+  wordCount?: true
+  exerciseType?: true
   clientToken?: true
   createdAt?: true
 }
@@ -106,6 +120,8 @@ export type SubmissionRevisionCountAggregateInputType = {
   note?: true
   submittedAt?: true
   submittedBy?: true
+  wordCount?: true
+  exerciseType?: true
   clientToken?: true
   createdAt?: true
   _all?: true
@@ -204,6 +220,8 @@ export type SubmissionRevisionGroupByOutputType = {
   note: string | null
   submittedAt: Date
   submittedBy: string | null
+  wordCount: number | null
+  exerciseType: string | null
   clientToken: string | null
   createdAt: Date
   _count: SubmissionRevisionCountAggregateOutputType | null
@@ -238,6 +256,8 @@ export type SubmissionRevisionWhereInput = {
   note?: Prisma.StringNullableFilter<"SubmissionRevision"> | string | null
   submittedAt?: Prisma.DateTimeFilter<"SubmissionRevision"> | Date | string
   submittedBy?: Prisma.StringNullableFilter<"SubmissionRevision"> | string | null
+  wordCount?: Prisma.IntNullableFilter<"SubmissionRevision"> | number | null
+  exerciseType?: Prisma.StringNullableFilter<"SubmissionRevision"> | string | null
   clientToken?: Prisma.StringNullableFilter<"SubmissionRevision"> | string | null
   createdAt?: Prisma.DateTimeFilter<"SubmissionRevision"> | Date | string
   entry?: Prisma.XOR<Prisma.CheckinEntryScalarRelationFilter, Prisma.CheckinEntryWhereInput>
@@ -254,6 +274,8 @@ export type SubmissionRevisionOrderByWithRelationInput = {
   note?: Prisma.SortOrderInput | Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   submittedBy?: Prisma.SortOrderInput | Prisma.SortOrder
+  wordCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  exerciseType?: Prisma.SortOrderInput | Prisma.SortOrder
   clientToken?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   entry?: Prisma.CheckinEntryOrderByWithRelationInput
@@ -275,6 +297,8 @@ export type SubmissionRevisionWhereUniqueInput = Prisma.AtLeast<{
   note?: Prisma.StringNullableFilter<"SubmissionRevision"> | string | null
   submittedAt?: Prisma.DateTimeFilter<"SubmissionRevision"> | Date | string
   submittedBy?: Prisma.StringNullableFilter<"SubmissionRevision"> | string | null
+  wordCount?: Prisma.IntNullableFilter<"SubmissionRevision"> | number | null
+  exerciseType?: Prisma.StringNullableFilter<"SubmissionRevision"> | string | null
   clientToken?: Prisma.StringNullableFilter<"SubmissionRevision"> | string | null
   createdAt?: Prisma.DateTimeFilter<"SubmissionRevision"> | Date | string
   entry?: Prisma.XOR<Prisma.CheckinEntryScalarRelationFilter, Prisma.CheckinEntryWhereInput>
@@ -291,6 +315,8 @@ export type SubmissionRevisionOrderByWithAggregationInput = {
   note?: Prisma.SortOrderInput | Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   submittedBy?: Prisma.SortOrderInput | Prisma.SortOrder
+  wordCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  exerciseType?: Prisma.SortOrderInput | Prisma.SortOrder
   clientToken?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.SubmissionRevisionCountOrderByAggregateInput
@@ -310,6 +336,8 @@ export type SubmissionRevisionScalarWhereWithAggregatesInput = {
   note?: Prisma.StringNullableWithAggregatesFilter<"SubmissionRevision"> | string | null
   submittedAt?: Prisma.DateTimeWithAggregatesFilter<"SubmissionRevision"> | Date | string
   submittedBy?: Prisma.StringNullableWithAggregatesFilter<"SubmissionRevision"> | string | null
+  wordCount?: Prisma.IntNullableWithAggregatesFilter<"SubmissionRevision"> | number | null
+  exerciseType?: Prisma.StringNullableWithAggregatesFilter<"SubmissionRevision"> | string | null
   clientToken?: Prisma.StringNullableWithAggregatesFilter<"SubmissionRevision"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"SubmissionRevision"> | Date | string
 }
@@ -319,6 +347,8 @@ export type SubmissionRevisionCreateInput = {
   revisionNumber: number
   note?: string | null
   submittedAt?: Date | string
+  wordCount?: number | null
+  exerciseType?: string | null
   clientToken?: string | null
   createdAt?: Date | string
   entry: Prisma.CheckinEntryCreateNestedOneWithoutRevisionsInput
@@ -335,6 +365,8 @@ export type SubmissionRevisionUncheckedCreateInput = {
   note?: string | null
   submittedAt?: Date | string
   submittedBy?: string | null
+  wordCount?: number | null
+  exerciseType?: string | null
   clientToken?: string | null
   createdAt?: Date | string
   currentForEntry?: Prisma.CheckinEntryUncheckedCreateNestedOneWithoutCurrentRevisionInput
@@ -347,6 +379,8 @@ export type SubmissionRevisionUpdateInput = {
   revisionNumber?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  exerciseType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clientToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   entry?: Prisma.CheckinEntryUpdateOneRequiredWithoutRevisionsNestedInput
@@ -363,6 +397,8 @@ export type SubmissionRevisionUncheckedUpdateInput = {
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   submittedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  exerciseType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clientToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   currentForEntry?: Prisma.CheckinEntryUncheckedUpdateOneWithoutCurrentRevisionNestedInput
@@ -377,6 +413,8 @@ export type SubmissionRevisionCreateManyInput = {
   note?: string | null
   submittedAt?: Date | string
   submittedBy?: string | null
+  wordCount?: number | null
+  exerciseType?: string | null
   clientToken?: string | null
   createdAt?: Date | string
 }
@@ -386,6 +424,8 @@ export type SubmissionRevisionUpdateManyMutationInput = {
   revisionNumber?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  exerciseType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clientToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -397,6 +437,8 @@ export type SubmissionRevisionUncheckedUpdateManyInput = {
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   submittedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  exerciseType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clientToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -433,12 +475,15 @@ export type SubmissionRevisionCountOrderByAggregateInput = {
   note?: Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   submittedBy?: Prisma.SortOrder
+  wordCount?: Prisma.SortOrder
+  exerciseType?: Prisma.SortOrder
   clientToken?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type SubmissionRevisionAvgOrderByAggregateInput = {
   revisionNumber?: Prisma.SortOrder
+  wordCount?: Prisma.SortOrder
 }
 
 export type SubmissionRevisionMaxOrderByAggregateInput = {
@@ -448,6 +493,8 @@ export type SubmissionRevisionMaxOrderByAggregateInput = {
   note?: Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   submittedBy?: Prisma.SortOrder
+  wordCount?: Prisma.SortOrder
+  exerciseType?: Prisma.SortOrder
   clientToken?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -459,12 +506,15 @@ export type SubmissionRevisionMinOrderByAggregateInput = {
   note?: Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   submittedBy?: Prisma.SortOrder
+  wordCount?: Prisma.SortOrder
+  exerciseType?: Prisma.SortOrder
   clientToken?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type SubmissionRevisionSumOrderByAggregateInput = {
   revisionNumber?: Prisma.SortOrder
+  wordCount?: Prisma.SortOrder
 }
 
 export type SubmissionRevisionScalarRelationFilter = {
@@ -607,6 +657,8 @@ export type SubmissionRevisionCreateWithoutSubmitterInput = {
   revisionNumber: number
   note?: string | null
   submittedAt?: Date | string
+  wordCount?: number | null
+  exerciseType?: string | null
   clientToken?: string | null
   createdAt?: Date | string
   entry: Prisma.CheckinEntryCreateNestedOneWithoutRevisionsInput
@@ -621,6 +673,8 @@ export type SubmissionRevisionUncheckedCreateWithoutSubmitterInput = {
   revisionNumber: number
   note?: string | null
   submittedAt?: Date | string
+  wordCount?: number | null
+  exerciseType?: string | null
   clientToken?: string | null
   createdAt?: Date | string
   currentForEntry?: Prisma.CheckinEntryUncheckedCreateNestedOneWithoutCurrentRevisionInput
@@ -663,6 +717,8 @@ export type SubmissionRevisionScalarWhereInput = {
   note?: Prisma.StringNullableFilter<"SubmissionRevision"> | string | null
   submittedAt?: Prisma.DateTimeFilter<"SubmissionRevision"> | Date | string
   submittedBy?: Prisma.StringNullableFilter<"SubmissionRevision"> | string | null
+  wordCount?: Prisma.IntNullableFilter<"SubmissionRevision"> | number | null
+  exerciseType?: Prisma.StringNullableFilter<"SubmissionRevision"> | string | null
   clientToken?: Prisma.StringNullableFilter<"SubmissionRevision"> | string | null
   createdAt?: Prisma.DateTimeFilter<"SubmissionRevision"> | Date | string
 }
@@ -672,6 +728,8 @@ export type SubmissionRevisionCreateWithoutCurrentForEntryInput = {
   revisionNumber: number
   note?: string | null
   submittedAt?: Date | string
+  wordCount?: number | null
+  exerciseType?: string | null
   clientToken?: string | null
   createdAt?: Date | string
   entry: Prisma.CheckinEntryCreateNestedOneWithoutRevisionsInput
@@ -687,6 +745,8 @@ export type SubmissionRevisionUncheckedCreateWithoutCurrentForEntryInput = {
   note?: string | null
   submittedAt?: Date | string
   submittedBy?: string | null
+  wordCount?: number | null
+  exerciseType?: string | null
   clientToken?: string | null
   createdAt?: Date | string
   assets?: Prisma.SubmissionAssetUncheckedCreateNestedManyWithoutRevisionInput
@@ -703,6 +763,8 @@ export type SubmissionRevisionCreateWithoutEntryInput = {
   revisionNumber: number
   note?: string | null
   submittedAt?: Date | string
+  wordCount?: number | null
+  exerciseType?: string | null
   clientToken?: string | null
   createdAt?: Date | string
   currentForEntry?: Prisma.CheckinEntryCreateNestedOneWithoutCurrentRevisionInput
@@ -717,6 +779,8 @@ export type SubmissionRevisionUncheckedCreateWithoutEntryInput = {
   note?: string | null
   submittedAt?: Date | string
   submittedBy?: string | null
+  wordCount?: number | null
+  exerciseType?: string | null
   clientToken?: string | null
   createdAt?: Date | string
   currentForEntry?: Prisma.CheckinEntryUncheckedCreateNestedOneWithoutCurrentRevisionInput
@@ -749,6 +813,8 @@ export type SubmissionRevisionUpdateWithoutCurrentForEntryInput = {
   revisionNumber?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  exerciseType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clientToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   entry?: Prisma.CheckinEntryUpdateOneRequiredWithoutRevisionsNestedInput
@@ -764,6 +830,8 @@ export type SubmissionRevisionUncheckedUpdateWithoutCurrentForEntryInput = {
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   submittedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  exerciseType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clientToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   assets?: Prisma.SubmissionAssetUncheckedUpdateManyWithoutRevisionNestedInput
@@ -791,6 +859,8 @@ export type SubmissionRevisionCreateWithoutAssetsInput = {
   revisionNumber: number
   note?: string | null
   submittedAt?: Date | string
+  wordCount?: number | null
+  exerciseType?: string | null
   clientToken?: string | null
   createdAt?: Date | string
   entry: Prisma.CheckinEntryCreateNestedOneWithoutRevisionsInput
@@ -806,6 +876,8 @@ export type SubmissionRevisionUncheckedCreateWithoutAssetsInput = {
   note?: string | null
   submittedAt?: Date | string
   submittedBy?: string | null
+  wordCount?: number | null
+  exerciseType?: string | null
   clientToken?: string | null
   createdAt?: Date | string
   currentForEntry?: Prisma.CheckinEntryUncheckedCreateNestedOneWithoutCurrentRevisionInput
@@ -833,6 +905,8 @@ export type SubmissionRevisionUpdateWithoutAssetsInput = {
   revisionNumber?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  exerciseType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clientToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   entry?: Prisma.CheckinEntryUpdateOneRequiredWithoutRevisionsNestedInput
@@ -848,6 +922,8 @@ export type SubmissionRevisionUncheckedUpdateWithoutAssetsInput = {
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   submittedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  exerciseType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clientToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   currentForEntry?: Prisma.CheckinEntryUncheckedUpdateOneWithoutCurrentRevisionNestedInput
@@ -859,6 +935,8 @@ export type SubmissionRevisionCreateWithoutReviewActionsInput = {
   revisionNumber: number
   note?: string | null
   submittedAt?: Date | string
+  wordCount?: number | null
+  exerciseType?: string | null
   clientToken?: string | null
   createdAt?: Date | string
   entry: Prisma.CheckinEntryCreateNestedOneWithoutRevisionsInput
@@ -874,6 +952,8 @@ export type SubmissionRevisionUncheckedCreateWithoutReviewActionsInput = {
   note?: string | null
   submittedAt?: Date | string
   submittedBy?: string | null
+  wordCount?: number | null
+  exerciseType?: string | null
   clientToken?: string | null
   createdAt?: Date | string
   currentForEntry?: Prisma.CheckinEntryUncheckedCreateNestedOneWithoutCurrentRevisionInput
@@ -901,6 +981,8 @@ export type SubmissionRevisionUpdateWithoutReviewActionsInput = {
   revisionNumber?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  exerciseType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clientToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   entry?: Prisma.CheckinEntryUpdateOneRequiredWithoutRevisionsNestedInput
@@ -916,6 +998,8 @@ export type SubmissionRevisionUncheckedUpdateWithoutReviewActionsInput = {
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   submittedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  exerciseType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clientToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   currentForEntry?: Prisma.CheckinEntryUncheckedUpdateOneWithoutCurrentRevisionNestedInput
@@ -928,6 +1012,8 @@ export type SubmissionRevisionCreateManySubmitterInput = {
   revisionNumber: number
   note?: string | null
   submittedAt?: Date | string
+  wordCount?: number | null
+  exerciseType?: string | null
   clientToken?: string | null
   createdAt?: Date | string
 }
@@ -937,6 +1023,8 @@ export type SubmissionRevisionUpdateWithoutSubmitterInput = {
   revisionNumber?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  exerciseType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clientToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   entry?: Prisma.CheckinEntryUpdateOneRequiredWithoutRevisionsNestedInput
@@ -951,6 +1039,8 @@ export type SubmissionRevisionUncheckedUpdateWithoutSubmitterInput = {
   revisionNumber?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  exerciseType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clientToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   currentForEntry?: Prisma.CheckinEntryUncheckedUpdateOneWithoutCurrentRevisionNestedInput
@@ -964,6 +1054,8 @@ export type SubmissionRevisionUncheckedUpdateManyWithoutSubmitterInput = {
   revisionNumber?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  exerciseType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clientToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -974,6 +1066,8 @@ export type SubmissionRevisionCreateManyEntryInput = {
   note?: string | null
   submittedAt?: Date | string
   submittedBy?: string | null
+  wordCount?: number | null
+  exerciseType?: string | null
   clientToken?: string | null
   createdAt?: Date | string
 }
@@ -983,6 +1077,8 @@ export type SubmissionRevisionUpdateWithoutEntryInput = {
   revisionNumber?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  exerciseType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clientToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   currentForEntry?: Prisma.CheckinEntryUpdateOneWithoutCurrentRevisionNestedInput
@@ -997,6 +1093,8 @@ export type SubmissionRevisionUncheckedUpdateWithoutEntryInput = {
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   submittedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  exerciseType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clientToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   currentForEntry?: Prisma.CheckinEntryUncheckedUpdateOneWithoutCurrentRevisionNestedInput
@@ -1010,6 +1108,8 @@ export type SubmissionRevisionUncheckedUpdateManyWithoutEntryInput = {
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   submittedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  exerciseType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clientToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1061,6 +1161,8 @@ export type SubmissionRevisionSelect<ExtArgs extends runtime.Types.Extensions.In
   note?: boolean
   submittedAt?: boolean
   submittedBy?: boolean
+  wordCount?: boolean
+  exerciseType?: boolean
   clientToken?: boolean
   createdAt?: boolean
   entry?: boolean | Prisma.CheckinEntryDefaultArgs<ExtArgs>
@@ -1078,6 +1180,8 @@ export type SubmissionRevisionSelectCreateManyAndReturn<ExtArgs extends runtime.
   note?: boolean
   submittedAt?: boolean
   submittedBy?: boolean
+  wordCount?: boolean
+  exerciseType?: boolean
   clientToken?: boolean
   createdAt?: boolean
   entry?: boolean | Prisma.CheckinEntryDefaultArgs<ExtArgs>
@@ -1091,6 +1195,8 @@ export type SubmissionRevisionSelectUpdateManyAndReturn<ExtArgs extends runtime.
   note?: boolean
   submittedAt?: boolean
   submittedBy?: boolean
+  wordCount?: boolean
+  exerciseType?: boolean
   clientToken?: boolean
   createdAt?: boolean
   entry?: boolean | Prisma.CheckinEntryDefaultArgs<ExtArgs>
@@ -1104,11 +1210,13 @@ export type SubmissionRevisionSelectScalar = {
   note?: boolean
   submittedAt?: boolean
   submittedBy?: boolean
+  wordCount?: boolean
+  exerciseType?: boolean
   clientToken?: boolean
   createdAt?: boolean
 }
 
-export type SubmissionRevisionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "entryId" | "revisionNumber" | "note" | "submittedAt" | "submittedBy" | "clientToken" | "createdAt", ExtArgs["result"]["submissionRevision"]>
+export type SubmissionRevisionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "entryId" | "revisionNumber" | "note" | "submittedAt" | "submittedBy" | "wordCount" | "exerciseType" | "clientToken" | "createdAt", ExtArgs["result"]["submissionRevision"]>
 export type SubmissionRevisionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   entry?: boolean | Prisma.CheckinEntryDefaultArgs<ExtArgs>
   currentForEntry?: boolean | Prisma.SubmissionRevision$currentForEntryArgs<ExtArgs>
@@ -1142,6 +1250,19 @@ export type $SubmissionRevisionPayload<ExtArgs extends runtime.Types.Extensions.
     note: string | null
     submittedAt: Date
     submittedBy: string | null
+    /**
+     * 参赛者申报的打卡明细，决定这一版值几分（见 src/services/judge.service.ts）。
+     * 单词赛道用 wordCount，运动赛道用 exerciseType，读书与历史记录两者皆空。
+     * 
+     * 刻意可空：历史记录没有这两个值，给非空默认值等于撒谎。
+     * 也刻意**不**在这里存判定出来的分值 —— 分值必须每次从 checkin_entries
+     * 经 currentRevision 现算，否则「一个打卡只算一次分」会被破坏。
+     */
+    wordCount: number | null
+    /**
+     * 取值见 judge.service.ts 的 FITNESS_EXERCISE_TYPES
+     */
+    exerciseType: string | null
     /**
      * 防重复点击：同一 entry 下同一 client_token 只产生一个版本（design.md §7.4）
      */
@@ -1581,6 +1702,8 @@ export interface SubmissionRevisionFieldRefs {
   readonly note: Prisma.FieldRef<"SubmissionRevision", 'String'>
   readonly submittedAt: Prisma.FieldRef<"SubmissionRevision", 'DateTime'>
   readonly submittedBy: Prisma.FieldRef<"SubmissionRevision", 'String'>
+  readonly wordCount: Prisma.FieldRef<"SubmissionRevision", 'Int'>
+  readonly exerciseType: Prisma.FieldRef<"SubmissionRevision", 'String'>
   readonly clientToken: Prisma.FieldRef<"SubmissionRevision", 'String'>
   readonly createdAt: Prisma.FieldRef<"SubmissionRevision", 'DateTime'>
 }

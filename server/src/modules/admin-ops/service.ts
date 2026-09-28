@@ -11,6 +11,7 @@ import { AppError, notFound } from '../../core/errors.js'
 import { getPrismaClient, type Db } from '../../db/client.js'
 import { runInTransaction } from '../../db/tx.js'
 import { auditContextFrom, recordAudit } from '../../services/audit.service.js'
+import { resolveDeclaration } from '../../services/judge.service.js'
 import { requireCurrentCampaign } from '../campaigns/service.js'
 
 /**
@@ -402,6 +403,9 @@ export interface CreateManualEntryInput {
   activityDate: string
   reason: string
   note?: string | undefined
+  /** 申报明细（design.md §9.1）：单词与运动必填，读书不填 */
+  wordCount?: number | undefined
+  exerciseType?: string | undefined
   status: 'pending' | 'approved'
   actor: AdminActor
   audit: AuditContext
@@ -443,6 +447,25 @@ export async function createManualEntry(input: CreateManualEntryInput): Promise<
 
   const trackId = campaignTrack.trackId
   const trackSlug = campaignTrack.track.slug
+
+  /*
+    补录的申报明细走与参赛者提交**同一个**校验函数 —— 两条路径的规则必须一致，
+    否则「自己交的 60 分钟运动记 2 分、补录的同一条记 1 分」，没人解释得清。
+    补录版本的 note 一定会被写出来（见下面），所以读书赛道「图片或备注有一个」
+    这条在这里由备注满足。
+  */
+  const note = input.note
+    ? `管理员补录：${input.reason}；备注：${input.note}`
+    : `管理员补录：${input.reason}`
+  const { declaration } = resolveDeclaration({
+    trackSlug,
+    wordCount: input.wordCount,
+    exerciseType: input.exerciseType,
+    note,
+    // 补录没有材料，图片数恒为 0
+    imageCount: 0,
+    campaignMinImages: campaign.minImages,
+  })
 
   const result = await runInTransaction(prisma, async (tx) => {
     // 唯一约束 (participant_id, track_id, activity_date)：补录只能新增槽位，不能覆盖已有记录。
@@ -488,7 +511,9 @@ export async function createManualEntry(input: CreateManualEntryInput): Promise<
       data: {
         entryId: entry.id,
         revisionNumber: 1,
-        note: input.note ? `管理员补录：${input.reason}；备注：${input.note}` : `管理员补录：${input.reason}`,
+        note,
+        wordCount: declaration.wordCount,
+        exerciseType: declaration.exerciseType,
         submittedAt: now,
         submittedBy: input.actor.userId,
       },

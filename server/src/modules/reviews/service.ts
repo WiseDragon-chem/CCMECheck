@@ -11,6 +11,7 @@ import { cstInstantOf, cstToday } from '../../core/time.js'
 import { getPrismaClient, type Db } from '../../db/client.js'
 import { runInTransaction } from '../../db/tx.js'
 import { auditContextFrom, recordAudit } from '../../services/audit.service.js'
+import { judgePoints } from '../../services/judge.service.js'
 import { requireCurrentCampaign } from '../campaigns/service.js'
 
 /**
@@ -212,6 +213,17 @@ export interface ReviewEntryDetail {
     revision_id: string
     revision_number: number
     note: string | null
+    /** 参赛者申报的明细（design.md §9.1）：单词数量或运动类型，读书与历史记录为空 */
+    word_count: number | null
+    exercise_type: string | null
+    /**
+     * 这一版通过审核后值多少分（毫点，1000 = 1 分）。
+     *
+     * 梯度化之后同一个「通过」按钮对应的分值是变的，审核员看不到它就只能盲批；
+     * 它同时也能暴露虚报（填了 50 个但截图明显不够）。
+     * 值由服务端的 judgePoints 判定，与榜单、CSV 导出同源。
+     */
+    judged_points: number
     submitted_at: string
     assets: Array<{ asset_id: string; width: number | null; height: number | null; sort_order: number }>
   } | null
@@ -245,7 +257,17 @@ export async function getReviewEntryDetail(entryId: string): Promise<ReviewEntry
       participant: {
         include: { user: { select: { studentId: true, name: true } } },
       },
-      track: { select: { id: true, slug: true, name: true } },
+      // 连赛道在**本活动**里的计分规则一起取：判定分值要拿 daily_points 兜底，
+      // 而审核页显示的分值必须与榜单一致。campaignTracks 是同一张表上的关系，
+      // 所以这是零额外查询（与 checkins/service.ts 的取法一致）。
+      track: {
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          campaignTracks: { select: { campaignId: true, dailyPoints: true } },
+        },
+      },
       currentRevision: {
         include: { assets: { orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] } },
       },
@@ -270,6 +292,13 @@ export async function getReviewEntryDetail(entryId: string): Promise<ReviewEntry
   if (!entry) throw notFound('打卡记录不存在')
 
   const currentRevisionId = entry.currentRevisionId
+  // 判定的兜底分值：赛道在本活动里的 daily_points。
+  // 查不到（理论上不会）时回退 0，宁可显示 0 分也要让审核页画得出来。
+  const campaignTrack = entry.track.campaignTracks.find((item) => item.campaignId === entry.campaignId)
+  const declaration = {
+    wordCount: entry.currentRevision?.wordCount ?? null,
+    exerciseType: entry.currentRevision?.exerciseType ?? null,
+  }
 
   return {
     entry_id: entry.id,
@@ -297,6 +326,13 @@ export async function getReviewEntryDetail(entryId: string): Promise<ReviewEntry
           revision_id: entry.currentRevision.id,
           revision_number: entry.currentRevision.revisionNumber,
           note: entry.currentRevision.note,
+          word_count: entry.currentRevision.wordCount,
+          exercise_type: entry.currentRevision.exerciseType,
+          judged_points: judgePoints({
+            trackSlug: entry.track.slug,
+            declaration,
+            basePoints: campaignTrack?.dailyPoints ?? 0,
+          }),
           submitted_at: entry.currentRevision.submittedAt.toISOString(),
           assets: entry.currentRevision.assets.map((asset) => ({
             asset_id: asset.id,

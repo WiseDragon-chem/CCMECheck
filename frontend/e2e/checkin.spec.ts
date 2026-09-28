@@ -31,7 +31,12 @@ test.describe('参赛者打卡', () => {
     // 未选图时提交按钮不可用，并说明原因
     const submit = page.getByRole('button', { name: /提\s*交/ })
     await expect(submit).toBeDisabled()
-    await expect(page.getByText(/至少需要 1 张证明材料/)).toBeVisible()
+    /*
+      落到的是读书赛道（.first() = sortOrder 1）。它的材料要求比其他赛道宽：
+      图片与备注有一个即可（§9.1 读书固定 1 分、不看量），所以这里说的是
+      「二者至少填一个」，而不是「至少需要 1 张证明材料」。
+    */
+    await expect(page.getByText('请上传证明材料或填写备注，二者至少填一个')).toBeVisible()
 
     // 选一张真实的 PNG，走完整个上传流水线（含服务端的解码与 EXIF 剥离）
     await page.setInputFiles('input[type="file"]', testImage())
@@ -167,5 +172,70 @@ test.describe('参赛者打卡', () => {
     await expect(page.getByText('提交信息')).toBeVisible()
     await expect(page.getByText('第 2 版')).toBeVisible()
     await expect(page.getByText(/提交历史（1 个较早版本）/)).toBeVisible()
+  })
+
+  test('单词赛道必须填数量：低于下限时不能提交（§9.1）', async ({ page }) => {
+    // 直接进赛道页，不依赖主页卡片的顺序
+    await login(page, FRESH_PARTICIPANTS[1])
+    await page.goto('/checkin/vocabulary')
+
+    const submit = page.getByRole('button', { name: /提\s*交/ })
+    const wordCount = page.getByRole('spinbutton')
+
+    // 材料齐了但没填数量：仍然不能提交，并说明差什么
+    await page.setInputFiles('input[type="file"]', testImage())
+    await expect(page.locator('.image-thumb')).toHaveCount(1)
+    await expect(submit).toBeDisabled()
+    await expect(page.getByText('请填写当日背诵的单词数量')).toBeVisible()
+
+    /*
+      低于下限：按钮仍禁用，提示换成具体的下限。
+      这里同时守住了「不静默夹到 30」——用户填的 20 必须原样留着，
+      否则他会以为交上去的是 20。
+    */
+    await wordCount.fill('20')
+    await expect(wordCount).toHaveValue('20')
+    await expect(submit).toBeDisabled()
+    await expect(page.getByText(/单词数量不能少于 30 个/)).toBeVisible()
+
+    // 达到下限：可以提交，服务端接受这个数量
+    await wordCount.fill('50')
+    await expect(submit).toBeEnabled()
+    await submit.click()
+    await page.waitForURL('**/home', { timeout: 30_000 })
+    await expect(page.getByText('已提交，等待审核').first()).toBeVisible()
+  })
+
+  test('读书赛道只填备注、不传图片也能提交（§9.1）', async ({ page }) => {
+    /*
+      读书固定 1 分、不看量，所以材料要求放宽到「图片与备注有一个即可」。
+      用一个已有待审核记录的账号走「重新提交」，免得占用别的用例的干净赛道 ——
+      该账号此时只有读书是待审核的，所以这条按钮必然是读书的那一条。
+    */
+    await login(page, FRESH_PARTICIPANTS[2])
+
+    const resubmit = page.getByRole('button', { name: '重新提交' }).first()
+    await expect(resubmit).toBeVisible()
+    await resubmit.click()
+    await page.waitForURL('**/checkin/**')
+
+    const submit = page.getByRole('button', { name: /提\s*交/ })
+    // 图片与备注都空 → 不能提交，且给的是读书赛道特有的那句提示
+    // （它同时也证明了我们确实在读书赛道上）
+    await expect(submit).toBeDisabled()
+    await expect(page.getByText('请上传证明材料或填写备注，二者至少填一个')).toBeVisible()
+
+    /*
+      只写备注就够了，一张图都不传。
+      按 placeholder 定位而不是 `textarea`：antd 的 TextArea 会为 autoSize
+      额外渲染一个 hiddenTextarea，裸选择器会命中两个元素。
+    */
+    await page.getByPlaceholder('可选，补充说明本次打卡的内容').fill('读了《万历十五年》第一、二章')
+    await expect(page.locator('.image-thumb')).toHaveCount(0)
+    await expect(submit).toBeEnabled()
+
+    await submit.click()
+    await page.waitForURL('**/home', { timeout: 30_000 })
+    await expect(page.getByText('已提交，等待审核').first()).toBeVisible()
   })
 })

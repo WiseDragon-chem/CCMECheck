@@ -384,7 +384,7 @@ export default function ReviewPipelinePage() {
         ) : (
           <MaterialsColumn
             entryId={cursorId}
-            assets={detail?.current_revision?.assets ?? []}
+            revision={detail?.current_revision ?? null}
             isManual={detail?.is_manual ?? false}
             onViewModeChange={setViewBusy}
             hotkeysEnabled={!modalOpen}

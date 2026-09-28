@@ -67,6 +67,8 @@ describe('提交表单构造', () => {
       track: 'reading',
       activityDate: '2026-10-01',
       note: null,
+      wordCount: null,
+      exerciseType: null,
       clientToken: 'token-1',
       images: [c, a, b],
     })
@@ -84,6 +86,8 @@ describe('提交表单构造', () => {
       track: 'reading',
       activityDate: '2026-10-01',
       note: null,
+      wordCount: null,
+      exerciseType: null,
       clientToken: 't',
       images: [a, b],
     })
@@ -91,6 +95,8 @@ describe('提交表单构造', () => {
       track: 'reading',
       activityDate: '2026-10-01',
       note: null,
+      wordCount: null,
+      exerciseType: null,
       clientToken: 't',
       images: [b, a],
     })
@@ -104,6 +110,8 @@ describe('提交表单构造', () => {
       track: 'fitness',
       activityDate: '2026-10-02',
       note: '跑了 5 公里',
+      wordCount: null,
+      exerciseType: 'run_gt_3km',
       clientToken: 'abc-123',
       images: [file('a.jpg', JPEG_HEAD)],
     })
@@ -112,6 +120,41 @@ describe('提交表单构造', () => {
     expect(form.get('activity_date')).toBe('2026-10-02')
     expect(form.get('client_token')).toBe('abc-123')
     expect(form.get('note')).toBe('跑了 5 公里')
+    expect(form.get('exercise_type')).toBe('run_gt_3km')
+  })
+
+  /*
+    申报明细的「有值才 append」是刻意的：服务端 schema 的 transform 依赖字段缺失，
+    传空串会被转成 null 之外的东西（word_count 的空串甚至会变成数字 0）。
+  */
+  it('申报明细按赛道传递，无关字段不传', () => {
+    const vocabulary = buildCheckinFormData({
+      track: 'vocabulary',
+      activityDate: '2026-10-01',
+      note: null,
+      wordCount: 50,
+      exerciseType: null,
+      clientToken: 't',
+      images: [file('a.jpg', JPEG_HEAD)],
+    })
+
+    expect(vocabulary.get('word_count')).toBe('50')
+    expect(vocabulary.get('exercise_type')).toBeNull()
+  })
+
+  it('没有申报明细时不传这两个字段，而不是传空串', () => {
+    const reading = buildCheckinFormData({
+      track: 'reading',
+      activityDate: '2026-10-01',
+      note: '读了 30 页',
+      wordCount: null,
+      exerciseType: null,
+      clientToken: 't',
+      images: [],
+    })
+
+    expect(reading.get('word_count')).toBeNull()
+    expect(reading.get('exercise_type')).toBeNull()
   })
 
   it('备注为空时不传该字段，而不是传一个空串', () => {
@@ -119,6 +162,8 @@ describe('提交表单构造', () => {
       track: 'reading',
       activityDate: '2026-10-01',
       note: null,
+      wordCount: null,
+      exerciseType: null,
       clientToken: 't',
       images: [file('a.jpg', JPEG_HEAD)],
     })

@@ -43,6 +43,25 @@ export const submitCheckinFieldsSchema = z.object({
     .max(1000)
     .optional()
     .transform((value) => (value === undefined || value === '' ? null : value)),
+  /**
+   * 申报明细（design.md §9.1）：单词赛道填数量，运动赛道填类型，读书两个都不填。
+   *
+   * 这里只做「文本 → 数字 / 空值」的搬运，**取值是否合法由 judge.service.ts 判定** ——
+   * 规则只有一份，schema 不复制一遍阈值。
+   *
+   * 「读书的图片与备注至少有一个」这类跨字段规则在这里表达不了：
+   * 图片走的是 multer，schema 看不到它（见 routes.ts 的 uploadedImages）。
+   */
+  word_count: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value === undefined || value === '' ? null : Number(value))),
+  exercise_type: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value === undefined || value === '' ? null : value)),
   /** 客户端生成的幂等键，防止重复点击产生重复版本（design.md §7.4） */
   client_token: z
     .string()

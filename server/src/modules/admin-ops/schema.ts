@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { DEFAULT_REOPEN_MINUTES, MAX_REOPEN_MINUTES } from '../../config/constants.js'
 import { dateOnlySchema, idSchema } from '../../core/validation.js'
+import { FITNESS_EXERCISE_TYPES } from '../../services/judge.service.js'
 
 /**
  * §8.5 异常处理的操作载荷。
@@ -50,6 +51,13 @@ export const createManualEntryBodySchema = z.object({
   reason: reasonSchema,
   /** 补录备注，会写进补录版本的 note */
   note: z.string().trim().max(2000).optional(),
+  /**
+   * 申报明细（design.md §9.1）。单词与运动赛道**必填**，规则与参赛者自己提交
+   * 完全一致（judge.service.ts 的 resolveDeclaration）：补录记录没有后续编辑入口，
+   * 不在这里采集就永远是错的档位。
+   */
+  word_count: z.coerce.number().int().optional(),
+  exercise_type: z.enum(FITNESS_EXERCISE_TYPES).optional(),
   /** 默认 pending：补录也要走审核；确需直接计入时显式传 approved */
   status: z.enum(['pending', 'approved']).default('pending'),
 })
