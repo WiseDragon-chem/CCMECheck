@@ -327,40 +327,65 @@ body {
 
 /* ---- 赞助商展示 ---- */
 .sponsor {
-  margin-top: 16px;
+  /*
+    宽度上限 500px，产品定的。手机的内容区只有 380px，这条不起作用；
+    起作用的是桌面：首页内容区 992px，不限宽的话图按比例要 684px 高，
+    一条广告占满整屏。收在 500 之后，桌面的大小与手机接近（500 比 380 略大）。
+    超过 500 的部分不是「留白」而是**居中**：贴着左边、右边空一片看着像坏了。
+  */
+  max-width: 500px;
+  margin: 16px auto 0;
 }
 
 .sponsor__thanks {
   margin: 0 0 6px;
-  font-size: 12px;
-  color: rgba(0, 0, 0, 0.45);
+  /* 13px：产品要求比原来（12px）略大一点。上一版里这一行长高一点要从画面框
+     的预算里扣（否则顶出滚动条），现在没有那份预算了 —— 它与画面高度相加
+     就是这一块的占地，页面该滚就滚 */
+  font-size: 13px;
+  /* 正文黑，不是原来那种次要信息的灰（0.45）—— 产品要求这行当正文看。
+     0.88 是 antd 的 colorText，页面上其它没写颜色的正文都是这个值，
+     所以这里跟着写它，而不是 #000：纯黑会比周围所有字都更重 */
+  color: rgba(0, 0, 0, 0.88);
+}
+
+/* 赞助商名字。用 <strong> 的语义，字重按本项目的习惯写 600（不是浏览器的
+   700）：同一行前半句是 400，600 已经足够拉开主次，还不至于比正文标题更重 */
+.sponsor__thanks-brand {
+  font-weight: 600;
 }
 
 .sponsor__frame {
-  /* 高度由 SponsorBanner 按页面剩余空间算出来，以 CSS 变量传进来。
-     这里不写定值：写一个数只会在两端各错一次 —— 首页给不了那么多，
-     「我的」页又远不止那么多。 */
-  height: var(--sponsor-height);
+  /* 高度不写：由图片自己撑起来（见下面的 .sponsor__img），框跟着长。
+     上一版这里挂的是一份「按页面剩余空间算出来的像素预算」，为的是让参赛者端
+     一屏放得下 —— 产品已经改口径：赞助图尽量大，页面该滚就滚。
+     取舍见 design.md §7.7。 */
   /* 不填底色：赞助商图多是白底的，填浅灰反而在框里显出一块白方块。
      一条细边框只负责把这一个位划出来 */
   border: 1px solid #f0f0f0;
   border-radius: 8px;
   overflow: hidden;
-  /* react-slick 会给它包出来的每一层塞 display: inline-block，
-     行盒的 strut 会让画面比算出来的高度多出几个像素。这一条不能删：
-     整页不滚动是按像素算的预算，多出来的几像素就够顶出滚动条。 */
-  line-height: 0;
 }
 
 .sponsor__img {
+  /* 只有一张图时不套轮播（见 SponsorBanner），这条是给那种情形用的：
+     独占一行，行盒里不留任何东西。多张图走轮播时 slick 会把 display 覆盖成
+     inline-block（它的行内样式里写死了），那条路靠下面的 vertical-align 兜。 */
   display: block;
+  /* 铺满内容区宽度，高度跟着原图比例 —— 这就是「尽量放大」的全部实现：
+     不需要 object-fit（宽度 100% 加高度 auto 永远与原图同比例，裁不到也
+     拉不扁），也不需要知道图片多大。 */
   width: 100%;
-  /* 高度同样取那个变量，而不是 height: 100%：antd Carousel 的 DOM 是
-     .slick-slide > div > div 再套图片，百分比高度要逐层传递才成立。
-     取到一个像素值之后，图片再大也撑不高这一屏。
-     contain 而不是 cover：赞助商的 logo 不该被裁掉。 */
-  height: var(--sponsor-height);
-  object-fit: contain;
+  height: auto;
+  /*
+    图下面的那条缝隙。slick 会给每张图的行内样式写
+    `width: 100%; display: inline-block`（见 SponsorBanner 的说明），
+    inline-block 就落在行盒的基线上，下面留出字体的降部 —— 实测 15px 字
+    留 6px。而 antd 的 `.ant-carousel` 自带 `line-height: 1.5715`，把外面
+    的 line-height 顶掉了，指望「容器上写 line-height: 0」没用。
+    改基线对齐才是对症的：图底贴住行盒底，这一框就正好是图的高度。
+  */
+  vertical-align: bottom;
 }
 
 /* 这里原本有一组给轮播指示点重新着色的规则（antd 的圆点是按深色图设计的白点，

@@ -35,6 +35,36 @@ describe('SponsorBanner', () => {
     expect(screen.getByRole('img', { name: '化学与分子工程学院' })).toBeInTheDocument()
   })
 
+  /**
+   * 文案被拆成「小字 + 加粗的名字」两段。整行都加粗就分不出主次，
+   * 所以这里钉住的是**加粗只落在名字上**，而不只是名字出现在页面上。
+   */
+  it('只把赞助商名字加粗，小字不加粗', () => {
+    const { container } = renderWithProviders(<SponsorBanner items={ONE} />)
+
+    const thanks = container.querySelector('.sponsor__thanks')
+    expect(thanks?.querySelector('strong')).toHaveTextContent(zh.sponsor.thanksBrand)
+    expect(thanks).toHaveTextContent(`${zh.sponsor.thanks}${zh.sponsor.thanksBrand}`)
+  })
+
+  /**
+   * 尺寸由图片自己撑（CSS 的 width: 100% + height: auto），**JS 不再往 DOM 里
+   * 写高度**。上一版是在画面框上挂一个 --sponsor-height 像素值 —— 这条钉住的
+   * 就是它没有被请回来。像素几何本身归 e2e（见 e2e/layout.spec.ts）。
+   *
+   * 只查高度：slick 自己会给图片写 `width: 100%; display: inline-block`，
+   * 那是它的排版机制，与这条规则无关。
+   */
+  it('赞助位里没有任何行内高度', () => {
+    const { container } = renderWithProviders(<SponsorBanner items={TWO} />)
+
+    const styled = Array.from(container.querySelectorAll<HTMLElement>('[style]'))
+    expect(styled.length, '一个带行内样式的元素都没有，这条断言就失去意义了').toBeGreaterThan(0)
+    for (const el of styled) {
+      expect(el.getAttribute('style'), `${el.className} 上不该有行内高度`).not.toMatch(/height/i)
+    }
+  })
+
   it('只有一家时不套轮播：没有圆点', () => {
     const { container } = renderWithProviders(<SponsorBanner items={ONE} />)
 
