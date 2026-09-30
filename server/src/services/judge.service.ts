@@ -35,6 +35,21 @@ export const TIER2_MULTIPLIER = 2
 export const WORD_COUNT_MIN = 30
 /** 单词赛道升到二档的数量 */
 export const WORD_COUNT_TIER2 = 50
+/**
+ * 单词赛道允许申报的最大数量。超过它的提交直接被拒。
+ *
+ * **这不是计分阈值。** `≥ WORD_COUNT_TIER2` 已经封顶在二档，填 5000 和填 5 万拿到的是同一个分值，
+ * 所以加这个上限不会改变任何人的分数 —— 它只是输入合法性，别把它当成第三档往分值表里塞。
+ *
+ * 存在的理由有两个：
+ *   1. 明显不真实的数量（`999999`）不该一路通过审核，落进库里再出现在审核页与 CSV 导出上。
+ *   2. `submission_revisions.word_count` 是 32 位 `Int`，而 `Number.isInteger(1e21)` 是 `true` ——
+ *      没有上限时，超大值会通过应用层的全部校验，最后死在 Prisma 上变成 500 而不是可读的校验错误。
+ *
+ * 与 `WORD_COUNT_MIN` 一样，判定只发生在 resolveDeclaration。**不要**把它复制进
+ * checkins/schema.ts 或 admin-ops/schema.ts —— 阈值只有一份。
+ */
+export const WORD_COUNT_MAX = 5000
 
 /**
  * 运动类型。存**稳定的英文码**，中文标签（`>2km跑步` 等）属于文案，
@@ -155,6 +170,9 @@ export function judgePoints(params: {
     if (typeof count !== 'number' || !Number.isInteger(count) || count < WORD_COUNT_MIN) {
       return basePoints
     }
+    // 这里**刻意不看 WORD_COUNT_MAX**，方向与上面那条相反：超过上限的值同样本不该落库，
+    // 但它只可能来自上限生效之前的历史数据，而报 8000 个的人确实背了那么多 —— 判成基础分
+    // 是扣他的分，不是兜底。何况 ≥TIER2 本来就是二档，上限对内部分值毫无影响。
     return count >= WORD_COUNT_TIER2 ? basePoints * TIER2_MULTIPLIER : basePoints
   }
 
@@ -208,10 +226,16 @@ export function resolveDeclaration(input: DeclarationInput): ResolvedDeclaration
 
   if (trackSlug === 'vocabulary') {
     const wordCount = input.wordCount ?? null
-    if (wordCount === null || !Number.isInteger(wordCount) || wordCount < WORD_COUNT_MIN) {
-      throw validationFailed(`单词数量必须是不小于 ${WORD_COUNT_MIN} 的整数`, {
-        word_count_min: WORD_COUNT_MIN,
-      })
+    if (
+      wordCount === null ||
+      !Number.isInteger(wordCount) ||
+      wordCount < WORD_COUNT_MIN ||
+      wordCount > WORD_COUNT_MAX
+    ) {
+      throw validationFailed(
+        `单词数量必须是 ${WORD_COUNT_MIN} 到 ${WORD_COUNT_MAX} 之间的整数`,
+        { word_count_min: WORD_COUNT_MIN, word_count_max: WORD_COUNT_MAX },
+      )
     }
     // 单词赛道只认数量：误传的 exercise_type 在这里被丢弃，
     // 不允许无关字段流到计分器上

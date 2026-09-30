@@ -198,6 +198,12 @@ test.describe('参赛者打卡', () => {
     await expect(submit).toBeDisabled()
     await expect(page.getByText(/单词数量不能少于 30 个/)).toBeVisible()
 
+    // 超过上限：同样不静默夹到 5000，用户填的 5001 原样留着
+    await wordCount.fill('5001')
+    await expect(wordCount).toHaveValue('5001')
+    await expect(submit).toBeDisabled()
+    await expect(page.getByText(/单词数量不能超过 5000 个/)).toBeVisible()
+
     // 达到下限：可以提交，服务端接受这个数量
     await wordCount.fill('50')
     await expect(submit).toBeEnabled()

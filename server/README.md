@@ -171,7 +171,7 @@ Zod schema 在 `schema.ts`（同时供 OpenAPI 注册）。
 
 申报明细（`word_count` / `exercise_type`）决定这条打卡值几分，取值与阈值见
 [`src/services/judge.service.ts`](./src/services/judge.service.ts)：
-单词赛道必填 `word_count`（整数，不少于 30），运动赛道必填 `exercise_type`
+单词赛道必填 `word_count`（整数，30–5000；上限只是输入合法性，不影响分值），运动赛道必填 `exercise_type`
 （`run_gt_2km` / `run_gt_3km` / `workout_30min` / `workout_60min`），读书赛道两个都不填。
 `images` 是 1–3 张，**读书赛道例外：可以为 0 张，只要 `note` 非空**（图片与备注有一个即可）。
 

@@ -18,7 +18,7 @@ import { presentError } from '@/api/presentError'
 import { invalidationMap, qk } from '@/api/queryKeys'
 import type { AdminParticipant, Track } from '@/api/types'
 import { exerciseTypeOptions } from '@/components/exerciseTypeMeta'
-import { WORD_COUNT_MIN, type FitnessExerciseType } from '@/features/checkin/declaration'
+import { WORD_COUNT_MAX, WORD_COUNT_MIN, type FitnessExerciseType } from '@/features/checkin/declaration'
 import { fromPickerDate, toPickerDate } from '@/lib/datetime'
 import { parsePointsToMilli } from '@/lib/milli'
 import { zh } from '@/locales/zh-CN'
@@ -164,17 +164,33 @@ function ManualSection({ tracks }: { tracks: Track[] }) {
     同一条 60 分钟运动，自己交记 2 分、补录记 1 分，没人解释得清。
   */
   const declarationReady = trackSlug === 'vocabulary'
-    ? wordCount !== null && Number.isInteger(wordCount) && wordCount >= WORD_COUNT_MIN
+    ? wordCount !== null &&
+      Number.isInteger(wordCount) &&
+      wordCount >= WORD_COUNT_MIN &&
+      wordCount <= WORD_COUNT_MAX
     : trackSlug === 'fitness'
       ? exerciseType !== null
       : true
+
+  /*
+    数量越界时按钮会灰掉，而这一屏没有别的提示位 —— 不说清原因，补录的人只会以为表单坏了。
+    与提交页同一条规则、同一句文案（阈值来源见 features/checkin/declaration.ts）。
+  */
+  const declarationHint =
+    trackSlug === 'vocabulary' && wordCount !== null
+      ? wordCount > WORD_COUNT_MAX
+        ? zh.checkin.submit.wordCountTooMany(WORD_COUNT_MAX)
+        : wordCount < WORD_COUNT_MIN
+          ? zh.checkin.submit.wordCountTooFew(WORD_COUNT_MIN)
+          : null
+      : null
 
   const ready = Boolean(participant && trackId && activityDate) && declarationReady
 
   return (
     <OpsAction
       title={zh.admin.ops.manual}
-      hint={zh.admin.ops.manualHint}
+      hint={declarationHint ?? zh.admin.ops.manualHint}
       consequence={zh.admin.ops.consequenceManual}
       confirmText={zh.admin.ops.submit}
       ready={ready}

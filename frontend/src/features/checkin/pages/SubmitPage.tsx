@@ -30,7 +30,12 @@ import ImagePicker from '../components/ImagePicker'
 import type { SelectedImage } from '../components/imagePicker.utils'
 import { resolveCardDisplayState } from '../cardStateMeta'
 import { exerciseTypeLabel } from '@/components/exerciseTypeMeta'
-import { FITNESS_EXERCISE_TYPES, WORD_COUNT_MIN, isLenientImageTrack } from '../declaration'
+import {
+  FITNESS_EXERCISE_TYPES,
+  WORD_COUNT_MAX,
+  WORD_COUNT_MIN,
+  isLenientImageTrack,
+} from '../declaration'
 
 /**
  * 提交打卡（design.md §7.4）。
@@ -228,7 +233,12 @@ export default function SubmitPage() {
     ? images.length === 0 && note.trim() === ''
     : images.length < rules.min_images
   const missingDeclaration = track === 'vocabulary'
-    ? !(wordCount !== null && Number.isInteger(wordCount) && wordCount >= WORD_COUNT_MIN)
+    ? !(
+        wordCount !== null &&
+        Number.isInteger(wordCount) &&
+        wordCount >= WORD_COUNT_MIN &&
+        wordCount <= WORD_COUNT_MAX
+      )
     : track === 'fitness'
       ? exerciseType === null
       : false
@@ -242,9 +252,11 @@ export default function SubmitPage() {
       : zh.checkin.submit.minImages(rules.min_images)
   } else if (missingDeclaration) {
     if (track === 'vocabulary') {
-      blockerHint = wordCount !== null && wordCount < WORD_COUNT_MIN
-        ? zh.checkin.submit.wordCountTooFew(WORD_COUNT_MIN)
-        : zh.checkin.submit.wordCountRequired
+      blockerHint = wordCount !== null && wordCount > WORD_COUNT_MAX
+        ? zh.checkin.submit.wordCountTooMany(WORD_COUNT_MAX)
+        : wordCount !== null && wordCount < WORD_COUNT_MIN
+          ? zh.checkin.submit.wordCountTooFew(WORD_COUNT_MIN)
+          : zh.checkin.submit.wordCountRequired
     } else {
       blockerHint = zh.checkin.submit.exerciseTypeRequired
     }
@@ -301,6 +313,9 @@ export default function SubmitPage() {
             **静默夹到 min**，于是用户填 20 会看到它自己变成 30，然后以为交的是 20。
             改成一个只是挡掉零和负数的下限，让「不能少于 30 个」那句提示来说清楚 ——
             按钮禁用 + 明说原因，比悄悄改掉用户填的数字诚实。
+
+            上限同理，这里也**不设 max={WORD_COUNT_MAX}**：填 8000 被悄悄改成 5000
+            是同一件不诚实的事。越界由上面那条 blockerHint 明说，服务端再兜一次。
           */}
           <InputNumber
             value={wordCount}

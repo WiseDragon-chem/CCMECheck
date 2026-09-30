@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   FITNESS_EXERCISE_TYPES,
   TIER2_MULTIPLIER,
+  WORD_COUNT_MAX,
   WORD_COUNT_MIN,
   WORD_COUNT_TIER2,
   dailyCapTierProblem,
@@ -45,6 +46,12 @@ describe('单词赛道：按背诵数量分档', () => {
   it('50 个起记 2 分', () => {
     expect(points(WORD_COUNT_TIER2)).toBe(ONE * TIER2_MULTIPLIER)
     expect(points(500)).toBe(ONE * TIER2_MULTIPLIER)
+  })
+
+  it('上限之上的数量仍是二档 —— WORD_COUNT_MAX 不是第三档', () => {
+    // 只可能来自上限生效之前的历史数据。判成基础分是扣他的分，不是兜底
+    expect(points(WORD_COUNT_MAX)).toBe(ONE * TIER2_MULTIPLIER)
+    expect(points(WORD_COUNT_MAX + 1)).toBe(ONE * TIER2_MULTIPLIER)
   })
 
   it('数量缺失或不是正整数时回退到基础分', () => {
@@ -181,6 +188,16 @@ describe('提交时的申报明细校验', () => {
     expect(() => resolve({ wordCount: 0 })).toThrowError()
     expect(() => resolve({ wordCount: null })).toThrowError()
     expect(() => resolve({ wordCount: 30.5 })).toThrowError()
+  })
+
+  it('单词赛道超过上限直接拒绝', () => {
+    expect(() => resolve({ wordCount: WORD_COUNT_MAX + 1 })).toThrowError(/5000/)
+    // 32 位 Int 会在写库时炸成 500，必须在应用层就拦下
+    expect(() => resolve({ wordCount: 1e21 })).toThrowError(/5000/)
+  })
+
+  it('上限本身是合法的', () => {
+    expect(resolve({ wordCount: WORD_COUNT_MAX }).declaration.wordCount).toBe(WORD_COUNT_MAX)
   })
 
   it('单词赛道接受下限及以上，并丢弃误传的运动类型', () => {

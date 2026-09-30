@@ -206,6 +206,7 @@ export const zh = {
       wordCountPlaceholder: '例如 50',
       wordCountRequired: '请填写当日背诵的单词数量',
       wordCountTooFew: (min: number) => `单词数量不能少于 ${min} 个`,
+      wordCountTooMany: (max: number) => `单词数量不能超过 ${max} 个`,
       exerciseType: '本次运动类型',
       exerciseTypeRequired: '请选择本次运动类型',
       /** 读书赛道的材料要求放宽了：图片与备注有一个即可 */

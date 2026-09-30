@@ -352,6 +352,19 @@ describe('打卡提交', () => {
       expect(await db.checkinEntry.count()).toBe(0)
     })
 
+    it('单词数量超过上限时拒绝提交', async () => {
+      const response = await submit({
+        track: 'vocabulary',
+        activity_date: ACTIVITY_DATE,
+        word_count: '5001',
+      })
+
+      expect(response.status).toBe(400)
+      expect(response.body.code).toBe('VALIDATION_FAILED')
+      expect(response.body.message).toContain('5000')
+      expect(await db.checkinEntry.count()).toBe(0)
+    })
+
     it('运动赛道缺少运动类型时拒绝提交', async () => {
       const response = await submit({ track: 'fitness', activity_date: ACTIVITY_DATE })
 

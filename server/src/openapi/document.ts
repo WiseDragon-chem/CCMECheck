@@ -332,7 +332,7 @@ export function buildOpenApiDocument() {
               word_count: z
                 .string()
                 .optional()
-                .openapi({ description: '单词赛道必填：当日背诵数量（整数，不少于 30）' }),
+                .openapi({ description: '单词赛道必填：当日背诵数量（整数，30–5000）' }),
               exercise_type: z.string().optional().openapi({
                 description:
                   '运动赛道必填：运动类型，取值 run_gt_2km / run_gt_3km / workout_30min / workout_60min',

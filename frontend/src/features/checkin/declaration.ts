@@ -21,6 +21,14 @@ export const WORD_COUNT_MIN = 30
 /** 单词赛道升到二档的数量。提交页不显示它，只用于表单校验的语义完整 */
 export const WORD_COUNT_TIER2 = 50
 
+/**
+ * 单词赛道允许申报的最大数量。与 judge.service.ts 的 WORD_COUNT_MAX 一致。
+ *
+ * 它不是分值档位（≥50 已经封顶在二档），只用来在提交前拦下明显不真实的数量 ——
+ * 否则超限的值要等服务端拒一次才知道，而超大值在服务端还会撞上 32 位 Int。
+ */
+export const WORD_COUNT_MAX = 5000
+
 /** 运动类型，值与 judge.service.ts 的 FITNESS_EXERCISE_TYPES 一致 */
 export const FITNESS_EXERCISE_TYPES = [
   'run_gt_2km',
