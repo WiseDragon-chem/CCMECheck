@@ -63,7 +63,14 @@ export interface ReviewQueueItem {
   is_resubmission: boolean
 }
 
-/** 审核进度（§8.2 的「审核进度」区块） */
+/**
+ * 审核进度（§8.2 的「审核进度」区块）。
+ *
+ * 后三项统计的是**今天做出的审核决定**，不是「此刻处于某状态的记录数」。
+ * 两者的差别只在重新提交时显形：被驳回的记录一经重新提交就被推回 pending，
+ * 记录上的驳回痕迹同时被清空，按状态统计会让审核员今天做过的驳回凭空消失。
+ * 因此 reviewed_today 恒等于 approved_today + rejected_today。
+ */
 export interface ReviewProgress {
   pending_total: number
   reviewed_today: number
@@ -135,7 +142,7 @@ export async function listReviewQueue(filters: ReviewQueueFilters): Promise<Revi
   // 今天的起点按北京时间零点换算，与 activity_date 的归属规则保持一致（§6.2）
   const todayStart = cstInstantOf(cstToday(), '00:00')
 
-  const [rows, total, pendingTotal, reviewedToday, approvedToday, rejectedToday] = await Promise.all([
+  const [rows, total, pendingTotal, approvedToday, rejectedToday] = await Promise.all([
     prisma.checkinEntry.findMany({
       where,
       // 先到先审：审核流水线按提交时间先进先出（§8.2）；id 作为次级排序保证分页稳定
@@ -160,12 +167,26 @@ export async function listReviewQueue(filters: ReviewQueueFilters): Promise<Revi
     prisma.checkinEntry.count({ where }),
     // 进度条统计整个活动，不随筛选器变化 —— 它衡量的是「还剩多少活没干」
     prisma.checkinEntry.count({ where: { campaignId: campaign.id, status: 'pending' } }),
-    prisma.checkinEntry.count({ where: { campaignId: campaign.id, reviewedAt: { gte: todayStart } } }),
-    prisma.checkinEntry.count({
-      where: { campaignId: campaign.id, status: 'approved', reviewedAt: { gte: todayStart } },
+    // 从 review_actions 而不是 checkin_entries 统计：审核决定只有这张表不会丢。
+    // 记录上的 status/reviewedAt 会被重新提交覆盖（status 回 pending、reviewedAt 清空），
+    // 于是「驳回 → 重新提交 → 通过」这条链在记录上只剩最后那次通过。
+    //
+    // 只有 approve / reject 算审核决定：reopen、revoke、void、manual_create 是
+    // 管理员对记录的处置，不是审核员对材料的判断。代价是管理员直接判为通过的补录
+    // 不计入今日通过 —— 那一份工作量本来就不来自流水线。
+    prisma.reviewAction.count({
+      where: {
+        entry: { campaignId: campaign.id },
+        action: REVIEW_ACTION.approve,
+        createdAt: { gte: todayStart },
+      },
     }),
-    prisma.checkinEntry.count({
-      where: { campaignId: campaign.id, status: 'rejected', reviewedAt: { gte: todayStart } },
+    prisma.reviewAction.count({
+      where: {
+        entry: { campaignId: campaign.id },
+        action: REVIEW_ACTION.reject,
+        createdAt: { gte: todayStart },
+      },
     }),
   ])
 
@@ -176,8 +197,7 @@ export async function listReviewQueue(filters: ReviewQueueFilters): Promise<Revi
     page_size: filters.pageSize,
     progress: {
       pending_total: pendingTotal,
-      reviewed_today: reviewedToday,
-      // 只统计「此刻仍是通过/驳回」的记录：今天审过但随后被撤销的记录不再计入
+      reviewed_today: approvedToday + rejectedToday,
       approved_today: approvedToday,
       rejected_today: rejectedToday,
     },
