@@ -601,8 +601,10 @@ export const ImportCommitResponseSchema = z
 export const ReviewProgressSchema = z
   .object({
     pending_total: z.number().int(),
-    reviewed_today: z.number().int(),
-    approved_today: z.number().int().openapi({ description: '只统计此刻仍是通过的记录，被撤销的不计入' }),
+    reviewed_today: z.number().int().openapi({ description: '今天做出的审核决定数，恒等于通过数加驳回数' }),
+    approved_today: z.number().int().openapi({
+      description: '今天通过的次数。按审核决定而非记录当前状态统计，因此被驳回后重新提交再通过的记录算 1 次通过 + 1 次驳回',
+    }),
     rejected_today: z.number().int(),
   })
   .openapi('ReviewProgress')
