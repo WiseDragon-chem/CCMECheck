@@ -105,7 +105,8 @@ npm run campaign:init         # 幂等：创建活动或把库改成与代码一
    有异常时用异常处理页补录、重开、撤销或积分调整。
 3. **活动结束后** —— 先清空待审队列，再在异常处理页**冻结最终榜单**，
    然后导出名册（名单页）。打卡明细与排行榜的导出接口后端已就绪，
-   界面尚未做，暂时需要直接调接口（见下方 API 文档）。
+   界面尚未做，暂时需要直接调接口（见下方 API 文档）；
+   总榜也可以跑 `npm run export:leaderboard` 直接读库出 CSV。
 
 ---
 
@@ -116,6 +117,7 @@ npm run campaign:init         # 幂等：创建活动或把库改成与代码一
 | server | `npm run dev` | 开发服务（HTTP 与定时任务同进程） |
 | server | `npm run seed` | 管理员、审核员、三个赛道 |
 | server | `npm run campaign:init` | 把代码里的活动配置同步到库 |
+| server | `npm run export:leaderboard` | 导出总榜 CSV（直接读库，与后台导出同一口径） |
 | server | `npm test` | 单元 + 验收测试 |
 | server | `npm run prisma:studio` | 查看数据库 |
 | frontend | `npm run dev` | 开发服务（`/api` 代理到 3000） |
